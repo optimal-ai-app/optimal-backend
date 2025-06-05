@@ -4,16 +4,22 @@ server:
 
 spring:
   datasource:
-    # Replace with your Optimal app’s PostgreSQL connection (e.g., Supabase or Docker)
-    url: jdbc:postgresql://${POSTGRES_DB_SERVER_ADDRESS:localhost}:${POSTGRES_DB_SERVER_PORT:5432}/optimal_db?sslmode=require
-    username: ${POSTGRES_USER:postgres}
-    password: ${POSTGRES_PASSWORD:example}
+    # Supabase uses SSL, so prepend "jdbc:" and add "?sslmode=require"
+    url: jdbc:postgresql://db.umndbnimuswczlydijnf.supabase.co:5432/postgres?sslmode=require
+    username: postgres
+    password: FTSDq@5&v@Z&67T
     hikari:
-      pool-name: OptimalHikariPool
+      pool-name: SpringBootBoilerplateHikariPool
   jpa:
     hibernate:
-      ddl-auto: update # use 'update' in development; switch to 'validate' or migrations in production
+      ddl-auto: update
     open-in-view: false
+
+    # Add this so Hibernate knows which Dialect to use without probing
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
   jta:
     enabled: false
 
@@ -36,21 +42,19 @@ logging:
     org.springframework: INFO
     com.optimal.backend.springboot: INFO
 
+## FIXME : Customize JWT token and Swagger information for your application
+
 jwt:
-  # Replace with a strong secret (e.g., from environment) and your own issuer
-  secretKey: ${JWT_SECRET:changeThisToAStrongSecret}
-  issuer: optimal.yourdomain.com
-  expirationMinute: 86400 # tokens valid for 60 days
+  secretKey: secret
+  issuer: www.farukgenc.com
+  expirationMinute: 10
 
 swagger:
-  contact-name: Optimal Backend Team
-  contact-mail: backend@optimal.app
-  contact-url: https://optimal.app/docs
-  app-name: Optimal Backend API
-  app-description: >
-    “Optimal” is the backend service for the Optimal application. 
-    This project includes Spring Boot, Spring Data JPA, validation, 
-    Spring Security + JWT, PostgreSQL, MapStruct, Lombok, and OpenAPI.
-  app-version: 1.0.0
+  contact-name: Faruk Genc
+  contact-mail: omer@farukgenc.com
+  contact-url: https://farukgenc.com
+  app-name: Spring Boot Boilerplate Project
+  app-description: 'Spring Boot Boilerplate is a starter kit. This project includes : Spring Boot(3.4.0), Spring Data JPA, Spring Validation, Spring Security + JWT Token, PostgreSQL, Mapstruct, Lombok, Swagger (Open API)'
+  app-version: 3.4.0
   app-license-url: https://www.apache.org/licenses/LICENSE-2.0.html
   app-license: Apache 2.0

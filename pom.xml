@@ -9,7 +9,7 @@
         <version>3.4.0</version>
     </parent>
 
-    <groupId>com.farukgenc</groupId>
+    <groupId>com.optimal.backend</groupId>
     <artifactId>springboot-boilerplate</artifactId>
     <version>3.4.0</version>
 
@@ -21,9 +21,10 @@
 
     <developers>
         <developer>
-            <name>Faruk Genc</name>
-            <email>omer@farukgenc.com</email>
-            <url>https://farukgenc.com</url>
+            <name>Ryan Yavari</name>
+        </developer>
+        <developer>
+            <name>Nir Guberman</name>
         </developer>
     </developers>
 

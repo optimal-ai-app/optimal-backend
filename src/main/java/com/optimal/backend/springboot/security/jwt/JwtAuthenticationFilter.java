@@ -38,6 +38,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
 			throws IOException, ServletException {
 
+		String path = request.getRequestURI();
+
+		if (path.equals("/register") || path.equals("/login") ||
+		path.startsWith("/swagger-ui") || path.startsWith("/v3/api-docs") ||
+		path.equals("/swagger-ui.html") || path.startsWith("/actuator")) {
+			chain.doFilter(request, response);
+			return;
+		}
+		
 		final String header = request.getHeader(SecurityConstants.HEADER_STRING);
 
 		String username = null;
