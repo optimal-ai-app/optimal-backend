@@ -22,7 +22,7 @@ public class LlmClient {
         this.chatModel = chatModel;
     }
 
-    public LlmResponse generate(String systemPrompt, List<Message> contexts, List<Object> tools) {
+    public LlmResponse generate(String systemPrompt, List<Message> contexts, List<Tool> tools) {
         try {
             // Convert our Messages to LangChain4j ChatMessages
             List<ChatMessage> messages = new ArrayList<>();
@@ -39,7 +39,7 @@ public class LlmClient {
 
             // Convert tools to ToolSpecifications if they implement our Tool interface
             List<ToolSpecification> toolSpecs = new ArrayList<>();
-            for (Object tool : tools) {
+            for (Tool tool : tools) {
                 if (tool instanceof Tool) {
                     Tool toolInstance = (Tool) tool;
                     ToolSpecification toolSpec = ToolSpecification.builder()
@@ -69,7 +69,7 @@ public class LlmClient {
         }
     }
 
-    private LlmResponse createSimulatedResponse(String systemPrompt, List<Object> tools) {
+    private LlmResponse createSimulatedResponse(String systemPrompt, List<Tool> tools) {
         String content = "This is a simulated response from an LLM. " +
                 "In a real implementation, this would be replaced with an actual API call to an LLM service. " +
                 "The response would be generated based on the input prompt: " + systemPrompt;
