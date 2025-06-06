@@ -1,5 +1,5 @@
 # Spring Boot Boilerplate
- *Spring Boot Boilerplate* is a **starter kit**. This project is a very simple and useful.
+ *Spring Boot Boilerplate* is a **starter kit**. This project is simple and useful.
  
 ## Technologies 
 - Spring Boot (v3.4.0)
