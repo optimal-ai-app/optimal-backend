@@ -47,12 +47,12 @@ public class BaseSupervisor implements SupervisorInterface {
             }
 
             Rules:
+            - The array CANNOT be empty, if there is only one agent, return an array with that agent
             - "name" must be exactly one of the available agent names listed above
             - "instruction" should be a clear, specific task for that agent
             - "dependency" is an array of agent names that must complete before this agent can start (empty array [] if no dependencies)
             - The dependency system creates a Directed Acyclic Graph (DAG) - agents with no dependencies run first, then agents whose dependencies are complete
             - DO NOT create circular dependencies
-            - If the user's request doesn't require any agents, return an empty array []
             - ONLY use agent names that exist in the available agents list above
 
             Example responses:
@@ -183,10 +183,10 @@ public class BaseSupervisor implements SupervisorInterface {
 
         // Build the dynamic system prompt based on registered agents
         String dynamicSystemPrompt = buildInterpreterSystemPrompt();
-
+        System.out.println("dynamicSystemPrompt: " + dynamicSystemPrompt);
         LlmResponse response = llmClient.generate(dynamicSystemPrompt, contexts, new ArrayList<>());
         String responseContent = response.getContent();
-
+        System.out.println("interpreter response: " + responseContent);
         Queue<AgentNode> agentNodes = new LinkedList<>();
         try {
             ObjectMapper mapper = new ObjectMapper();

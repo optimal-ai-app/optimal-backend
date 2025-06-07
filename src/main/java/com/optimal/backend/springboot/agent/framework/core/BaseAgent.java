@@ -91,6 +91,8 @@ public abstract class BaseAgent {
             aiMessage.setRole("assistant");
             aiMessage.setContent(response.getContent());
             aiMessage.setMessage(response.getContent());
+            System.out.println(this.name + " response: " + response.getContent());
+
             contexts.add(aiMessage);
 
             // Check if response has tool calls
