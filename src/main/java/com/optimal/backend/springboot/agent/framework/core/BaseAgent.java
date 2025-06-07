@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.HashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
+
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -36,12 +39,12 @@ public abstract class BaseAgent {
     public BaseAgent(String name, String description, String systemPrompt, List<Tool> tools) {
         this.name = name;
         this.description = description;
-        this.systemPrompt = systemPrompt;
+        this.systemPrompt = GeneralPromptAppender.appendGeneralInstructions(systemPrompt);
         this.tools = tools != null ? tools : new ArrayList<>();
     }
 
     public BaseAgent(String name, String description, String systemPrompt) {
-        this(name, description, systemPrompt, new ArrayList<>());
+        this(name, description, GeneralPromptAppender.appendGeneralInstructions(systemPrompt), new ArrayList<>());
     }
     //
 
