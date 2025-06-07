@@ -26,9 +26,9 @@ public abstract class BaseAgent {
     protected String systemPrompt; // System prompt for the agent
     protected List<Tool> tools; // List of tools available to the agent
 
-    @Autowired
-    // This just means that spring will inject the LlmClient bean into the field
+     // This just means that spring will inject the LlmClient bean into the field
     // We do not need to instantiate it here, spring will do it for us
+    @Autowired
     protected LlmClient llmClient;
 
     // Constructors
@@ -86,6 +86,12 @@ public abstract class BaseAgent {
 
         for (int i = 0; i < this.MAX_STEPS; i++) {
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
+            // Add AI response to context
+            Message aiMessage = new Message();
+            aiMessage.setRole("assistant");
+            aiMessage.setContent(response.getContent());
+            aiMessage.setMessage(response.getContent());
+            contexts.add(aiMessage);
 
             // Check if response has tool calls
             if (response.hasToolCalls()) {
