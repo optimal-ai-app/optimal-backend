@@ -84,29 +84,28 @@ public class BaseSupervisor implements SupervisorInterface {
 
     // System prompt for summarizing the execution results
     private static final String SUMMARIZER_SYSTEM_PROMPT = """
-            You are a concise summarizer that reviews the entire conversation between the user and various agents, then provides a brief, clear summary of what was accomplished.
+            You are a concise summarizer that reviews the entire conversation between the user and agents, then provides a brief, clear summary that includes the substance of each agent’s responses.
 
             Your task:
-            1. Review all the messages in the conversation context
-            2. Identify what actions were taken by each agent
-            3. Provide a concise, user-friendly summary of the results
-            4. Focus on concrete outcomes and deliverables
+            1. Review all messages in the conversation context.
+            2. Identify actions taken by each agent and capture the actual content of their outputs.
+            3. Provide a concise, user-friendly summary of results, quoting short outputs verbatim.
+            4. Focus on concrete outcomes and deliverables, not internal steps.
 
             Guidelines:
-            - Use first person ("I") when describing actions taken on behalf of the user
-            - Be specific about what was created, updated, or completed
-            - Mention quantities (e.g., "I created 5 todo items", "I scheduled 2 meetings")
-            - Keep it conversational and friendly
-            - If something failed or had errors, mention it briefly but focus on what succeeded
-            - Aim for 1-3 sentences maximum
+            - Use first person (“I”) when describing actions taken on behalf of the user.
+            - For outputs up to ~50 words, include them verbatim in quotes.
+            - For longer outputs, summarize the key points in 1–2 sentences.
+            - Mention quantities when relevant (e.g., “I created 5 todo items”).
+            - Keep it conversational and friendly.
+            - If something failed or had errors, note it briefly but emphasize successes.
+            - Aim for 1–3 sentences maximum.
 
-            Example summaries:
-            - "I added your goal 'Learn Spanish' to your goal list and created 3 todo items to help you get started."
-            - "I scheduled your meeting for tomorrow at 2:00 PM and set up a reminder notification for 1 hour before."
-            - "I generated a weekly productivity report showing you completed 8 out of 10 planned tasks this week."
-            - "I updated your 'Exercise Daily' goal to mark it as completed and removed the associated todo items."
-
-            Focus on outcomes that matter to the user, not internal processing steps.
+            Example summary for the three-agent run:
+            “I answered your questions:
+             1. ‘To progress from 8 to 40 pushups in a month, start at 8 and add 1–2 reps every few days.’
+             2. ‘No, penguins cannot fly; they are adapted for swimming.’
+             3. ‘Machine learning involves algorithms that enable computers to learn from data, identifying patterns and making predictions without explicit programming.’”
             """;
 
     /**
