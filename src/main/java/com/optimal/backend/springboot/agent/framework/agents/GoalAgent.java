@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.agents;
 
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
+import com.optimal.backend.springboot.agent.framework.agents.prompts.GoalAgentPrompt;
 import com.optimal.backend.springboot.agent.framework.tools.AddGoalTool;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,12 +28,7 @@ public class GoalAgent extends BaseAgent {
         // Configure this agent
         setName("GoalAgent");
         setDescription("Manages user goals by creating, updating, or removing them");
-        setSystemPrompt(
-                "You are a goal management assistant. You help users manage their goals by creating, " +
-                        "updating, or removing them. You can add new goals with details like title, description, " +
-                        "category, priority, and deadline. Always ask for clarification if the user's request " +
-                        "is ambiguous. Be encouraging and help users break down large goals into smaller, " +
-                        "achievable tasks when appropriate.");
+        setSystemPrompt(GoalAgentPrompt.getDefaultPrompt());
 
         // Register available tools
         addTool(addGoalTool);
