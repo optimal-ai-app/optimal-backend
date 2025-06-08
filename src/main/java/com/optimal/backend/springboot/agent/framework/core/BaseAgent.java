@@ -1,9 +1,10 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
-import java.util.List;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -20,18 +21,16 @@ import jakarta.annotation.PostConstruct;
  */
 @Component
 public abstract class BaseAgent {
-    final protected int MAX_STEPS = 20; // Maximum number of steps an agent can take
-    protected String name; // Name of the agent
-    protected String description; // Description of the agent
-    protected String systemPrompt; // System prompt for the agent
-    protected List<Tool> tools; // List of tools available to the agent
-
-     // This just means that spring will inject the LlmClient bean into the field
-    // We do not need to instantiate it here, spring will do it for us
+    private static final int MAX_STEPS = 20;
+    
+    protected String name;
+    protected String description;
+    protected String systemPrompt;
+    protected List<Tool> tools;
+    
     @Autowired
     protected LlmClient llmClient;
 
-    // Constructors
     public BaseAgent() {
         this.tools = new ArrayList<>();
     }
@@ -44,22 +43,16 @@ public abstract class BaseAgent {
     }
 
     public BaseAgent(String name, String description, String systemPrompt) {
-        this(name, description, GeneralPromptAppender.appendGeneralInstructions(systemPrompt), new ArrayList<>());
+        this(name, description, systemPrompt, new ArrayList<>());
     }
-    //
 
     /**
      * Initialization method called after Spring dependency injection.
      * Override this method in subclasses to configure the agent.
      */
-    // We may not need this, but it's a good practice to have it
     @PostConstruct
     protected void initialize() {
-        // Subclasses should override this method to configure the agent
-        // Example:
-        // setName("MyAgent");
-        // setSystemPrompt("You are a helpful assistant...");
-        // addTool(myTool);
+        // Override in subclasses to configure the agent
     }
 
     public void addTool(Tool tool) {
@@ -74,106 +67,84 @@ public abstract class BaseAgent {
 
     public List<Message> run(List<Message> instructions) {
         List<Message> contexts = new ArrayList<>(instructions);
+        Map<String, Tool> toolMap = createToolMap();
 
-        // Create tool map for quick lookup by name
-        Map<String, Tool> toolMap = new HashMap<>();
-        for (Tool tool : tools) {
-            if (tool instanceof Tool) {
-                Tool toolInstance = (Tool) tool;
-                toolMap.put(toolInstance.getName(), toolInstance);
-            }
-        }
-
-        for (int i = 0; i < this.MAX_STEPS; i++) {
+        for (int step = 0; step < MAX_STEPS; step++) {
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
-            // Add AI response to context
-            Message aiMessage = new Message();
-            aiMessage.setRole("assistant");
-            aiMessage.setContent(response.getContent());
-            aiMessage.setMessage(response.getContent());
-            System.out.println(this.name + " response: " + response.getContent());
+            
+            String responseContent = getResponseContent(response);
+            if (!responseContent.trim().isEmpty()) {
+                contexts.add(new Message("assistant", responseContent, responseContent));
+            }
 
-            contexts.add(aiMessage);
-
-            // Check if response has tool calls
             if (response.hasToolCalls()) {
-                // Process each tool call
-                for (ToolCall toolCall : response.getToolCalls()) {
-                    // Execute the tool call
-                    Tool tool = toolMap.get(toolCall.getName());
-                    if (tool instanceof Tool) {
-                        Tool toolInstance = (Tool) tool;
-                        try {
-                            String output = toolInstance.execute(toolCall.getInput());
-
-                            // Add tool response to context
-                            Message toolMessage = new Message();
-                            toolMessage.setRole("tool");
-                            toolMessage.setToolExecutionId(toolCall.getId());
-                            toolMessage.setContent(output);
-                            contexts.add(toolMessage);
-
-                        } catch (Exception e) {
-                            // Handle tool execution errors gracefully
-                            Message errorMessage = new Message();
-                            errorMessage.setRole("tool");
-                            errorMessage.setToolExecutionId(toolCall.getId());
-                            errorMessage.setContent("Error executing tool: " + e.getMessage());
-                            contexts.add(errorMessage);
-                        }
-                    } else {
-                        // Tool not found - add error message
-                        Message errorMessage = new Message();
-                        errorMessage.setRole("tool");
-                        errorMessage.setToolExecutionId(toolCall.getId());
-                        errorMessage.setContent("Error: Tool '" + toolCall.getName() + "' not found");
-                        contexts.add(errorMessage);
-                    }
-                }
+                processToolCalls(response.getToolCalls(), toolMap, contexts);
             } else {
-                // No more tool calls, we can break the loop
                 break;
             }
         }
+        
         return contexts;
     }
 
+    private Map<String, Tool> createToolMap() {
+        Map<String, Tool> toolMap = new HashMap<>();
+        for (Tool tool : tools) {
+            toolMap.put(tool.getName(), tool);
+        }
+        return toolMap;
+    }
+
+    private String getResponseContent(LlmResponse response) {
+        String content = response.getContent();
+        if (content == null || content.trim().isEmpty()) {
+            return response.hasToolCalls() ? "" : "No response provided";
+        }
+        return content;
+    }
+
+    private void processToolCalls(List<ToolCall> toolCalls, Map<String, Tool> toolMap, List<Message> contexts) {
+        for (ToolCall toolCall : toolCalls) {
+            Tool tool = toolMap.get(toolCall.getName());
+            Message toolMessage = executeTool(tool, toolCall);
+            contexts.add(toolMessage);
+        }
+    }
+
+    private Message executeTool(Tool tool, ToolCall toolCall) {
+        String output;
+        
+        if (tool != null) {
+            try {
+                output = tool.execute(toolCall.getInput());
+            } catch (Exception e) {
+                output = "Error executing tool: " + e.getMessage();
+            }
+        } else {
+            output = "Error: Tool '" + toolCall.getName() + "' not found";
+        }
+        
+        Message message = new Message("tool", output, output);
+        message.setToolExecutionId(toolCall.getId());
+        return message;
+    }
+
     // Getters and setters
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getSystemPrompt() {
-        return systemPrompt;
-    }
-
-    public void setSystemPrompt(String systemPrompt) {
-        this.systemPrompt = systemPrompt;
-    }
-
-    public List<Tool> getTools() {
-        return tools;
-    }
-
-    public void setTools(List<Tool> tools) {
-        this.tools = tools != null ? tools : new ArrayList<>();
-    }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    
+    public String getSystemPrompt() { return systemPrompt; }
+    public void setSystemPrompt(String systemPrompt) { this.systemPrompt = systemPrompt; }
+    
+    public List<Tool> getTools() { return tools; }
+    public void setTools(List<Tool> tools) { this.tools = tools != null ? tools : new ArrayList<>(); }
 
     @Override
     public String toString() {
-        return String.format("Agent{name='%s', description='%s', tools=%d}",
+        return String.format("Agent{name='%s', description='%s', tools=%d}", 
                 name, description, tools.size());
     }
 }

@@ -18,8 +18,14 @@ public interface Tool {
     /**
      * Execute the tool with the given input JSON string
      * 
-     * @param input The input parameters as JSON string
-     * @return The output result from executing the tool
+     * IMPORTANT: This method MUST NEVER return null. Always return a meaningful
+     * string:
+     * - On success: return the actual result
+     * - On empty results: return "No entries found" or similar
+     * - On errors: return descriptive error message
+     * 
+     * @param input The input parameters as JSON string (may be null or empty)
+     * @return The output result from executing the tool (NEVER null)
      */
     String execute(String input);
 

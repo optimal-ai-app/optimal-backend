@@ -1,13 +1,13 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import dev.langchain4j.data.message.AiMessage;
-import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import java.util.List;
-import java.util.ArrayList;
 
 /**
  * Represents a response from the LLM which may contain tool calls
@@ -35,30 +35,44 @@ public class LlmResponse {
 
     /**
      * Constructor with just content (no tool calls)
+     * Ensures content is never null
      */
     public LlmResponse(String content) {
-        this.content = content;
+        this.content = content != null ? content : "";
         this.toolCalls = new ArrayList<>();
     }
 
     /**
      * Constructor from LangChain4j AiMessage
+     * Ensures content is never null
      */
     public LlmResponse(AiMessage aiMessage) {
         this.aiMessage = aiMessage;
-        this.content = aiMessage.text();
-        this.toolCalls = new ArrayList<>();
+        this.content = extractContent(aiMessage);
+        this.toolCalls = extractToolCalls(aiMessage);
+    }
 
-        // Extract tool calls from AiMessage if they exist
-        if (aiMessage.hasToolExecutionRequests()) {
+    private String extractContent(AiMessage aiMessage) {
+        if (aiMessage == null) return "";
+        
+        String messageText = aiMessage.text();
+        return (messageText != null && !messageText.trim().isEmpty()) ? messageText : "";
+    }
+
+    private List<ToolCall> extractToolCalls(AiMessage aiMessage) {
+        List<ToolCall> calls = new ArrayList<>();
+        
+        if (aiMessage != null && aiMessage.hasToolExecutionRequests()) {
             aiMessage.toolExecutionRequests().forEach(request -> {
                 ToolCall toolCall = new ToolCall();
                 toolCall.setId(request.id());
                 toolCall.setName(request.name());
                 toolCall.setInput(request.arguments());
-                this.toolCalls.add(toolCall);
+                calls.add(toolCall);
             });
         }
+        
+        return calls;
     }
 
     /**

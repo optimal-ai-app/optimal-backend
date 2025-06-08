@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.optimal.backend.springboot.agent.framework.agents.ExampleAgent;
+import com.optimal.backend.springboot.agent.framework.agents.DatabaseQueryAgent;
 import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.Message;
 
@@ -19,11 +20,15 @@ public class ChatController {
     private ExampleAgent exampleAgent;
 
     @Autowired
+    private DatabaseQueryAgent databaseQueryAgent;
+
+    @Autowired
     private BaseSupervisor supervisor;
 
     @PostMapping
     public ResponseEntity<String> chat(@RequestBody String message) {
         supervisor.addAgent("exampleAgent", exampleAgent);
+        supervisor.addAgent("databaseQueryAgent", databaseQueryAgent);
         return ResponseEntity.ok(supervisor.execute(message));
     }
 }

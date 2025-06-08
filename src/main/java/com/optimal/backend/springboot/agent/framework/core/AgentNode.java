@@ -35,5 +35,4 @@ public class AgentNode {
     public void removeDependency(String dependency) {
         dependencies.remove(dependency);
     }
-
 }

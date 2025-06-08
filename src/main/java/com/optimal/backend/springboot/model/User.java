@@ -34,5 +34,13 @@ public class User {
 
 	@Enumerated(EnumType.STRING)
 	private UserRole userRole;
-
+	@Override
+	public String toString() {
+		return "User{id=" + getId() + 
+			   ", name='" + getName() + '\'' +
+			   ", username='" + getUsername() + '\'' +
+			   ", email='" + getEmail() + '\'' +
+			   ", role='" + (getUserRole() != null ? getUserRole().toString() : "null") + "'}";
+	}
+	
 }

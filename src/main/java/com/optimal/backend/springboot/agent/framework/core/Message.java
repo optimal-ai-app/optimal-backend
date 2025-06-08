@@ -1,10 +1,10 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.data.message.UserMessage;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -34,23 +34,38 @@ public class Message {
 
     /**
      * Convert this Message to a LangChain4j ChatMessage
+     * Ensures that null values are never passed to LangChain4j
      */
     public ChatMessage toLangChain4jMessage() {
+        String text = getTextContent();
+
         switch (role.toLowerCase()) {
             case "system":
-                return new SystemMessage(content != null ? content : message);
+                return new SystemMessage(text);
             case "user":
-                return new UserMessage(content != null ? content : message);
+                return new UserMessage(text);
             case "assistant":
             case "ai":
-                return new AiMessage(content != null ? content : message);
+                return new AiMessage(text);
             case "tool":
-                // For tool messages, we'll just convert to UserMessage for now
-                // The proper ToolExecutionResultMessage requires a ToolExecutionRequest
-                return new UserMessage(content != null ? content : message);
+                return new UserMessage(text);
             default:
-                return new UserMessage(content != null ? content : message);
+                return new UserMessage(text);
         }
+    }
+
+    /**
+     * Get the text content of this message, never returning null
+     */
+    private String getTextContent() {
+        if (content != null && !content.trim().isEmpty()) {
+            return content;
+        }
+        if (message != null && !message.trim().isEmpty()) {
+            return message;
+        }
+        // Fallback for null/empty content and message
+        return "No content provided";
     }
 
     /**
@@ -59,24 +74,33 @@ public class Message {
     public static Message fromLangChain4jMessage(ChatMessage chatMessage) {
         Message message = new Message();
 
-        if (chatMessage instanceof SystemMessage) {
-            message.setRole("system");
-            message.setContent(((SystemMessage) chatMessage).text());
-            message.setMessage(((SystemMessage) chatMessage).text());
-        } else if (chatMessage instanceof UserMessage) {
-            message.setRole("user");
-            message.setContent(((UserMessage) chatMessage).text());
-            message.setMessage(((UserMessage) chatMessage).text());
-        } else if (chatMessage instanceof AiMessage) {
-            message.setRole("assistant");
-            message.setContent(((AiMessage) chatMessage).text());
-            message.setMessage(((AiMessage) chatMessage).text());
-        } else if (chatMessage instanceof ToolExecutionResultMessage) {
-            ToolExecutionResultMessage toolMsg = (ToolExecutionResultMessage) chatMessage;
-            message.setRole("tool");
-            message.setContent(toolMsg.text());
-            message.setMessage(toolMsg.text());
-            message.setToolExecutionId(toolMsg.id());
+        switch (chatMessage) {
+            case SystemMessage systemMsg -> {
+                message.setRole("system");
+                message.setContent(systemMsg.text());
+                message.setMessage(systemMsg.text());
+            }
+            case UserMessage userMsg -> {
+                message.setRole("user");
+                message.setContent(userMsg.text());
+                message.setMessage(userMsg.text());
+            }
+            case AiMessage aiMsg -> {
+                message.setRole("assistant");
+                message.setContent(aiMsg.text());
+                message.setMessage(aiMsg.text());
+            }
+            case ToolExecutionResultMessage toolMsg -> {
+                message.setRole("tool");
+                message.setContent(toolMsg.text());
+                message.setMessage(toolMsg.text());
+                message.setToolExecutionId(toolMsg.id());
+            }
+            default -> {
+                message.setRole("user");
+                message.setContent("Unknown message type");
+                message.setMessage("Unknown message type");
+            }
         }
 
         return message;

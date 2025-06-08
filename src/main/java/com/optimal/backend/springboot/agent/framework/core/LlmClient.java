@@ -24,6 +24,14 @@ public class LlmClient {
 
     public LlmResponse generate(String systemPrompt, List<Message> contexts, List<Tool> tools) {
         try {
+            // Null-safety checks
+            if (contexts == null) {
+                contexts = new ArrayList<>();
+            }
+            if (tools == null) {
+                tools = new ArrayList<>();
+            }
+
             // Convert our Messages to LangChain4j ChatMessages
             List<ChatMessage> messages = new ArrayList<>();
 
@@ -34,18 +42,19 @@ public class LlmClient {
 
             // Convert context messages
             for (Message context : contexts) {
-                messages.add(context.toLangChain4jMessage());
+                if (context != null) { // Skip null messages
+                    messages.add(context.toLangChain4jMessage());
+                }
             }
 
             // Convert tools to ToolSpecifications if they implement our Tool interface
             List<ToolSpecification> toolSpecs = new ArrayList<>();
             for (Tool tool : tools) {
-                if (tool instanceof Tool) {
-                    Tool toolInstance = (Tool) tool;
+                if (tool != null) { // Skip null tools
                     ToolSpecification toolSpec = ToolSpecification.builder()
-                            .name(toolInstance.getName())
-                            .description(toolInstance.getDescription())
-                            .parameters(toolInstance.getParameters())
+                            .name(tool.getName())
+                            .description(tool.getDescription())
+                            .parameters(tool.getParameters())
                             .build();
                     toolSpecs.add(toolSpec);
                 }
@@ -70,9 +79,13 @@ public class LlmClient {
     }
 
     private LlmResponse createSimulatedResponse(String systemPrompt, List<Tool> tools) {
+        // Ensure systemPrompt is not null for the simulated response
+        String promptText = (systemPrompt != null && !systemPrompt.trim().isEmpty()) ? systemPrompt
+                : "No system prompt provided";
+
         String content = "This is a simulated response from an LLM. " +
                 "In a real implementation, this would be replaced with an actual API call to an LLM service. " +
-                "The response would be generated based on the input prompt: " + systemPrompt;
+                "The response would be generated based on the input prompt: " + promptText;
 
         LlmResponse response = new LlmResponse(content);
 

@@ -9,13 +9,14 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.interfaces.SupervisorInterface;
 import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 @Component
 public class BaseSupervisor implements SupervisorInterface {
@@ -24,9 +25,7 @@ public class BaseSupervisor implements SupervisorInterface {
     @Autowired
     private LlmClient llmClient;
 
-    // Base system prompt template for interpreting user input - agents will be
-    // dynamically appended
-    private static final String INTERPRETER_SYSTEM_PROMPT_BASE = """
+    private static final String INTERPRETER_PROMPT_BASE = """
             You are an intelligent task coordinator that analyzes user requests and determines which agents should execute to fulfill the request.
 
             Your job is to:
@@ -34,11 +33,9 @@ public class BaseSupervisor implements SupervisorInterface {
             2. Determine which agents are needed to complete the task
             3. Identify any dependencies between agents (which agents must finish before others can start)
             4. Provide specific instructions for each agent
-
             """;
 
-    private static final String INTERPRETER_SYSTEM_PROMPT_INSTRUCTIONS = """
-
+    private static final String INTERPRETER_PROMPT_RULES = """
             You MUST respond with a valid JSON array of agent nodes. Each agent node must have this exact structure:
             {
                 "name": "AgentName",
@@ -55,36 +52,11 @@ public class BaseSupervisor implements SupervisorInterface {
             - DO NOT create circular dependencies
             - ONLY use agent names that exist in the available agents list above
 
-            Example responses:
-            For "Add a goal to learn Spanish and create 3 todos for it":
-            [
-                {
-                    "name": "GoalAgent",
-                    "instruction": "Add a new goal: Learn Spanish",
-                    "dependency": []
-                },
-                {
-                    "name": "TodoAgent",
-                    "instruction": "Create 3 todo items to help achieve the Spanish learning goal",
-                    "dependency": ["GoalAgent"]
-                }
-            ]
-
-            For "Schedule a meeting tomorrow at 2pm":
-            [
-                {
-                    "name": "ScheduleAgent",
-                    "instruction": "Schedule a meeting for tomorrow at 2:00 PM",
-                    "dependency": []
-                }
-            ]
-
             Always respond with valid JSON only - no additional text or explanation.
             """;
 
-    // System prompt for summarizing the execution results
-    private static final String SUMMARIZER_SYSTEM_PROMPT = """
-            You are a concise summarizer that reviews the entire conversation between the user and agents, then provides a brief, clear summary that includes the substance of each agent’s responses.
+    private static final String SUMMARIZER_PROMPT = """
+            You are a concise summarizer that reviews the entire conversation between the user and agents, then provides a brief, clear summary that includes the substance of each agent's responses.
 
             Your task:
             1. Review all messages in the conversation context.
@@ -93,54 +65,14 @@ public class BaseSupervisor implements SupervisorInterface {
             4. Focus on concrete outcomes and deliverables, not internal steps.
 
             Guidelines:
-            - Use first person (“I”) when describing actions taken on behalf of the user.
+            - Use first person ("I") when describing actions taken on behalf of the user.
             - For outputs up to ~50 words, include them verbatim in quotes.
             - For longer outputs, summarize the key points in 1–2 sentences.
-            - Mention quantities when relevant (e.g., “I created 5 todo items”).
+            - Mention quantities when relevant (e.g., "I created 5 todo items").
             - Keep it conversational and friendly.
             - If something failed or had errors, note it briefly but emphasize successes.
             - Aim for 1–3 sentences maximum.
-
-            Example summary for the three-agent run:
-            “I answered your questions:
-             1. ‘To progress from 8 to 40 pushups in a month, start at 8 and add 1–2 reps every few days.’
-             2. ‘No, penguins cannot fly; they are adapted for swimming.’
-             3. ‘Machine learning involves algorithms that enable computers to learn from data, identifying patterns and making predictions without explicit programming.’”
             """;
-
-    /**
-     * Builds the interpreter system prompt dynamically based on registered agents
-     */
-    private String buildInterpreterSystemPrompt() {
-        StringBuilder prompt = new StringBuilder(INTERPRETER_SYSTEM_PROMPT_BASE);
-
-        // Add available agents section
-        prompt.append("Available agents and their capabilities:\n");
-
-        if (agents.isEmpty()) {
-            prompt.append("- No agents are currently registered\n");
-        } else {
-            for (Map.Entry<String, BaseAgent> entry : agents.entrySet()) {
-                String agentName = entry.getKey();
-                BaseAgent agent = entry.getValue();
-                String description = agent.getDescription();
-
-                // Use agent name from the key, and description from the agent
-                // If description is null or empty, provide a generic description
-                if (description == null || description.trim().isEmpty()) {
-                    description = "Agent for handling " + agentName.toLowerCase() + " related tasks";
-                }
-
-                prompt.append("- ").append(agentName).append(": ").append(description).append("\n");
-            }
-        }
-
-        // Add the instructions part
-        prompt.append(INTERPRETER_SYSTEM_PROMPT_INSTRUCTIONS);
-
-        // Append general instructions to ensure consistent behavior
-        return GeneralPromptAppender.appendGeneralInstructions(prompt.toString());
-    }
 
     public void addAgent(String name, BaseAgent agent) {
         agents.put(name, agent);
@@ -149,77 +81,135 @@ public class BaseSupervisor implements SupervisorInterface {
     @Override
     public String execute(String userInput) {
         Queue<AgentNode> queue = interpret(userInput);
-        List<Message> contexts = new ArrayList<>();
-        contexts.add(new Message("user", userInput));
-
+        Map<String, List<Message>> agentOutputs = new HashMap<>();
         Set<String> finishedAgents = new HashSet<>();
+        Set<String> processingAgents = new HashSet<>();
+        int maxIterations = queue.size() * 2;
+        int iterations = 0;
 
-        while (!queue.isEmpty()) {
+        agentOutputs.put("user", List.of(new Message("user", userInput)));
+
+        while (!queue.isEmpty() && iterations < maxIterations) {
+            iterations++;
             AgentNode current = queue.poll();
-            if (finishedAgents.containsAll(current.getDependencies())) {
-                BaseAgent agent = agents.get(current.getName());
+            String agentName = current.getName();
 
-                // Add this agent's instructions into the shared context
-                contexts.addAll(current.getInstructions());
+            if (finishedAgents.contains(agentName)) {
+                continue;
+            }
 
-                // Pass the entire conversation history (contexts) to run()
-                List<Message> response = agent.run(new ArrayList<>(contexts));
-                contexts.addAll(response);
+            if (!processingAgents.add(agentName)) {
+                throw new IllegalStateException("Dependency cycle detected at agent: " + agentName);
+            }
 
-                finishedAgents.add(current.getName());
+            if (areDependenciesMet(current, finishedAgents)) {
+                List<Message> agentContext = buildAgentContext(current, agentOutputs);
+                
+                BaseAgent agent = agents.get(agentName);
+                List<Message> response = agent.run(agentContext);
+                agentOutputs.put(agentName, response);
+                finishedAgents.add(agentName);
+                processingAgents.remove(agentName);
             } else {
                 queue.add(current);
             }
         }
 
-        return summarize(contexts);
+        if (iterations >= maxIterations) {
+            throw new IllegalStateException("Execution exceeded maximum iterations. Possible circular dependency.");
+        }
+
+        return summarizeResults(agentOutputs);
     }
 
     @Override
     public Queue<AgentNode> interpret(String userInput) {
-        List<Message> contexts = new ArrayList<>();
-        contexts.add(new Message("user", userInput));
+        List<Message> contexts = List.of(new Message("user", userInput));
+        String systemPrompt = buildInterpreterPrompt();
+        
+        LlmResponse response = llmClient.generate(systemPrompt, contexts, new ArrayList<>());
+        return parseAgentNodes(response.getContent());
+    }
 
-        // Build the dynamic system prompt based on registered agents
-        String dynamicSystemPrompt = buildInterpreterSystemPrompt();
-        System.out.println("dynamicSystemPrompt: " + dynamicSystemPrompt);
-        LlmResponse response = llmClient.generate(dynamicSystemPrompt, contexts, new ArrayList<>());
-        String responseContent = response.getContent();
-        System.out.println("interpreter response: " + responseContent);
+    @Override
+    public String summarize(List<Message> contexts) {
+        String enhancedPrompt = GeneralPromptAppender.appendGeneralInstructions(SUMMARIZER_PROMPT);
+        LlmResponse response = llmClient.generate(enhancedPrompt, contexts, new ArrayList<>());
+        return response.getContent();
+    }
+
+    private String buildInterpreterPrompt() {
+        StringBuilder prompt = new StringBuilder(INTERPRETER_PROMPT_BASE);
+        prompt.append("\nAvailable agents and their capabilities:\n");
+
+        if (agents.isEmpty()) {
+            prompt.append("- No agents are currently registered\n");
+        } else {
+            agents.forEach((name, agent) -> {
+                String description = agent.getDescription();
+                if (description == null || description.trim().isEmpty()) {
+                    description = "Agent for handling " + name.toLowerCase() + " related tasks";
+                }
+                prompt.append("- ").append(name).append(": ").append(description).append("\n");
+            });
+        }
+
+        prompt.append(INTERPRETER_PROMPT_RULES);
+        return GeneralPromptAppender.appendGeneralInstructions(prompt.toString());
+    }
+
+    private boolean areDependenciesMet(AgentNode current, Set<String> finishedAgents) {
+        return current.getDependencies().stream().allMatch(finishedAgents::contains);
+    }
+
+    private List<Message> buildAgentContext(AgentNode current, Map<String, List<Message>> agentOutputs) {
+        List<Message> context = new ArrayList<>(current.getInstructions());
+        
+        for (String dep : current.getDependencies()) {
+            context.addAll(agentOutputs.getOrDefault(dep, List.of()));
+        }
+        
+        if (current.getDependencies().isEmpty()) {
+            context.addAll(agentOutputs.get("user"));
+        }
+        
+        return context;
+    }
+
+    private String summarizeResults(Map<String, List<Message>> agentOutputs) {
+        List<Message> summaryContext = new ArrayList<>(agentOutputs.get("user"));
+        agentOutputs.entrySet().stream()
+                .filter(e -> !e.getKey().equals("user"))
+                .forEach(e -> summaryContext.addAll(e.getValue()));
+        
+        return summarize(summaryContext);
+    }
+
+    private Queue<AgentNode> parseAgentNodes(String responseContent) {
         Queue<AgentNode> agentNodes = new LinkedList<>();
+        
         try {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode[] nodes = mapper.readValue(responseContent, JsonNode[].class);
+            
             for (JsonNode node : nodes) {
                 String name = node.get("name").asText();
                 String instruction = node.get("instruction").asText();
 
                 HashSet<String> dependencies = new HashSet<>();
                 JsonNode depsNode = node.get("dependency");
-                if (depsNode.isArray()) {
+                if (depsNode != null && depsNode.isArray()) {
                     for (JsonNode dep : depsNode) {
                         dependencies.add(dep.asText());
                     }
                 }
 
-                AgentNode agentNode = new AgentNode(name, dependencies, instruction);
-                agentNodes.add(agentNode);
+                agentNodes.add(new AgentNode(name, dependencies, instruction));
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException("Failed to parse agent nodes", e);
         }
 
         return agentNodes;
-    }
-
-    @Override
-    public String summarize(List<Message> contexts) {
-        List<Message> summaryContexts = new ArrayList<>(contexts);
-
-        // Append general instructions to the summarizer prompt as well
-        String enhancedSummarizerPrompt = GeneralPromptAppender.appendGeneralInstructions(SUMMARIZER_SYSTEM_PROMPT);
-
-        LlmResponse response = llmClient.generate(enhancedSummarizerPrompt, summaryContexts, new ArrayList<>());
-        return response.getContent();
     }
 }
