@@ -72,37 +72,34 @@ public class Message {
      * Create Message from LangChain4j ChatMessage
      */
     public static Message fromLangChain4jMessage(ChatMessage chatMessage) {
-        Message message = new Message();
-
-        switch (chatMessage) {
-            case SystemMessage systemMsg -> {
-                message.setRole("system");
-                message.setContent(systemMsg.text());
-                message.setMessage(systemMsg.text());
-            }
-            case UserMessage userMsg -> {
-                message.setRole("user");
-                message.setContent(userMsg.text());
-                message.setMessage(userMsg.text());
-            }
-            case AiMessage aiMsg -> {
-                message.setRole("assistant");
-                message.setContent(aiMsg.text());
-                message.setMessage(aiMsg.text());
-            }
-            case ToolExecutionResultMessage toolMsg -> {
-                message.setRole("tool");
-                message.setContent(toolMsg.text());
-                message.setMessage(toolMsg.text());
-                message.setToolExecutionId(toolMsg.id());
-            }
-            default -> {
-                message.setRole("user");
-                message.setContent("Unknown message type");
-                message.setMessage("Unknown message type");
-            }
+        if (chatMessage instanceof SystemMessage) {
+            SystemMessage systemMsg = (SystemMessage) chatMessage;
+            Message message = new Message("system", systemMsg.text(), systemMsg.text());
+            return message;
+        } else if (chatMessage instanceof UserMessage) {
+            UserMessage userMsg = (UserMessage) chatMessage;
+            Message message = new Message("user", userMsg.text(), userMsg.text());
+            return message;
+        } else if (chatMessage instanceof AiMessage) {
+            AiMessage aiMsg = (AiMessage) chatMessage;
+            Message message = new Message("assistant", aiMsg.text(), aiMsg.text());
+            return message;
+        } else if (chatMessage instanceof ToolExecutionResultMessage) {
+            ToolExecutionResultMessage toolMsg = (ToolExecutionResultMessage) chatMessage;
+            Message message = new Message("tool", toolMsg.text(), toolMsg.text());
+            message.setToolExecutionId(toolMsg.id());
+            return message;
+        } else {
+            return new Message("user", "Unknown message type", "Unknown message type");
         }
+    }
 
-        return message;
+    @Override
+    public String toString() {
+        return "Message{" +
+                "content='" + content + '\'' +
+                ", toolCallId='" + toolCallId + '\'' +
+                ", toolExecutionId='" + toolExecutionId + '\'' +
+                '}';
     }
 }

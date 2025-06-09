@@ -71,7 +71,7 @@ public abstract class BaseAgent {
 
         for (int step = 0; step < MAX_STEPS; step++) {
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
-            
+            System.out.println("response: " + response);
             String responseContent = getResponseContent(response);
             if (!responseContent.trim().isEmpty()) {
                 contexts.add(new Message("assistant", responseContent, responseContent));
@@ -107,6 +107,7 @@ public abstract class BaseAgent {
         for (ToolCall toolCall : toolCalls) {
             Tool tool = toolMap.get(toolCall.getName());
             Message toolMessage = executeTool(tool, toolCall);
+            System.out.println("toolMessage: " + toolMessage);
             contexts.add(toolMessage);
         }
     }

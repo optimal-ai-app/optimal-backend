@@ -48,15 +48,35 @@ public class LlmResponse {
      */
     public LlmResponse(AiMessage aiMessage) {
         this.aiMessage = aiMessage;
-        this.content = extractContent(aiMessage);
         this.toolCalls = extractToolCalls(aiMessage);
+        this.content = extractContent(aiMessage);
     }
 
     private String extractContent(AiMessage aiMessage) {
         if (aiMessage == null) return "";
         
+        StringBuilder content = new StringBuilder();
+        
+        // Add the main message text
         String messageText = aiMessage.text();
-        return (messageText != null && !messageText.trim().isEmpty()) ? messageText : "";
+        if (messageText != null && !messageText.trim().isEmpty()) {
+            content.append(messageText);
+        }
+        
+        // Add tool calls if present
+        if (aiMessage.hasToolExecutionRequests()) {
+            if (content.length() > 0) {
+                content.append("\n\n"); // Add spacing between message and tool calls
+            }
+            content.append("Tool Calls:\n");
+            aiMessage.toolExecutionRequests().forEach(request -> {
+                content.append("- Tool: ").append(request.name())
+                      .append("\n  Arguments: ").append(request.arguments())
+                      .append("\n");
+            });
+        }
+        
+        return content.length() > 0 ? content.toString() : "";
     }
 
     private List<ToolCall> extractToolCalls(AiMessage aiMessage) {
@@ -73,6 +93,15 @@ public class LlmResponse {
         }
         
         return calls;
+    }
+
+    @Override
+    public String toString() {
+        return "LlmResponse{" +
+                "content='" + content + '\'' +
+                ", toolCalls=" + toolCalls +
+                ", aiMessage=" + aiMessage +
+                '}';
     }
 
     /**

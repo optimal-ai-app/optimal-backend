@@ -79,7 +79,7 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     @Override
-    public String execute(String userInput) {
+    public String execute(List<Message> userInput) {
         Queue<AgentNode> queue = interpret(userInput);
         Map<String, List<Message>> agentOutputs = new HashMap<>();
         Set<String> finishedAgents = new HashSet<>();
@@ -87,7 +87,7 @@ public class BaseSupervisor implements SupervisorInterface {
         int maxIterations = queue.size() * 2;
         int iterations = 0;
 
-        agentOutputs.put("user", List.of(new Message("user", userInput)));
+        agentOutputs.put("user", userInput);
 
         while (!queue.isEmpty() && iterations < maxIterations) {
             iterations++;
@@ -123,8 +123,8 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     @Override
-    public Queue<AgentNode> interpret(String userInput) {
-        List<Message> contexts = List.of(new Message("user", userInput));
+    public Queue<AgentNode> interpret(List<Message> userInput) {
+        List<Message> contexts = userInput;
         String systemPrompt = buildInterpreterPrompt();
         
         LlmResponse response = llmClient.generate(systemPrompt, contexts, new ArrayList<>());

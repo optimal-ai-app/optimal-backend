@@ -2,6 +2,7 @@ package com.optimal.backend.springboot.controller;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,9 +27,21 @@ public class ChatController {
     private BaseSupervisor supervisor;
 
     @PostMapping
-    public ResponseEntity<String> chat(@RequestBody String message) {
+    public ResponseEntity<String> chat(@RequestBody Map<String, Object> request) {
         supervisor.addAgent("exampleAgent", exampleAgent);
         supervisor.addAgent("databaseQueryAgent", databaseQueryAgent);
-        return ResponseEntity.ok(supervisor.execute(message));
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> messages = (List<Map<String, Object>>) request.get("messages");
+
+        List<Message> convertedMessages = messages.stream()
+                .map(msg -> new Message(
+                        (String) msg.get("role"),
+                        (String) msg.get("content")))
+                .toList();
+
+        String output = supervisor.execute(convertedMessages);
+        System.out.println("output: " + output);
+        return ResponseEntity.ok(output);
     }
 }

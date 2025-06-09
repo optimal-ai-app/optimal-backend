@@ -10,9 +10,9 @@ import com.optimal.backend.springboot.agent.framework.core.Message;
 public interface SupervisorInterface {
     void addAgent(String name, BaseAgent agent);
 
-    String execute(String userInput);
+    String execute(List<Message> userInput);
 
-    Queue<AgentNode> interpret(String userInput);
+    Queue<AgentNode> interpret(List<Message> userInput);
 
     String summarize(List<Message> contexts);
 }
