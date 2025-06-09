@@ -20,7 +20,7 @@ public class DatabaseQueryAgent extends BaseAgent {
     protected void initialize() {
         // Configure this agent
         setName("DatabaseQueryAgent");
-        setDescription("Queries the database to retrieve user information and statistics");
+        setDescription("Queries the database to retrieve the app's user information and nothing else.");
         setSystemPrompt(DatabaseQueryAgentPrompt.getDefaultPrompt());
 
         // Register the database query tool
