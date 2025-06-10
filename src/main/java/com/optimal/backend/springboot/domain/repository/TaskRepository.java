@@ -11,19 +11,20 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    @Query("""
-      SELECT t
-        FROM Task t
-       WHERE t.todoList.userId = :userId
-    ORDER BY t.createdAt DESC
-    """)
-    List<Task> findByUserId(@Param("userId") UUID userId);
+    // @Query("""
+    //   SELECT t
+    //     FROM Task t
+    //    WHERE t.todoList.userId = :userId
+    // ORDER BY t.createdAt DESC
+    // """)
+    // List<Task> findByUserId(@Param("userId") UUID userId);
 
     @Query("""
       SELECT t
         FROM Task t
-       WHERE t.todoList.todoListId = :todoListId
+       WHERE t.todoListId = :todoListId
     ORDER BY t.createdAt DESC
     """)
     List<Task> findByTodoListId(@Param("todoListId") UUID todoListId);
+    
 }

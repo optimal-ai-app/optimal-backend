@@ -8,7 +8,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-
 @Entity
 @Table(name = "goals")
 public class Goal {
@@ -31,4 +30,11 @@ public class Goal {
 
     @Column(name = "created_at")
     private Timestamp createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.createdAt == null) {
+            this.createdAt = new Timestamp(System.currentTimeMillis());
+        }
+    }
 }

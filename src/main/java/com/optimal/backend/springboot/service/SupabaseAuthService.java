@@ -2,8 +2,7 @@ package com.optimal.backend.springboot.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,9 +16,7 @@ import java.util.Map;
 /**
  * Service for handling Supabase authentication
  */
-@Slf4j
 @Service
-@RequiredArgsConstructor
 public class SupabaseAuthService {
 
     @Value("${supabase.url}")
@@ -28,17 +25,16 @@ public class SupabaseAuthService {
     @Value("${supabase.anonKey}")
     private String supabaseAnonKey;
 
-    private final WebClient.Builder webClientBuilder;
-    private final ObjectMapper objectMapper;
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+    
+    @Autowired
+    private ObjectMapper objectMapper;
 
     /**
      * Register a new user with Supabase
      */
     public Mono<JsonNode> registerUser(String email, String password) {
-        log.info("Attempting to register user with email: {}", email);
-        log.debug("Using Supabase URL: {}", supabaseUrl);
-        log.debug("Using anon key length: {}", supabaseAnonKey.length());
-        
         WebClient webClient = webClientBuilder
                 .baseUrl(supabaseUrl + "/auth/v1")
                 .build();
@@ -58,62 +54,53 @@ public class SupabaseAuthService {
                 .bodyToMono(String.class)
                 .map(response -> {
                     try {
-                        log.debug("Registration response: {}", response);
                         return objectMapper.readTree(response);
                     } catch (Exception e) {
-                        log.error("Error parsing registration response", e);
                         throw new RuntimeException("Failed to parse registration response", e);
                     }
                 })
-                .doOnSuccess(response -> log.info("User registration successful for email: {}", email))
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
-                        log.error("Registration failed for email: {} with status: {} and body: {}", 
-                                email, webClientException.getStatusCode(), webClientException.getResponseBodyAsString());
-                        log.error("Request headers were: apikey={}, Authorization=Bearer {}", 
-                                supabaseAnonKey.substring(0, 20) + "...", supabaseAnonKey.substring(0, 20) + "...");
-                    } else {
-                        log.error("Registration failed for email: {}", email, error);
+                        System.err.println("Registration failed with status: " + webClientException.getStatusCode() + 
+                                " and body: " + webClientException.getResponseBodyAsString());
                     }
                 });
     }
 
     /**
-     * Authenticate user with Supabase
+     * Authenticate user with Supabase - Fixed to send JSON instead of form data
      */
     public Mono<JsonNode> loginUser(String email, String password) {
         WebClient webClient = webClientBuilder
                 .baseUrl(supabaseUrl + "/auth/v1")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .defaultHeader("apikey", supabaseAnonKey)
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + supabaseAnonKey)
                 .build();
 
-        String formData = "grant_type=password&email=" + email + "&password=" + password;
+        Map<String, Object> requestBody = Map.of(
+                "email", email,
+                "password", password
+        );
 
         return webClient.post()
-                .uri("/token")
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .bodyValue(formData)
+                .uri("/token?grant_type=password")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header("apikey", supabaseAnonKey)
+                .header(HttpHeaders.AUTHORIZATION, "Bearer " + supabaseAnonKey)
+                .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)
                 .map(response -> {
                     try {
                         return objectMapper.readTree(response);
                     } catch (Exception e) {
-                        log.error("Error parsing login response", e);
                         throw new RuntimeException("Failed to parse login response", e);
                     }
                 })
-                .doOnSuccess(response -> log.info("User login successful"))
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
-                        log.error("Login failed with status: {} and body: {}", 
-                                webClientException.getStatusCode(), webClientException.getResponseBodyAsString());
-                    } else {
-                        log.error("Login failed", error);
+                        System.err.println("Login failed with status: " + webClientException.getStatusCode() + 
+                                " and body: " + webClientException.getResponseBodyAsString());
                     }
                 });
     }

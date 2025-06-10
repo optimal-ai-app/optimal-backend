@@ -24,17 +24,14 @@ public class TodoList {
     @Column(name = "todo_list_id")
     private UUID todoListId;
 
-    @Column(name = "name", nullable = false)
-    private String name;
-
-    @Column(name = "description")
-    private String description;
-
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @OneToMany(mappedBy = "todoList", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private List<Task> tasks = new ArrayList<>();
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    // @OneToMany(mappedBy = "todoList", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    // private List<Task> tasks = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;

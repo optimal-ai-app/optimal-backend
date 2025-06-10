@@ -9,22 +9,28 @@ import lombok.Setter;
 
 @Getter
 @Setter
-
 @Entity
 @Table(name = "tasks")
 public class Task {
 
     @Id
-    @Column(name = "task_id")
+    @Column(name = "task_id", nullable = false)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID taskId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "todo_list_id")
-    private TodoList todoList;
+    // @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // @JoinColumn(name = "todo_list")
+    // private TodoList todoList;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
     @JoinColumn(name = "goal_id")
     private Goal goal;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "todo_list_id", nullable = false)
+    private UUID todoListId;
 
     @Column(name = "description", nullable = false)
     private String description;

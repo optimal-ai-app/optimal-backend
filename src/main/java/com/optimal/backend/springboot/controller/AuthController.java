@@ -65,7 +65,7 @@ public class AuthController {
     @Operation(summary = "Login user", description = "Authenticate user with Supabase")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
-            JsonNode response = supabaseAuthService.loginUser(request.getUsername(), request.getPassword()).block();
+            JsonNode response = supabaseAuthService.loginUser(request.getEmail(), request.getPassword()).block();
             
             if (response != null && response.has("access_token")) {
                 LoginResponse loginResponse = new LoginResponse();

@@ -7,8 +7,9 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -16,6 +17,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Security configuration for Supabase authentication
@@ -49,8 +51,17 @@ public class SecurityConfiguration {
 
 	@Bean
 	public JwtDecoder jwtDecoder() {
-		SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HMACSHA256");
-		return NimbusJwtDecoder.withSecretKey(secretKey).build();
+		SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
+		NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey).build();
+		
+		// Configure validators to include audience validation for Supabase
+		OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(
+						"aud", aud -> aud != null && aud.contains("authenticated"));
+		OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer("https://umndbnimuswczlydijnf.supabase.co/auth/v1");
+		OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
+		
+		jwtDecoder.setJwtValidator(withAudience);
+		return jwtDecoder;
 	}
 
 	@Bean
