@@ -3,6 +3,7 @@ package com.optimal.backend.springboot.model;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
 
 /**
  * Created on Ağustos, 2020
@@ -19,8 +20,7 @@ import lombok.*;
 public class User {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private UUID id;
 
 	private String name;
 

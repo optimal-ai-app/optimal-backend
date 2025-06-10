@@ -1,40 +1,56 @@
 package com.optimal.backend.springboot.configuration;
 
-import com.optimal.backend.springboot.security.jwt.JwtAuthenticationEntryPoint;
-import com.optimal.backend.springboot.security.jwt.JwtAuthenticationFilter;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configurers.*;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Arrays;
 
 /**
- * Created on Ağustos, 2020
- *
- * @author Faruk
+ * Security configuration for Supabase authentication
  */
 @Configuration
-@RequiredArgsConstructor
+@EnableWebSecurity
 public class SecurityConfiguration {
 
-	private final JwtAuthenticationFilter jwtAuthenticationFilter;
-
-	private final JwtAuthenticationEntryPoint unauthorizedHandler;
+	@Value("${supabase.jwtSecret}")
+	private String jwtSecret;
 
 	@Bean
-	public AuthenticationManager authenticationManager(final AuthenticationConfiguration authenticationConfiguration) throws Exception {
-		return authenticationConfiguration.getAuthenticationManager();
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		return http
+				.csrf(csrf -> csrf.disable())
+				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+				.authorizeHttpRequests(auth -> auth
+						.requestMatchers("/api/auth/**").permitAll()
+						.requestMatchers("/register", "/login").permitAll()
+						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						.requestMatchers("/actuator/**").permitAll()
+						.requestMatchers("/chat").permitAll()
+						.anyRequest().authenticated()
+				)
+				.oauth2ResourceServer(oauth2 -> oauth2
+						.jwt(Customizer.withDefaults())
+				)
+				.build();
+	}
+
+	@Bean
+	public JwtDecoder jwtDecoder() {
+		SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HMACSHA256");
+		return NimbusJwtDecoder.withSecretKey(secretKey).build();
 	}
 
 	@Bean
@@ -49,30 +65,4 @@ public class SecurityConfiguration {
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
 	}
-
-	@Bean
-	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-
-		//@formatter:off
-
-		return http
-				.csrf(CsrfConfigurer::disable)
-				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
-				.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
-				.authorizeHttpRequests(request -> request.requestMatchers("/register",
-																	      "/login",
-																	      "/v3/api-docs/**",
-																          "/swagger-ui/**",
-																	      "/swagger-ui.html",
-																	      "/actuator/**", "/chat")
-													   .permitAll()
-													   .anyRequest()
-													   .authenticated())
-				.sessionManagement(manager -> manager.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.exceptionHandling(handler -> handler.authenticationEntryPoint(unauthorizedHandler))
-				.build();
-
-		//@formatter:on
-	}
-
 }

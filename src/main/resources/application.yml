@@ -22,6 +22,11 @@ spring:
 
   jta:
     enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          secret-key: ${supabase.jwtSecret}
 
 springdoc:
   show-actuator: true
@@ -48,12 +53,11 @@ logging:
     org.springframework: INFO
     com.optimal.backend.springboot: INFO
 
-## FIXME : Customize JWT token and Swagger information for your application
-
-jwt:
-  secretKey: secret
-  issuer: www.farukgenc.com
-  expirationMinute: 10
+## Supabase Configuration
+supabase:
+  url: https://umndbnimuswczlydijnf.supabase.co
+  anonKey: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbmRibmltdXN3Y3pseWRpam5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNDU3MTYsImV4cCI6MjA2NDcyMTcxNn0.ezFuM78SpsRP97eWhakg4n3Sp8PF16KPHGzUAghw-p8}
+  jwtSecret: ${SUPABASE_JWT_SECRET:xvn6VpMpIdGpFDFfIGqMOQ9WzqFGf4qEjPfCZmZhMpM=}
 
 swagger:
   contact-name: Faruk Genc
