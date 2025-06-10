@@ -24,8 +24,7 @@ public class Message {
     @Column(name = "role", nullable = false)
     private String role; // "user" or "assistant"
 
-    @Lob
-    @Column(name = "content", nullable = false)
+    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
 
     @Column(name = "sequence_index", nullable = false)

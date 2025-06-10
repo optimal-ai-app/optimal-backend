@@ -14,6 +14,7 @@ import lombok.Setter;
 public class Checkin {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(name = "todo_id")

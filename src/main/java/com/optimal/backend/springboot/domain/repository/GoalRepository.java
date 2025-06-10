@@ -14,7 +14,7 @@ public interface GoalRepository extends JpaRepository<Goal, UUID> {
     @Query("""
       SELECT g
         FROM Goal g
-       WHERE g.goalList.userId = :userId
+       WHERE g.userId = :userId
     ORDER BY g.createdAt DESC
     """)
     List<Goal> findByUserId(@Param("userId") UUID userId);

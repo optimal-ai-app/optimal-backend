@@ -14,6 +14,7 @@ import lombok.Setter;
 public class Goal {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(name = "user_id")

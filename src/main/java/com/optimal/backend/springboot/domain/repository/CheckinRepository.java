@@ -10,5 +10,5 @@ import java.util.UUID;
 @Repository
 public interface CheckinRepository extends JpaRepository<Checkin, UUID> {
     List<Checkin> findByUserId(UUID userId);
-    List<Checkin> findByToDoId(UUID todoId);
+    List<Checkin> findByTodoId(UUID todoId);
 }

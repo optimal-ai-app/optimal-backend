@@ -15,9 +15,9 @@ public interface PersonaRepository extends JpaRepository<Persona, UUID> {
 
     List<Persona> findByUserId(UUID userId);
 
-    Optional<Persona> findByUserIdAndIsDefaultTrue(UUID userId);
+    Optional<Persona> findByUserIdAndDefaultPersonaTrue(UUID userId);
 
     @Modifying
-    @Query("UPDATE Persona p SET p.isDefault = FALSE WHERE p.userId = :userId")
+    @Query("UPDATE Persona p SET p.defaultPersona = FALSE WHERE p.userId = :userId")
     void clearDefaultForUser(@Param("userId") UUID userId);
 }

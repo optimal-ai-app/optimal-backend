@@ -33,7 +33,7 @@ public class PersonaService {
         if (!p.getUserId().equals(userId)) {
             throw new IllegalArgumentException("Persona does not belong to user");
         }
-        p.setIsDefault(true);
+        p.setDefaultPersona(true);
         return personaRepository.save(p);
     }
 }

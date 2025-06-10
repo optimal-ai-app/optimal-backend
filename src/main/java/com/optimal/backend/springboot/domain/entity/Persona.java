@@ -1,0 +1,51 @@
+package com.optimal.backend.springboot.domain.entity;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+import java.util.UUID;
+import java.sql.Timestamp;
+
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "personas")
+public class Persona {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "persona_id")
+    private UUID personaId;
+
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
+
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "description")
+    private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "personality_type")
+    private PersonalityEnum personalityType;
+
+    @Column(name = "is_default", nullable = false)
+    private boolean defaultPersona = false;
+
+    @Column(name = "created_at", nullable = false)
+    private Timestamp createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        if (this.personaId == null) {
+            this.personaId = UUID.randomUUID();
+        }
+        this.createdAt = new Timestamp(System.currentTimeMillis());
+    }
+}

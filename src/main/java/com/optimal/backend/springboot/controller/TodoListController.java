@@ -1,7 +1,7 @@
 package com.optimal.backend.springboot.controller;
 
-import com.optimal.backend.springboot.domain.entity.ToDo;
-import com.optimal.backend.springboot.domain.repository.ToDoRepository;
+import com.optimal.backend.springboot.domain.entity.TodoList;
+import com.optimal.backend.springboot.domain.repository.TodoListRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,19 +11,18 @@ import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/todos")
-public class ToDoController {
+@RequestMapping("/api/todolists")
+public class TodoListController {
 
-    private final ToDoRepository todoRepository;
+    private final TodoListRepository todoListRepository;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<List<ToDo>> getToDosByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(todoRepository.findByUserId(userId));
+    public ResponseEntity<List<TodoList>> getTodoListsByUser(@PathVariable UUID userId) {
+        return ResponseEntity.ok(todoListRepository.findByUserId(userId));
     }
 
     @PostMapping
-    public ResponseEntity<ToDo> createToDo(@RequestBody ToDo todo) {
-        todo.setId(UUID.randomUUID());
-        return ResponseEntity.ok(todoRepository.save(todo));
+    public ResponseEntity<TodoList> createTodoList(@RequestBody TodoList todoList) {
+        return ResponseEntity.ok(todoListRepository.save(todoList));
     }
 }

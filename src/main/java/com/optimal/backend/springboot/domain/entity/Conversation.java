@@ -24,8 +24,7 @@ public class Conversation {
     @Column(name = "title")
     private String title;
 
-    @Lob
-    @Column(name = "summary_text")
+    @Column(name = "summary_text", columnDefinition = "TEXT")
     private String summaryText;
 
     @Column(name = "created_at")

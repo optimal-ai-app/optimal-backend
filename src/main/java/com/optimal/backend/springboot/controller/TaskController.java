@@ -18,11 +18,11 @@ public class TaskController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Task>> getTasksByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(taskService.getTasksByUser(userId));
+        return ResponseEntity.ok(taskService.getTasksByUserId(userId));
     }
 
     @GetMapping("/todolist/{todoListId}")
     public ResponseEntity<List<Task>> getTasksByTodoList(@PathVariable UUID todoListId) {
-        return ResponseEntity.ok(taskService.getTasksByTodoList(todoListId));
+        return ResponseEntity.ok(taskService.getTasksByTodoListId(todoListId));
     }
 }
