@@ -41,11 +41,10 @@ public class SecurityConfiguration {
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						.requestMatchers("/actuator/**").permitAll()
 						.requestMatchers("/chat").permitAll()
-						.anyRequest().authenticated()
-				)
+						.requestMatchers("/api/**").permitAll()
+						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
-						.jwt(Customizer.withDefaults())
-				)
+						.jwt(Customizer.withDefaults()))
 				.build();
 	}
 
@@ -53,13 +52,14 @@ public class SecurityConfiguration {
 	public JwtDecoder jwtDecoder() {
 		SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
 		NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey).build();
-		
+
 		// Configure validators to include audience validation for Supabase
 		OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(
-						"aud", aud -> aud != null && aud.contains("authenticated"));
-		OAuth2TokenValidator<Jwt> withIssuer = JwtValidators.createDefaultWithIssuer("https://umndbnimuswczlydijnf.supabase.co/auth/v1");
+				"aud", aud -> aud != null && aud.contains("authenticated"));
+		OAuth2TokenValidator<Jwt> withIssuer = JwtValidators
+				.createDefaultWithIssuer("https://umndbnimuswczlydijnf.supabase.co/auth/v1");
 		OAuth2TokenValidator<Jwt> withAudience = new DelegatingOAuth2TokenValidator<>(withIssuer, audienceValidator);
-		
+
 		jwtDecoder.setJwtValidator(withAudience);
 		return jwtDecoder;
 	}
@@ -71,7 +71,7 @@ public class SecurityConfiguration {
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
-		
+
 		UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 		source.registerCorsConfiguration("/**", configuration);
 		return source;
