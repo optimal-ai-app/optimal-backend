@@ -1,9 +1,13 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
 import com.optimal.backend.springboot.agent.framework.core.Tool;
+import com.optimal.backend.springboot.service.GoalService;
+
 import dev.langchain4j.agent.tool.ToolParameters;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -60,7 +64,7 @@ public class ExampleTool implements Tool {
                                 Arrays.asList("general", "urgent", "info", "warning")),
                         "priority",
                         java.util.Map.of("type", "number", "description", "Priority level from 1 (low) to 5 (high)")))
-                .required(Arrays.asList("message"))
+                .required(Arrays.asList("message")) // IMPORTANT
                 .build();
     }
 }

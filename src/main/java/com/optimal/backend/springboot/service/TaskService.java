@@ -27,6 +27,10 @@ public class TaskService {
         return taskRepository.findByUserId(userId);
     }
 
+    public List<Task> getTasksByUserIdAndGoalId(UUID userId, UUID goalId) {
+        return taskRepository.findByUserIdAndGoalId(userId, goalId);
+    }
+
     public Optional<Task> getTaskById(UUID id) {
         return taskRepository.findById(id);
     }
@@ -40,22 +44,28 @@ public class TaskService {
             return taskRepository.save(task);
         }
 
-        // save the first task
+        // For recurring tasks, ensure the first task starts on the correct day
+        if (!repeatDays.isEmpty()) {
+            String targetDay = repeatDays.get(0);
+            Timestamp adjustedDate = calculateDueDateForDay(task.getDueDate(), targetDay);
+            task.setDueDate(adjustedDate);
+        }
+
+        // Save the first task
         Task firstTask = taskRepository.save(task);
 
-        // start from the first task's due date
-        Timestamp lastDueDate = firstTask.getDueDate();
-        int totalCopies = repeat - 1;
+        // Create the remaining repeated tasks
+        Timestamp currentDate = firstTask.getDueDate();
 
-        for (int i = 0; i < totalCopies; i++) {
-            // choose the correct weekday in cycle
-            String currentDay = repeatDays.get(i % repeatDays.size());
+        for (int i = 1; i < repeat; i++) {
+            // Get the day for this repetition (cycles through repeatDays)
+            String dayForThisRepeat = repeatDays.get((i - 1) % repeatDays.size());
 
-            // compute the next occurrence *after* lastDueDate
-            Timestamp newDueDate = calculateDueDateForDay(lastDueDate, currentDay);
-            lastDueDate = newDueDate; // move the “cursor” forward
+            // Calculate the next occurrence after currentDate
+            Timestamp nextDate = calculateDueDateForDay(currentDate, dayForThisRepeat);
+            currentDate = nextDate;
 
-            // build & save the repeat task
+            // Create and save the repeated task
             Task repeatedTask = new Task();
             repeatedTask.setTitle(task.getTitle());
             repeatedTask.setDescription(task.getDescription());
@@ -63,7 +73,7 @@ public class TaskService {
             repeatedTask.setStatus(task.getStatus());
             repeatedTask.setUserId(task.getUserId());
             repeatedTask.setGoalId(task.getGoalId());
-            repeatedTask.setDueDate(newDueDate);
+            repeatedTask.setDueDate(nextDate);
 
             taskRepository.save(repeatedTask);
         }
@@ -76,6 +86,10 @@ public class TaskService {
         if (originalDueDate != null) {
             calendar.setTime(originalDueDate);
         }
+
+        System.out.println("=== calculateDueDateForDay Debug:");
+        System.out.println("Input date: " + originalDueDate);
+        System.out.println("Target day: " + dayOfWeek);
 
         // Map day names to Calendar day constants
         int targetDayOfWeek;
@@ -113,8 +127,15 @@ public class TaskService {
             daysToAdd = 7; // If it's the same day, move to next week
         }
 
+        System.out.println("Current day of week: " + currentDayOfWeek + ", Target: " + targetDayOfWeek
+                + ", Days to add: " + daysToAdd);
+
         calendar.add(Calendar.DAY_OF_MONTH, daysToAdd);
-        return new Timestamp(calendar.getTimeInMillis());
+        Timestamp result = new Timestamp(calendar.getTimeInMillis());
+
+        System.out.println("Result date: " + result);
+
+        return result;
     }
 
     public Task updateTask(Task task) {

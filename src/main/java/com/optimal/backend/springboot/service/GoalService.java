@@ -64,4 +64,13 @@ public class GoalService {
     public boolean existsById(UUID goalId) {
         return goalRepository.existsById(goalId);
     }
+
+    @Transactional(readOnly = true)
+    public Optional<Goal> getGoalByUserIdAndTitle(UUID userId, String title) {
+        List<Goal> goals = goalRepository.findByUserIdAndTitle(userId, title);
+        if (goals != null && !goals.isEmpty()) {
+            return Optional.of(goals.get(0));
+        }
+        return Optional.empty();
+    }
 }

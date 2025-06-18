@@ -11,12 +11,19 @@ import java.util.UUID;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
 
-    @Query("""
-      SELECT t
-        FROM Task t
-       WHERE t.userId = :userId
-    ORDER BY t.createdDate DESC
-    """)
-    List<Task> findByUserId(@Param("userId") UUID userId);
-    
+  @Query("""
+        SELECT t
+          FROM Task t
+         WHERE t.userId = :userId
+      ORDER BY t.createdDate DESC
+      """)
+  List<Task> findByUserId(@Param("userId") UUID userId);
+
+  @Query("""
+        SELECT t
+          FROM Task t
+         WHERE t.goalId = :goalId AND t.userId = :userId
+      ORDER BY t.createdDate DESC
+      """)
+  List<Task> findByUserIdAndGoalId(@Param("userId") UUID userId, @Param("goalId") UUID goalId);
 }

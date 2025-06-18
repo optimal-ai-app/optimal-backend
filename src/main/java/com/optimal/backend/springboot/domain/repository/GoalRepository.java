@@ -11,11 +11,19 @@ import java.util.UUID;
 @Repository
 public interface GoalRepository extends JpaRepository<Goal, UUID> {
 
-    @Query("""
-      SELECT g
-        FROM Goal g
-       WHERE g.userId = :userId
-    ORDER BY g.createdAt DESC
-    """)
-    List<Goal> findByUserId(@Param("userId") UUID userId);
+  @Query("""
+        SELECT g
+          FROM Goal g
+         WHERE g.userId = :userId
+      ORDER BY g.createdAt DESC
+      """)
+  List<Goal> findByUserId(@Param("userId") UUID userId);
+
+  @Query("""
+        SELECT g
+          FROM Goal g
+         WHERE g.userId = :userId AND (:title IS NULL OR g.title = :title)
+      ORDER BY g.createdAt DESC
+      """)
+  List<Goal> findByUserIdAndTitle(@Param("userId") UUID userId, @Param("title") String title);
 }

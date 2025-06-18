@@ -21,6 +21,9 @@ public class Message {
     private String toolCallId;
     private String toolExecutionId;
 
+    // Store original LangChain4j message to preserve tool calls
+    private ChatMessage originalLangChain4jMessage;
+
     public Message(String role, String message) {
         this.role = role;
         this.message = message;
@@ -33,10 +36,26 @@ public class Message {
     }
 
     /**
+     * Constructor to create Message from LangChain4j AiMessage while preserving
+     * tool calls
+     */
+    public Message(AiMessage aiMessage) {
+        this.role = "assistant";
+        this.message = aiMessage.text();
+        this.content = aiMessage.text();
+        this.originalLangChain4jMessage = aiMessage; // Preserve original for tool calls
+    }
+
+    /**
      * Convert this Message to a LangChain4j ChatMessage
      * Ensures that null values are never passed to LangChain4j
      */
     public ChatMessage toLangChain4jMessage() {
+        // If we have an original LangChain4j message, use it to preserve tool calls
+        if (originalLangChain4jMessage != null) {
+            return originalLangChain4jMessage;
+        }
+
         String text = getTextContent();
 
         switch (role.toLowerCase()) {
@@ -48,7 +67,13 @@ public class Message {
             case "ai":
                 return new AiMessage(text);
             case "tool":
-                return new UserMessage(text);
+                // Tool execution results need to be properly formatted for LangChain4j
+                if (toolExecutionId != null && !toolExecutionId.trim().isEmpty()) {
+                    return new ToolExecutionResultMessage(toolExecutionId, toolCallId, text);
+                } else {
+                    // Fallback to UserMessage if no toolExecutionId
+                    return new UserMessage("Tool result: " + text);
+                }
             default:
                 return new UserMessage(text);
         }
@@ -82,8 +107,8 @@ public class Message {
             return message;
         } else if (chatMessage instanceof AiMessage) {
             AiMessage aiMsg = (AiMessage) chatMessage;
-            Message message = new Message("assistant", aiMsg.text(), aiMsg.text());
-            return message;
+            // Use special constructor to preserve tool calls
+            return new Message(aiMsg);
         } else if (chatMessage instanceof ToolExecutionResultMessage) {
             ToolExecutionResultMessage toolMsg = (ToolExecutionResultMessage) chatMessage;
             Message message = new Message("tool", toolMsg.text(), toolMsg.text());

@@ -22,12 +22,12 @@ import jakarta.annotation.PostConstruct;
 @Component
 public abstract class BaseAgent {
     private static final int MAX_STEPS = 20;
-    
+
     protected String name;
     protected String description;
     protected String systemPrompt;
     protected List<Tool> tools;
-    
+
     @Autowired
     protected LlmClient llmClient;
 
@@ -69,21 +69,46 @@ public abstract class BaseAgent {
         List<Message> contexts = new ArrayList<>(instructions);
         Map<String, Tool> toolMap = createToolMap();
 
+        System.out.println("=== Agent Run Started ===");
+        System.out.println("Initial contexts: " + contexts.size());
+
         for (int step = 0; step < MAX_STEPS; step++) {
+            System.out.println("\n=== STEP " + (step + 1) + " ===");
+            System.out.println("Sending to LLM - Contexts: " + contexts.size());
+
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
-            System.out.println("response: " + response);
             String responseContent = getResponseContent(response);
-            if (!responseContent.trim().isEmpty()) {
-                contexts.add(new Message("assistant", responseContent, responseContent));
-            }
+
+            System.out.println("LLM Response: " + responseContent);
+            System.out.println("Has tool calls: " + response.hasToolCalls());
 
             if (response.hasToolCalls()) {
+                // For responses with tool calls, we need to preserve the original AiMessage
+                // to maintain the tool call metadata that OpenAI requires
+                System.out.println("Processing " + response.getToolCalls().size() + " tool calls");
+
+                // Create assistant message from the original AiMessage to preserve tool calls
+                Message assistantMessage = new Message(response.getAiMessage());
+                contexts.add(assistantMessage);
+                System.out.println("Added assistant message with tool calls to context");
+
+                // Process tool calls and add their results
                 processToolCalls(response.getToolCalls(), toolMap, contexts);
+                System.out.println("After tool calls - Contexts: " + contexts.size());
+                contexts.forEach(ctx -> System.out.println("- " + ctx.getRole() + ": " + ctx.getContent()));
             } else {
+                // For responses without tool calls, add the text content as usual
+                if (!responseContent.trim().isEmpty()) {
+                    Message assistantMessage = new Message("assistant", responseContent, responseContent);
+                    contexts.add(assistantMessage);
+                    System.out.println("Added assistant message to context");
+                }
+                System.out.println("No tool calls, ending conversation");
                 break;
             }
         }
-        
+
+        System.out.println("=== Agent Run Completed ===");
         return contexts;
     }
 
@@ -105,16 +130,24 @@ public abstract class BaseAgent {
 
     private void processToolCalls(List<ToolCall> toolCalls, Map<String, Tool> toolMap, List<Message> contexts) {
         for (ToolCall toolCall : toolCalls) {
+            System.out.println("Executing tool: " + toolCall.getName() + " with ID: " + toolCall.getId());
+            System.out.println("Tool input: " + toolCall.getInput());
+
             Tool tool = toolMap.get(toolCall.getName());
             Message toolMessage = executeTool(tool, toolCall);
-            System.out.println("toolMessage: " + toolMessage);
+
+            System.out.println("Tool execution result:");
+            System.out.println("- Role: " + toolMessage.getRole());
+            System.out.println("- Content: " + toolMessage.getContent());
+            System.out.println("- ToolExecutionId: " + toolMessage.getToolExecutionId());
+
             contexts.add(toolMessage);
         }
     }
 
     private Message executeTool(Tool tool, ToolCall toolCall) {
         String output;
-        
+
         if (tool != null) {
             try {
                 output = tool.execute(toolCall.getInput());
@@ -124,28 +157,48 @@ public abstract class BaseAgent {
         } else {
             output = "Error: Tool '" + toolCall.getName() + "' not found";
         }
-        
+
         Message message = new Message("tool", output, output);
         message.setToolExecutionId(toolCall.getId());
         return message;
     }
 
     // Getters and setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    
-    public String getDescription() { return description; }
-    public void setDescription(String description) { this.description = description; }
-    
-    public String getSystemPrompt() { return systemPrompt; }
-    public void setSystemPrompt(String systemPrompt) { this.systemPrompt = systemPrompt; }
-    
-    public List<Tool> getTools() { return tools; }
-    public void setTools(List<Tool> tools) { this.tools = tools != null ? tools : new ArrayList<>(); }
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getSystemPrompt() {
+        return systemPrompt;
+    }
+
+    public void setSystemPrompt(String systemPrompt) {
+        this.systemPrompt = systemPrompt;
+    }
+
+    public List<Tool> getTools() {
+        return tools;
+    }
+
+    public void setTools(List<Tool> tools) {
+        this.tools = tools != null ? tools : new ArrayList<>();
+    }
 
     @Override
     public String toString() {
-        return String.format("Agent{name='%s', description='%s', tools=%d}", 
+        return String.format("Agent{name='%s', description='%s', tools=%d}",
                 name, description, tools.size());
     }
 }
