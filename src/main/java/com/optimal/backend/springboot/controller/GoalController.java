@@ -32,8 +32,7 @@ public class GoalController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Goal>> getGoalsByUser(@PathVariable UUID userId) {
-        List<Goal> goals = goalService.getGoalsByUser(userId);
-        return ResponseEntity.ok(goals);
+        return ResponseEntity.ok(goalService.getGoalsByUser(userId));
     }
 
     @GetMapping("/{goalId}")

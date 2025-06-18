@@ -35,9 +35,13 @@ public class GoalService {
     public Goal createGoal(CreateGoalRequest request) {
         Goal goal = new Goal();
         goal.setUserId(request.getUserId());
-        goal.setGoalTitle(request.getName());
-        goal.setGoalDescription(request.getDescription());
+        goal.setTitle(request.getTitle());
+        goal.setDescription(request.getDescription());
         goal.setDueDate(request.getDueDate());
+        goal.setTags(request.getTags());
+        goal.setStatus("active");
+        goal.setProgress(0);
+        goal.setStreak(0);
         return goalRepository.save(goal);
     }
 

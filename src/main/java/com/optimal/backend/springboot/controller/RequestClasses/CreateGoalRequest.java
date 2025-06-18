@@ -10,8 +10,8 @@ import lombok.Setter;
 @Setter
 public class CreateGoalRequest {
     private UUID userId;
-    private String name;
+    private String title;
     private String description;
     private Timestamp dueDate;
-    
+    private String[] tags;
 }
