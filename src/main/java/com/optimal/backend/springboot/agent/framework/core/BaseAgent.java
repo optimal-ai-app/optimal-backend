@@ -85,17 +85,17 @@ public abstract class BaseAgent {
             if (response.hasToolCalls()) {
                 // For responses with tool calls, we need to preserve the original AiMessage
                 // to maintain the tool call metadata that OpenAI requires
-                System.out.println("Processing " + response.getToolCalls().size() + " tool calls");
+                System.out.println("Processing all " + response.getToolCalls().size() + " tool calls");
 
                 // Create assistant message from the original AiMessage to preserve tool calls
                 Message assistantMessage = new Message(response.getAiMessage());
                 contexts.add(assistantMessage);
                 System.out.println("Added assistant message with tool calls to context");
 
-                // Process tool calls and add their results
+                // Process ALL tool calls to satisfy OpenAI's requirement
+                // OpenAI requires that each tool call ID gets a corresponding tool response
                 processToolCalls(response.getToolCalls(), toolMap, contexts);
                 System.out.println("After tool calls - Contexts: " + contexts.size());
-                contexts.forEach(ctx -> System.out.println("- " + ctx.getRole() + ": " + ctx.getContent()));
             } else {
                 // For responses without tool calls, add the text content as usual
                 if (!responseContent.trim().isEmpty()) {

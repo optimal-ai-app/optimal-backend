@@ -15,6 +15,6 @@ public class CreateTaskRequest {
     private Timestamp dueDate;
     private String priority;
     private UUID goalId;
-    private Integer repeat;
+    private Timestamp repeatEndDate;
     private List<String> repeatDays;
 }

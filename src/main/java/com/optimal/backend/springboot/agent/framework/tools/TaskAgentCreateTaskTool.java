@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
 import com.optimal.backend.springboot.agent.framework.core.Tool;
+import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.service.GoalService;
 import com.optimal.backend.springboot.service.TaskService;
 import com.optimal.backend.springboot.domain.entity.Task;
@@ -43,10 +44,11 @@ public class TaskAgentCreateTaskTool implements Tool {
             System.out.println("=== TaskAgentCreateTaskTool Input: " + input);
             System.out.println("=== Input raw bytes: " + java.util.Arrays.toString(input.getBytes()));
 
+            // Get userId from UserContext instead of parameters
+            UUID userId = UserContext.requireUserId();
+            System.out.println("=== Using userId from UserContext: " + userId);
+
             JsonNode inputNode = objectMapper.readTree(input);
-            UUID userId = inputNode.has("userId") && !inputNode.get("userId").isNull()
-                    ? UUID.fromString(inputNode.get("userId").asText())
-                    : null;
             String goalName = inputNode.has("goalName") && !inputNode.get("goalName").isNull()
                     ? inputNode.get("goalName").asText()
                     : null;
@@ -56,22 +58,41 @@ public class TaskAgentCreateTaskTool implements Tool {
             String taskDescription = inputNode.has("taskDescription") && !inputNode.get("taskDescription").isNull()
                     ? inputNode.get("taskDescription").asText()
                     : null;
-            Integer repeat = inputNode.has("repeat") && !inputNode.get("repeat").isNull()
-                    ? inputNode.get("repeat").asInt()
-                    : 1;
+            Timestamp repeatEndDate = null;
+            if (inputNode.has("repeatEndDate") && !inputNode.get("repeatEndDate").isNull()) {
+                String endDateInput = inputNode.get("repeatEndDate").asText().trim();
+                try {
+                    // Try to parse as ISO date or custom format
+                    LocalDateTime endDateTime;
+                    if (endDateInput.contains("T")) {
+                        endDateTime = LocalDateTime.parse(endDateInput);
+                    } else if (endDateInput.matches("\\d{4}-\\d{2}-\\d{2}")) {
+                        endDateTime = LocalDate.parse(endDateInput).atTime(23, 59, 59);
+                    } else {
+                        // Default to goal end date if parsing fails
+                        endDateTime = null;
+                    }
+                    if (endDateTime != null) {
+                        repeatEndDate = Timestamp.valueOf(endDateTime);
+                    }
+                } catch (DateTimeParseException e) {
+                    System.out.println("Failed to parse repeatEndDate: " + endDateInput);
+                    // Will default to goal end date below
+                }
+            }
             List<String> repeatDays = inputNode.has("repeatDays") && inputNode.get("repeatDays").isArray()
                     ? objectMapper.convertValue(inputNode.get("repeatDays"), List.class)
                     : null;
 
             System.out.println("=== Parsed Parameters:");
-            System.out.println("userId: " + userId);
+            System.out.println("userId from context: " + userId);
             System.out.println("goalName: " + goalName);
             System.out.println("taskType: '" + taskType + "'");
             System.out.println("taskType length: " + (taskType != null ? taskType.length() : "null"));
             System.out.println("taskType raw bytes: "
                     + (taskType != null ? java.util.Arrays.toString(taskType.getBytes()) : "null"));
             System.out.println("taskDescription: '" + taskDescription + "'");
-            System.out.println("repeat: " + repeat);
+            System.out.println("repeatEndDate: " + repeatEndDate);
             System.out.println("repeatDays: " + repeatDays);
 
             // Enhanced date/time handling to ensure tasks start from today
@@ -89,11 +110,28 @@ public class TaskAgentCreateTaskTool implements Tool {
                     : "!!";
 
             UUID goalId = null;
+            Goal goal = null;
             if (goalName != null && userId != null) {
                 Optional<Goal> goalOpt = goalService.getGoalByUserIdAndTitle(userId, goalName);
                 if (goalOpt.isPresent()) {
-                    goalId = goalOpt.get().getId();
-                    System.out.println("Found goal: " + goalOpt.get().getTitle() + " with ID: " + goalId);
+                    goal = goalOpt.get();
+                    goalId = goal.getId();
+                    System.out.println("Found goal: " + goal.getTitle() + " with ID: " + goalId);
+
+                    // If no repeatEndDate specified and we have repeatDays, default to goal's end
+                    // date
+                    if (repeatEndDate == null && repeatDays != null && !repeatDays.isEmpty()
+                            && goal.getDueDate() != null) {
+                        repeatEndDate = goal.getDueDate();
+                        System.out.println("Using goal end date as default repeat end date: " + repeatEndDate);
+                    }
+
+                    // Cap repeatEndDate to goal's due date if it extends beyond the goal
+                    if (repeatEndDate != null && goal.getDueDate() != null && repeatEndDate.after(goal.getDueDate())) {
+                        System.out.println("Capping repeatEndDate from " + repeatEndDate + " to goal due date: "
+                                + goal.getDueDate());
+                        repeatEndDate = goal.getDueDate();
+                    }
                 } else {
                     System.out.println("Goal not found for user " + userId + " with name: " + goalName);
                     return "Goal not found for user.";
@@ -117,16 +155,20 @@ public class TaskAgentCreateTaskTool implements Tool {
             System.out.println("UserId: " + task.getUserId());
             System.out.println("GoalId: " + task.getGoalId());
 
-            Task created = taskService.createTask(task, repeat, repeatDays);
+            Task created = taskService.createTask(task, repeatEndDate, repeatDays);
             if (created != null) {
                 System.out.println("=== Task Created Successfully:");
-                System.out.println("Created title: '" + created.getTitle() + "'");
-                System.out.println("Created title length: " + created.getTitle().length());
-                System.out.println(
-                        "Created title raw bytes: " + java.util.Arrays.toString(created.getTitle().getBytes()));
-
-                return "Task '" + task.getTitle() + "' created successfully with due date: " +
+                String message = "Task '" + task.getTitle() + "' created successfully with due date: " +
                         (dueTime != null ? dueTime.toString() : "not specified");
+                if (repeatEndDate != null && repeatDays != null && !repeatDays.isEmpty()) {
+                    message += ". Task will repeat on " + String.join(", ", repeatDays) + " until " + repeatEndDate;
+
+                    // Check if repeatEndDate was capped to goal's due date
+                    if (goal != null && goal.getDueDate() != null && repeatEndDate.equals(goal.getDueDate())) {
+                        message += " (capped to goal completion date)";
+                    }
+                }
+                return message;
             } else {
                 return "Task creation failed.";
             }
@@ -148,6 +190,11 @@ public class TaskAgentCreateTaskTool implements Tool {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
 
+        System.out.println("=== parseDateTime Debug:");
+        System.out.println("Today: " + today);
+        System.out.println("Now: " + now);
+        System.out.println("Time input: " + timeInput);
+
         try {
             // Try to parse as full datetime first (yyyy-MM-dd HH:mm:ss)
             if (timeInput.contains(" ") && timeInput.length() >= 16) {
@@ -165,15 +212,13 @@ public class TaskAgentCreateTaskTool implements Tool {
                 LocalTime time = LocalTime.parse(timeInput, DateTimeFormatter.ofPattern(
                         timeInput.length() <= 5 ? "H:mm" : "H:mm:ss"));
 
-                // For time-only input, schedule for today with that time
-                // The TaskService will handle moving to correct days based on repeatDays
+                // For time-only input, always start from today
+                // TaskService will handle moving to correct days based on repeatDays
                 LocalDateTime todayWithTime = LocalDateTime.of(today, time);
 
-                // If the time has already passed today, schedule for tomorrow
-                // This gives TaskService a future starting point to work from
-                if (todayWithTime.isBefore(now)) {
-                    return LocalDateTime.of(today.plusDays(1), time);
-                }
+                // If the time has already passed today, start from today anyway
+                // Let TaskService handle finding the next valid occurrence
+                System.out.println("=== parseDateTime Result: " + todayWithTime);
                 return todayWithTime;
             }
 
@@ -191,8 +236,8 @@ public class TaskAgentCreateTaskTool implements Tool {
     @Override
     public String getDescription() {
         return "Creates a task for a user's goal, repeating on specified days and times. " +
-                "Tasks will be scheduled starting from today. Requires userId, goalName (nullable), " +
-                "taskType, repeat count, repeatDays, and dueTime.";
+                "Tasks will be scheduled starting from today. Uses the current user context automatically. " +
+                "Requires goalName (nullable), taskType, repeatEndDate, repeatDays, and dueTime.";
     }
 
     @Override
@@ -200,11 +245,14 @@ public class TaskAgentCreateTaskTool implements Tool {
         return ToolParameters.builder()
                 .type("object")
                 .properties(Map.of(
-                        "userId", Map.of("type", "string", "description", "The user's UUID"),
                         "goalName", Map.of("type", "string", "description", "The name of the goal (nullable)"),
                         "taskType", Map.of("type", "string", "description", "The type or title of the task"),
                         "taskDescription", Map.of("type", "string", "description", "The description of the task"),
-                        "repeat", Map.of("type", "number", "description", "Number of times to repeat the task"),
+                        "repeatEndDate",
+                        Map.of("type", "string", "description",
+                                "End date for the task. Can be ISO date (yyyy-MM-dd) or custom format (e.g. '2024-03-15'). "
+                                        +
+                                        "Tasks will be scheduled for today or the future, never in the past."),
                         "repeatDays",
                         Map.of("type", "array", "items", Map.of("type", "string"), "description",
                                 "List of days to repeat (e.g. Monday, Tuesday)"),
@@ -214,7 +262,7 @@ public class TaskAgentCreateTaskTool implements Tool {
                                         +
                                         "Tasks will be scheduled for today or the future, never in the past."),
                         "priority", Map.of("type", "string", "description", "The priority of the task (!!!, !!, !)")))
-                .required(Arrays.asList("userId", "taskType", "repeat", "repeatDays", "dueTime", "priority"))
+                .required(Arrays.asList("taskType", "repeatEndDate", "repeatDays", "dueTime", "priority"))
                 .build();
     }
 }

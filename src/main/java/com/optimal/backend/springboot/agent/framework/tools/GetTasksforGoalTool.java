@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.Tool;
+import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.domain.entity.Task;
 import com.optimal.backend.springboot.service.TaskService;
 
@@ -26,28 +27,46 @@ public class GetTasksforGoalTool implements Tool {
 
     @Override
     public String execute(String input) {
-        JsonNode inputNode = null;
         try {
-            inputNode = new ObjectMapper().readTree(input);
+            // Get userId from UserContext instead of parameters
+            UUID userId = UserContext.requireUserId();
+            System.out.println("=== GetTasksforGoalTool: Using userId from context: " + userId);
+
+            JsonNode inputNode = new ObjectMapper().readTree(input);
+            String goalTitle = inputNode.get("goalTitle").asText();
+
+            System.out.println("=== GetTasksforGoalTool: Received goalTitle string: '" + goalTitle + "'");
+
+            List<Task> tasks = taskService.getTasksByUserIdAndGoalTitle(userId, goalTitle);
+
+            if (tasks.isEmpty()) {
+                return "No tasks found for this goal.";
+            }
+
+            StringBuilder response = new StringBuilder();
+            response.append("Here are the existing tasks for this goal:\n\n");
+            for (int i = 0; i < tasks.size(); i++) {
+                Task task = tasks.get(i);
+                response.append("**Task ").append(i + 1).append(":**\n");
+                response.append("- Title: ").append(task.getTitle()).append("\n");
+                response.append("- Description: ").append(task.getDescription()).append("\n");
+                response.append("- Due Date: ").append(task.getDueDate()).append("\n");
+                response.append("- Status: ").append(task.getStatus()).append("\n\n");
+            }
+            return response.toString();
         } catch (JsonMappingException e) {
+            System.out.println("=== Error in GetTasksforGoalTool (JsonMapping): " + e.getMessage());
             e.printStackTrace();
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
-        if (inputNode == null) {
             return "Error: Invalid input format";
+        } catch (JsonProcessingException e) {
+            System.out.println("=== Error in GetTasksforGoalTool (JsonProcessing): " + e.getMessage());
+            e.printStackTrace();
+            return "Error: Invalid input format";
+        } catch (Exception e) {
+            System.out.println("=== Error in GetTasksforGoalTool: " + e.getMessage());
+            e.printStackTrace();
+            return "Error retrieving tasks: " + e.getMessage();
         }
-        UUID userId = UUID.fromString(inputNode.get("userId").asText());
-        UUID goalId = UUID.fromString(inputNode.get("goalId").asText());
-        List<Task> tasks = taskService.getTasksByUserIdAndGoalId(userId, goalId);
-        StringBuilder response = new StringBuilder();
-        response.append("Here are the tasks for the goal:\n\n");
-        for (Task task : tasks) {
-            response.append("Title: ").append(task.getTitle()).append("\n");
-            response.append("Description: ").append(task.getDescription()).append("\n\n");
-            response.append("Due Date: ").append(task.getDueDate()).append("\n\n");
-        }
-        return response.toString();
     }
 
     @Override
@@ -57,16 +76,17 @@ public class GetTasksforGoalTool implements Tool {
 
     @Override
     public String getDescription() {
-        return "GetTasksforGoalTool";
+        return "Gets existing tasks for a specific goal by goal title. Uses the current user context automatically. " +
+                "Requires only the goalTitle parameter.";
     }
 
     @Override
     public ToolParameters getParameters() {
         return ToolParameters.builder()
                 .type("object")
-                .properties(Map.of("userId", Map.of("type", "string", "description", "The user's UUID"),
-                        "goalId", Map.of("type", "string", "description", "The goal's ID")))
-                .required(Arrays.asList("userId", "goalId"))
+                .properties(Map.of(
+                        "goalTitle", Map.of("type", "string", "description", "The goal's title/name")))
+                .required(Arrays.asList("goalTitle"))
                 .build();
     }
 }

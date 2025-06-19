@@ -8,9 +8,8 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.Tool;
+import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.domain.entity.Goal;
 import com.optimal.backend.springboot.service.GoalService;
 
@@ -29,8 +28,8 @@ public class GoalDescriptionTool implements Tool {
     @Override
     public String execute(String input) {
         try {
-            JsonNode inputNode = new ObjectMapper().readTree(input);
-            UUID userId = UUID.fromString(inputNode.get("userId").asText());
+            UUID userId = UserContext.requireUserId();
+            System.out.println("=== GoalDescriptionTool: Using userId from context: " + userId);
 
             List<Goal> goals = goalService.getGoalsByUser(userId);
 
@@ -41,22 +40,27 @@ public class GoalDescriptionTool implements Tool {
             StringBuilder response = new StringBuilder();
             response.append("Here are your goals:\n\n");
 
-            for (Goal goal : goals) {
-                response.append("Title: ").append(goal.getTitle()).append("\n");
-                response.append("Description: ").append(goal.getDescription()).append("\n\n");
-                response.append("Due Date: ").append(goal.getDueDate()).append("\n\n");
-                response.append("ID: ").append(goal.getId()).append("\n\n");
+            for (int i = 0; i < goals.size(); i++) {
+                Goal goal = goals.get(i);
+                response.append("**Goal ").append(i + 1).append(":**\n");
+                response.append("- Title: ").append(goal.getTitle()).append("\n");
+                response.append("- Description: ").append(goal.getDescription()).append("\n");
+                response.append("- End Date: ").append(goal.getDueDate()).append("\n");
+                response.append("- Status: ").append(goal.getStatus()).append("\n\n");
             }
 
             return response.toString();
         } catch (Exception e) {
+            System.out.println("=== Error in GoalDescriptionTool: " + e.getMessage());
+            e.printStackTrace();
             return "Error retrieving goals: " + e.getMessage();
         }
     }
 
     @Override
     public String getDescription() {
-        return "This tool queries the user's goals and returns a list of the goals names and descriptions";
+        return "This tool queries the user's goals and returns a list of the goals names and descriptions. " +
+                "Uses the current user context automatically.";
     }
 
     @Override
@@ -64,8 +68,9 @@ public class GoalDescriptionTool implements Tool {
         return ToolParameters.builder()
                 .type("object")
                 .properties(Map.of(
-                        "userId", Map.of("type", "string", "description", "The user's UUID")))
-                .required(Arrays.asList("userId"))
+                // No parameters needed - userId comes from UserContext
+                ))
+                .required(Arrays.asList())
                 .build();
     }
 }

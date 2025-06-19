@@ -134,15 +134,19 @@ public class BaseSupervisor implements SupervisorInterface {
             // Parse the agent response to check for handoff decision
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
 
-            // If agent is ready to handoff, clear the handoff agent and continue with
-            // normal execution
+            // If agent is ready to handoff, clear the handoff agent and return the result
+            // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
+                System.out.println("Agent " + handoffAgent + " completed successfully, clearing handoff");
                 handoffAgent = null;
-                return executeNormal(userInput);
+                return parsedResponse; // Return the result immediately
             }
 
+            // If agent is not ready to handoff, keep the handoff agent active
+            System.out.println("Agent " + handoffAgent + " keeping control (readyToHandoff=false)");
             return parsedResponse;
         } catch (Exception e) {
+            System.out.println("Error in handoff agent " + handoffAgent + ": " + e.getMessage());
             // On error, clear handoff and return control to supervisor
             handoffAgent = null;
             return executeNormal(userInput);

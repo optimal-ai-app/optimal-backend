@@ -22,8 +22,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("""
         SELECT t
           FROM Task t
-         WHERE t.goalId = :goalId AND t.userId = :userId
+          JOIN Goal g ON t.goalId = g.id
+         WHERE g.title = :goalTitle AND t.userId = :userId
       ORDER BY t.createdDate DESC
       """)
-  List<Task> findByUserIdAndGoalId(@Param("userId") UUID userId, @Param("goalId") UUID goalId);
+  List<Task> findByUserIdAndGoalTitle(@Param("userId") UUID userId, @Param("goalTitle") String goalTitle);
 }

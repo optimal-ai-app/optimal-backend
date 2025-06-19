@@ -19,7 +19,7 @@ import java.util.UUID;
 public class TaskController {
 
     private final TaskService taskService;
-    
+
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Task>> getTasksByUser(@PathVariable UUID userId) {
         return ResponseEntity.ok(taskService.getTasksByUserId(userId));
@@ -36,7 +36,7 @@ public class TaskController {
         task.setPriority(request.getPriority());
         task.setGoalId(request.getGoalId());
         return ResponseEntity.ok(
-            taskService.createTask(task, request.getRepeat(), request.getRepeatDays()));
+                taskService.createTask(task, request.getRepeatEndDate(), request.getRepeatDays()));
     }
 
 }
