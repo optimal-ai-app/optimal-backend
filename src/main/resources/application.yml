@@ -4,16 +4,13 @@ server:
 
 spring:
   datasource:
-    # Supabase uses SSL, so prepend "jdbc:" and add "?sslmode=require"
-    url: jdbc:postgresql://db.umndbnimuswczlydijnf.supabase.co:5432/postgres?sslmode=require
-    username: postgres
+    driver-class-name: org.postgresql.Driver
+    url: 'jdbc:postgresql://aws-0-us-west-1.pooler.supabase.com:5432/postgres?sslmode=require'
+    username: postgres.umndbnimuswczlydijnf
     password: FTSDq@5&v@Z&67T
-    hikari:
-      pool-name: SpringBootBoilerplateHikariPool
   jpa:
     hibernate:
       ddl-auto: update
-    open-in-view: false
 
     # Add this so Hibernate knows which Dialect to use without probing
     properties:
@@ -36,6 +33,9 @@ langchain4j:
   open-ai:
     chat-model:
       api-key: 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
+  task-agent:
+    name: TaskAgent
+    description: "Can perform CRUD (create and delete for now) operations for a user's tasks by understanding the user's goals and generating or deleting tasks based on the user's goals. Can read the user's goals and generate tasks based on the user's goals."
 
 management:
   endpoint:
@@ -56,15 +56,15 @@ logging:
 ## Supabase Configuration
 supabase:
   url: https://umndbnimuswczlydijnf.supabase.co
-  anonKey: ${SUPABASE_ANON_KEY:eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbmRibmltdXN3Y3pseWRpam5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxNDU3MTYsImV4cCI6MjA2NDcyMTcxNn0.ezFuM78SpsRP97eWhakg4n3Sp8PF16KPHGzUAghw-p8}
-  jwtSecret: ${SUPABASE_JWT_SECRET:lJjHSUJiJZDIEHaHb0MUFHig+oOpUgFlW6fTdj6RpERsWCSHRSfSlsozgFWjzsjOUix773oFJVFvH8gJrFvlNQ==}
+  anonKey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVtbmRibmltdXN3Y3pseWRpam5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE3NDUzMTQsImV4cCI6MjA2NzMyMTMxNH0.CL7UownGSH8e9XIsKz-5z2-iyUvZ3Ko4rwDaZzNfK-I
+  jwtSecret: Cbcm2FHnRGZPrEAWVt4Ukfm3dHS1cAyokVSkik9ZEDxbMtEVnTfJLIWdFogttFiEXQOt83pPehKtTZscXQodIg==
 
 swagger:
-  contact-name: Faruk Genc
-  contact-mail: omer@farukgenc.com
-  contact-url: https://farukgenc.com
-  app-name: Spring Boot Boilerplate Project
-  app-description: 'Spring Boot Boilerplate is a starter kit. This project includes : Spring Boot(3.4.0), Spring Data JPA, Spring Validation, Spring Security + JWT Token, PostgreSQL, Mapstruct, Lombok, Swagger (Open API)'
-  app-version: 3.4.0
+  contact-name: Optimal AI
+  contact-mail: optimal.ai.app@gmail.com
+  contact-url: https://optimal.ai
+  app-name: Optimal.ai
+  app-description: 'Optimal.ai is a project that helps you to achieve your goals.'
+  app-version: 1.0.0
   app-license-url: https://www.apache.org/licenses/LICENSE-2.0.html
   app-license: Apache 2.0
