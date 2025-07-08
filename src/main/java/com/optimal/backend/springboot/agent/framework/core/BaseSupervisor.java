@@ -12,6 +12,7 @@ import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.interfaces.SupervisorInterface;
@@ -100,11 +101,13 @@ public class BaseSupervisor implements SupervisorInterface {
         public String content;
         public List<String> tags;
         public boolean readyToHandoff;
+        public Map<String, Object> data;
 
-        public SupervisorResponse(String content, List<String> tags, boolean readyToHandoff) {
+        public SupervisorResponse(String content, List<String> tags, boolean readyToHandoff, Map<String, Object> data) {
             this.content = content;
             this.tags = tags != null ? tags : new ArrayList<>();
             this.readyToHandoff = readyToHandoff;
+            this.data = data;
         }
     }
 
@@ -164,7 +167,7 @@ public class BaseSupervisor implements SupervisorInterface {
         if (queue.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
-                    new ArrayList<>(), true);
+                    new ArrayList<>(), true, new HashMap<>());
         }
 
         System.out.println("Supervisor selected " + queue.size() + " agents:");
@@ -271,14 +274,20 @@ public class BaseSupervisor implements SupervisorInterface {
                 boolean readyToHandoff = jsonNode.has("readyToHandoff") ? jsonNode.get("readyToHandoff").asBoolean()
                         : false;
 
-                return new SupervisorResponse(content, tags, readyToHandoff);
+                Map<String, Object> data = new HashMap<>();
+                if (jsonNode.has("data")) {
+                    JsonNode dataNode = jsonNode.get("data");
+                    data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
+                }
+
+                return new SupervisorResponse(content, tags, readyToHandoff, data);
             }
         } catch (Exception e) {
             // Not JSON, treat as plain text
         }
 
         // Default response format for plain text
-        return new SupervisorResponse(response, new ArrayList<>(), false);
+        return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>());
     }
 
     // Legacy method for backward compatibility
@@ -382,8 +391,12 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("Response content: " + responseContent);
 
         try {
+            // Clean the response content to handle markdown code blocks
+            String cleanedContent = cleanJsonResponse(responseContent);
+            System.out.println("Cleaned content: " + cleanedContent);
+
             ObjectMapper mapper = new ObjectMapper();
-            JsonNode rootNode = mapper.readTree(responseContent);
+            JsonNode rootNode = mapper.readTree(cleanedContent);
 
             System.out.println("Parsed JSON node type: " + rootNode.getNodeType());
 
@@ -419,6 +432,40 @@ public class BaseSupervisor implements SupervisorInterface {
 
         System.out.println("Successfully parsed " + agentNodes.size() + " agent nodes");
         return agentNodes;
+    }
+
+    /**
+     * Clean JSON response by removing markdown code blocks if present
+     */
+    private String cleanJsonResponse(String responseContent) {
+        if (responseContent == null || responseContent.trim().isEmpty()) {
+            return "[]"; // Return empty array as fallback
+        }
+
+        String cleaned = responseContent.trim();
+        
+        // Remove markdown code blocks if present
+        if (cleaned.startsWith("```json") || cleaned.startsWith("```JSON")) {
+            // Find the opening ```json or ```JSON
+            int startIndex = cleaned.indexOf('\n');
+            if (startIndex != -1) {
+                cleaned = cleaned.substring(startIndex + 1);
+            }
+        } else if (cleaned.startsWith("```")) {
+            // Handle generic ``` blocks
+            int startIndex = cleaned.indexOf('\n');
+            if (startIndex != -1) {
+                cleaned = cleaned.substring(startIndex + 1);
+            }
+        }
+        
+        // Remove closing ``` if present
+        if (cleaned.endsWith("```")) {
+            int endIndex = cleaned.lastIndexOf("```");
+            cleaned = cleaned.substring(0, endIndex);
+        }
+        
+        return cleaned.trim();
     }
 
     private AgentNode parseAgentNode(JsonNode node) {

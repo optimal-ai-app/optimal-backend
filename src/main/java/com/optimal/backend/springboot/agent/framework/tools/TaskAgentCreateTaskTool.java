@@ -42,8 +42,6 @@ public class TaskAgentCreateTaskTool implements Tool {
     public String execute(String input) {
         try {
             System.out.println("=== TaskAgentCreateTaskTool Input: " + input);
-            System.out.println("=== Input raw bytes: " + java.util.Arrays.toString(input.getBytes()));
-
             // Get userId from UserContext instead of parameters
             UUID userId = UserContext.requireUserId();
             System.out.println("=== Using userId from UserContext: " + userId);
@@ -88,9 +86,6 @@ public class TaskAgentCreateTaskTool implements Tool {
             System.out.println("userId from context: " + userId);
             System.out.println("goalName: " + goalName);
             System.out.println("taskType: '" + taskType + "'");
-            System.out.println("taskType length: " + (taskType != null ? taskType.length() : "null"));
-            System.out.println("taskType raw bytes: "
-                    + (taskType != null ? java.util.Arrays.toString(taskType.getBytes()) : "null"));
             System.out.println("taskDescription: '" + taskDescription + "'");
             System.out.println("repeatEndDate: " + repeatEndDate);
             System.out.println("repeatDays: " + repeatDays);
@@ -147,13 +142,7 @@ public class TaskAgentCreateTaskTool implements Tool {
             task.setPriority(priority);
             task.setStatus("todo");
 
-            System.out.println("=== Task Object Created:");
-            System.out.println("Title: '" + task.getTitle() + "'");
-            System.out.println("Title length: " + task.getTitle().length());
-            System.out.println("Title raw bytes: " + java.util.Arrays.toString(task.getTitle().getBytes()));
-            System.out.println("Description: '" + task.getDescription() + "'");
-            System.out.println("UserId: " + task.getUserId());
-            System.out.println("GoalId: " + task.getGoalId());
+           
 
             Task created = taskService.createTask(task, repeatEndDate, repeatDays);
             if (created != null) {
@@ -168,6 +157,12 @@ public class TaskAgentCreateTaskTool implements Tool {
                         message += " (capped to goal completion date)";
                     }
                 }
+
+                System.out.println("=== Task Object Created:");
+                System.out.println("Title: '" + task.getTitle() + "'");
+                System.out.println("Description: '" + task.getDescription() + "'");
+                System.out.println("UserId: " + task.getUserId());
+                System.out.println("GoalId: " + task.getGoalId());
                 return message;
             } else {
                 return "Task creation failed.";

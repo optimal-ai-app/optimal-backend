@@ -22,7 +22,7 @@ public class ChatController {
 
     @Autowired
     private TaskAgent taskAgent;
-
+    
     @Autowired
     private LlmClient llmClient;
 
@@ -67,7 +67,7 @@ public class ChatController {
             // Get or create user-specific supervisor with manually injected dependencies
             BaseSupervisor userSupervisor = userSupervisors.computeIfAbsent(userId, id -> {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
-                newSupervisor.addAgent("taskAgent", taskAgent);
+                newSupervisor.addAgent(taskAgent.getName(), taskAgent);
                 return newSupervisor;
             });
 
@@ -79,6 +79,7 @@ public class ChatController {
             response.put("content", supervisorResponse.content);
             response.put("tags", supervisorResponse.tags);
             response.put("readyToHandoff", supervisorResponse.readyToHandoff);
+            response.put("data", supervisorResponse.data);
 
             return ResponseEntity.ok(response);
 
@@ -90,6 +91,7 @@ public class ChatController {
             errorResponse.put("content", "Sorry, I encountered an error. Please try again.");
             errorResponse.put("tags", new ArrayList<>());
             errorResponse.put("readyToHandoff", false);
+            errorResponse.put("data", new HashMap<>());
             return ResponseEntity.status(500).body(errorResponse);
 
         } finally {

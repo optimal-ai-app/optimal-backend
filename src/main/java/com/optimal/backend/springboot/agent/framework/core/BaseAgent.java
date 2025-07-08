@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
 
@@ -19,7 +18,6 @@ import jakarta.annotation.PostConstruct;
  * 
  * This class is Spring-managed and supports dependency injection.
  */
-@Component
 public abstract class BaseAgent {
     private static final int MAX_STEPS = 20;
 
@@ -28,22 +26,22 @@ public abstract class BaseAgent {
     protected String systemPrompt;
     protected List<Tool> tools;
 
-    @Autowired
     protected LlmClient llmClient;
 
     public BaseAgent() {
         this.tools = new ArrayList<>();
     }
 
-    public BaseAgent(String name, String description, String systemPrompt, List<Tool> tools) {
+    public BaseAgent(String name, String description, String systemPrompt, List<Tool> tools, LlmClient llmClient) {
         this.name = name;
         this.description = description;
         this.systemPrompt = GeneralPromptAppender.appendGeneralInstructions(systemPrompt);
         this.tools = tools != null ? tools : new ArrayList<>();
+        this.llmClient = llmClient;
     }
 
-    public BaseAgent(String name, String description, String systemPrompt) {
-        this(name, description, systemPrompt, new ArrayList<>());
+    public BaseAgent(String name, String description, String systemPrompt, LlmClient llmClient) {
+        this(name, description, systemPrompt, new ArrayList<>(), llmClient);
     }
 
     /**

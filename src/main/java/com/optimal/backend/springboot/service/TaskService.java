@@ -60,8 +60,10 @@ public class TaskService {
         while (!calendar.getTime().after(repeatEndDate)) {
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
             String dayName = getDayNameFromCalendar(dayOfWeek);
+            String dayAbbrev = getDayAbbreviationFromCalendar(dayOfWeek);
 
-            if (repeatDays.stream().map(String::toLowerCase).anyMatch(d -> d.equals(dayName))) {
+            if (repeatDays.stream().anyMatch(d -> 
+                d.equalsIgnoreCase(dayName) || d.equalsIgnoreCase(dayAbbrev))) {
                 Task repeatedTask = new Task();
                 repeatedTask.setTitle(task.getTitle());
                 repeatedTask.setDescription(task.getDescription());
@@ -99,6 +101,27 @@ public class TaskService {
                 return "friday";
             case Calendar.SATURDAY:
                 return "saturday";
+            default:
+                throw new IllegalArgumentException("Invalid day of week");
+        }
+    }
+
+    private String getDayAbbreviationFromCalendar(int dayOfWeek) {
+        switch (dayOfWeek) {
+            case Calendar.SUNDAY:
+                return "SU";
+            case Calendar.MONDAY:
+                return "M";
+            case Calendar.TUESDAY:
+                return "T";
+            case Calendar.WEDNESDAY:
+                return "W";
+            case Calendar.THURSDAY:
+                return "TH";
+            case Calendar.FRIDAY:
+                return "F";
+            case Calendar.SATURDAY:
+                return "S";
             default:
                 throw new IllegalArgumentException("Invalid day of week");
         }

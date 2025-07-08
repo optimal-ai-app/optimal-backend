@@ -39,4 +39,10 @@ public class TaskController {
                 taskService.createTask(task, request.getRepeatEndDate(), request.getRepeatDays()));
     }
 
+    @DeleteMapping("/{taskId}")
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
+        taskService.deleteTask(taskId);
+        return ResponseEntity.noContent().build();
+    }
+
 }

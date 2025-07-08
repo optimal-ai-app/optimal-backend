@@ -35,7 +35,7 @@ langchain4j:
       api-key: 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
   task-agent:
     name: TaskAgent
-    description: "Can perform CRUD (create and delete for now) operations for a user's tasks by understanding the user's goals and generating or deleting tasks based on the user's goals. Can read the user's goals and generate tasks based on the user's goals."
+    description: "Can create tasks for a user's goals by understanding the user's goals."
 
 management:
   endpoint:
