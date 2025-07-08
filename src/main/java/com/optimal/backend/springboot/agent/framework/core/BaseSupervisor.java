@@ -187,11 +187,6 @@ public class BaseSupervisor implements SupervisorInterface {
 
             System.out.println("Processing agent: " + agentName + " (iteration " + iterations + ")");
 
-            if (finishedAgents.contains(agentName)) {
-                System.out.println("Agent " + agentName + " already finished, skipping");
-                continue;
-            }
-
             if (!processingAgents.add(agentName)) {
                 System.err.println("Dependency cycle detected at: " + agentName);
                 throw new IllegalStateException("Dependency cycle at: " + agentName);
