@@ -1,16 +1,20 @@
 package com.optimal.backend.springboot.controller;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.ArrayList;
-import java.util.HashMap;
 
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import com.optimal.backend.springboot.agent.framework.agents.TaskAgent;
+import com.optimal.backend.springboot.agent.framework.agents.TaskCreatorAgent;
+import com.optimal.backend.springboot.agent.framework.agents.TaskPlannerAgent;
 import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
@@ -21,8 +25,11 @@ import com.optimal.backend.springboot.agent.framework.core.UserContext;
 public class ChatController {
 
     @Autowired
-    private TaskAgent taskAgent;
-    
+    private TaskPlannerAgent taskPlannerAgent;
+
+    @Autowired
+    private TaskCreatorAgent taskCreatorAgent;
+
     @Autowired
     private LlmClient llmClient;
 
@@ -67,7 +74,8 @@ public class ChatController {
             // Get or create user-specific supervisor with manually injected dependencies
             BaseSupervisor userSupervisor = userSupervisors.computeIfAbsent(userId, id -> {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
-                newSupervisor.addAgent(taskAgent.getName(), taskAgent);
+                newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
+                newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
                 return newSupervisor;
             });
 

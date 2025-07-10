@@ -20,9 +20,14 @@ import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptA
 
 public class BaseSupervisor implements SupervisorInterface {
     private final Map<String, BaseAgent> agents = new HashMap<>();
-
     private String handoffAgent = null;
-
+    private Queue<AgentNode> agentNodes = null;
+    private final Map<String, List<Message>> agentOutputs = new HashMap<>();
+    private final Set<String> finishedAgents = new HashSet<>();
+    private final Set<String> processingAgents = new HashSet<>();
+    private int maxIterations = 0;
+    private int iterations = 0;
+    
     @Autowired
     private LlmClient llmClient;
 
@@ -36,7 +41,9 @@ public class BaseSupervisor implements SupervisorInterface {
         // LlmClient will be injected by Spring via @Autowired
     }
 
-    private static final String INTERPRETER_PROMPT_BASE = """
+    private String getInterpreterPromptBase() {
+        StringBuilder prompt = new StringBuilder();
+        prompt.append("""
             You are an intelligent task coordinator that analyzes user requests and determines which agents should execute to fulfill the request.
 
             Your job is to:
@@ -45,22 +52,32 @@ public class BaseSupervisor implements SupervisorInterface {
             3. Identify any dependencies between agents (which agents must finish before others can start)
             4. Provide specific instructions for each agent
 
-            AGENT SELECTION INTELLIGENCE:
+            Available Agents:
+            """);
 
-            **TaskAgent** - Use when user wants to:
-            - Create tasks, todos, or action items
-            - Break down goals into actionable steps
-            - Set up recurring activities or habits
-            - Schedule specific work or study sessions
-            - Plan workout routines, study schedules, etc.
-            - Anything involving "task", "todo", "schedule", "plan", "routine"
+        // Add each agent and its description
+        for (Map.Entry<String, BaseAgent> entry : agents.entrySet()) {
+            prompt.append("- ").append(entry.getKey()).append(": ")
+                  .append(entry.getValue().getDescription()).append("\n");
+        }
+
+        prompt.append("""
+
+            AGENT SELECTION INTELLIGENCE:
+            - Be SPECIFIC about what the agent should accomplish
+            - Include relevant context from the user's request
+            - Reference specific goals, targets, or requirements mentioned
+            - Don't just say "handle the user's request" - explain WHAT specifically to do
 
             INSTRUCTION INTELLIGENCE:
             - Be SPECIFIC about what the agent should accomplish
             - Include relevant context from the user's request
             - Reference specific goals, targets, or requirements mentioned
             - Don't just say "handle the user's request" - explain WHAT specifically to do
-            """;
+            """);
+
+        return prompt.toString();
+    }
 
     private static final String INTERPRETER_PROMPT_RULES = """
             You MUST respond with a valid JSON array of agent nodes. Each agent node must have this exact structure:
@@ -92,6 +109,7 @@ public class BaseSupervisor implements SupervisorInterface {
                     - "summary" should use first-person ("I created 3 goals…").
                     """);
 
+    @Override
     public void addAgent(String name, BaseAgent agent) {
         agents.put(name, agent);
     }
@@ -118,8 +136,29 @@ public class BaseSupervisor implements SupervisorInterface {
             return executeHandoffAgent(userInput);
         }
 
-        // Normal supervisor execution
-        return executeNormal(userInput);
+        // Reset state for new execution
+        agentOutputs.clear();
+        finishedAgents.clear();
+        processingAgents.clear();
+        iterations = 0;
+        
+        // Normal supervisor execution - initialize state
+        agentOutputs.put("user", userInput);
+        System.out.println("Supervisor determining which agents to use...");
+        this.agentNodes = interpret(userInput);
+        this.maxIterations = this.agentNodes.size() * 2;
+        
+        if (this.agentNodes.isEmpty()) {
+            System.err.println("Failed to interpret user request - no agents selected");
+            return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
+                    new ArrayList<>(), true, new HashMap<>());
+        }
+
+        System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
+        this.agentNodes.forEach(
+                node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getContent()));
+        
+        return executeNormal();
     }
 
     private SupervisorResponse executeHandoffAgent(List<Message> userInput) {
@@ -127,7 +166,7 @@ public class BaseSupervisor implements SupervisorInterface {
         if (agent == null) {
             // Agent not found, clear handoff and return to normal execution
             handoffAgent = null;
-            return executeNormal(userInput);
+            return executeNormal();
         }
 
         try {
@@ -141,8 +180,9 @@ public class BaseSupervisor implements SupervisorInterface {
             // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
                 System.out.println("Agent " + handoffAgent + " completed successfully, clearing handoff");
+                saveAgentOutput(handoffAgent, response);
                 handoffAgent = null;
-                return parsedResponse; // Return the result immediately
+                return executeNormal(); // Return the result immediately
             }
 
             // If agent is not ready to handoff, keep the handoff agent active
@@ -152,40 +192,20 @@ public class BaseSupervisor implements SupervisorInterface {
             System.out.println("Error in handoff agent " + handoffAgent + ": " + e.getMessage());
             // On error, clear handoff and return control to supervisor
             handoffAgent = null;
-            return executeNormal(userInput);
+            return executeNormal();
         }
     }
 
-    private SupervisorResponse executeNormal(List<Message> userInput) {
+    private SupervisorResponse executeNormal() {
         System.out.println("\n\nHandoff to Supervisor\n\n");
 
         // First, ask the LLM which agents should handle this request
-        System.out.println("Supervisor determining which agents to use...");
-        Queue<AgentNode> queue = interpret(userInput);
 
-        // Check if interpretation was successful
-        if (queue.isEmpty()) {
-            System.err.println("Failed to interpret user request - no agents selected");
-            return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
-                    new ArrayList<>(), true, new HashMap<>());
-        }
-
-        System.out.println("Supervisor selected " + queue.size() + " agents:");
-        queue.forEach(
-                node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getContent()));
-
-        Map<String, List<Message>> agentOutputs = new HashMap<>();
-        Set<String> finishedAgents = new HashSet<>();
-        Set<String> processingAgents = new HashSet<>();
-
-        agentOutputs.put("user", userInput);
-        int maxIterations = queue.size() * 2, iterations = 0;
-
-        while (!queue.isEmpty() && iterations++ < maxIterations) {
-            AgentNode current = queue.poll();
+        while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
+            AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
 
-            System.out.println("Processing agent: " + agentName + " (iteration " + iterations + ")");
+            System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
             if (!processingAgents.add(agentName)) {
                 System.err.println("Dependency cycle detected at: " + agentName);
@@ -206,16 +226,8 @@ public class BaseSupervisor implements SupervisorInterface {
 
                 List<Message> response = agent.run(context);
 
-                agentOutputs.put(agentName, response);
-                finishedAgents.add(agentName);
-                processingAgents.remove(agentName);
-
-                // Check if this agent wants to become the handoff agent
-                String agentFinalResponse = extractFinalResponse(response);
-                SupervisorResponse agentParsedResponse = parseAgentResponse(agentFinalResponse);
-
-                // If agent indicates it wants to take control (by not being ready to handoff
-                // immediately)
+                SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
+         
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     System.out.println("Agent " + agentName + " requesting handoff control");
@@ -224,7 +236,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 }
             } else {
                 System.out.println("Agent " + agentName + " dependencies not met, re-queuing");
-                queue.add(current);
+                this.agentNodes.add(current);
             }
         }
 
@@ -236,6 +248,13 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("All agents completed, summarizing results");
         String summary = summarizeResults(agentOutputs);
         return parseAgentResponse(summary);
+    }
+
+    private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
+        agentOutputs.put(agentName, response);
+        finishedAgents.add(agentName);
+        processingAgents.remove(agentName);
+        return parseAgentResponse(extractFinalResponse(response));
     }
 
     private String extractFinalResponse(List<Message> messages) {
@@ -331,7 +350,7 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     private String buildInterpreterPrompt() {
-        StringBuilder prompt = new StringBuilder(INTERPRETER_PROMPT_BASE);
+        StringBuilder prompt = new StringBuilder(getInterpreterPromptBase());
         prompt.append("\nAvailable agents and their capabilities:\n");
 
         if (agents.isEmpty()) {

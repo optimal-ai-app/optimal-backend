@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -44,10 +45,17 @@ public class GetTasksforGoalTool implements Tool {
             }
 
             StringBuilder response = new StringBuilder();
-            response.append("Here are the existing tasks for this goal:\n\n");
+            HashSet<UUID> sharedUUIDs = new HashSet<>();
+
+            response.append("Here are the existing tasks for this goal, note that some tasks may be repeating:\n\n");
             for (int i = 0; i < tasks.size(); i++) {
                 Task task = tasks.get(i);
+                if (sharedUUIDs.contains(task.getSharedId())) {
+                    continue;
+                }
+                sharedUUIDs.add(task.getSharedId()); // Add the shared UUID to the set
                 response.append("**Task ").append(i + 1).append(":**\n");
+                response.append("- Shared ID: ").append(task.getSharedId()).append("\n");
                 response.append("- Title: ").append(task.getTitle()).append("\n");
                 response.append("- Description: ").append(task.getDescription()).append("\n");
                 response.append("- Due Date: ").append(task.getDueDate()).append("\n");

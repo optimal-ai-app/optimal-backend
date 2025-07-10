@@ -1,17 +1,17 @@
 package com.optimal.backend.springboot.service;
 
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.optimal.backend.springboot.domain.entity.Task;
 import com.optimal.backend.springboot.domain.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.stereotype.Service;
-
-import java.sql.Timestamp;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.Calendar;
 
 @Service
 @RequiredArgsConstructor
@@ -56,12 +56,12 @@ public class TaskService {
 
         Task firstTask = null;
         boolean firstTaskCreated = false;
+        UUID sharedId = UUID.randomUUID();
 
         while (!calendar.getTime().after(repeatEndDate)) {
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
             String dayName = getDayNameFromCalendar(dayOfWeek);
             String dayAbbrev = getDayAbbreviationFromCalendar(dayOfWeek);
-
             if (repeatDays.stream().anyMatch(d -> 
                 d.equalsIgnoreCase(dayName) || d.equalsIgnoreCase(dayAbbrev))) {
                 Task repeatedTask = new Task();
@@ -72,6 +72,7 @@ public class TaskService {
                 repeatedTask.setUserId(task.getUserId());
                 repeatedTask.setGoalId(task.getGoalId());
                 repeatedTask.setDueDate(new Timestamp(calendar.getTimeInMillis()));
+                repeatedTask.setSharedId(sharedId);
                 if (!firstTaskCreated) {
                     firstTask = taskRepository.save(repeatedTask);
                     firstTaskCreated = true;

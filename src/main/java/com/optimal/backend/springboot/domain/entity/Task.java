@@ -1,12 +1,16 @@
 // src/main/java/com/optimal/backend/springboot/domain/entity/Task.java
 package com.optimal.backend.springboot.domain.entity;
 
-import jakarta.persistence.*;
+import java.sql.Timestamp;
 import java.util.UUID;
 
-import com.optimal.backend.springboot.model.User;
-
-import java.sql.Timestamp;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -48,6 +52,25 @@ public class Task {
     @Column(name = "user_id")
     private UUID userId;
 
+    @Column(name = "shared_id", nullable = true)
+    private UUID sharedId;
+
+    @Override
+    public String toString() {
+        return "Task{" +
+                "taskId=" + taskId +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", createdDate=" + createdDate +
+                ", completedDate=" + completedDate +
+                ", priority='" + priority + '\'' +
+                ", dueDate=" + dueDate +
+                ", status='" + status + '\'' +
+                ", goalId=" + goalId +
+                ", userId=" + userId +
+                ", sharedId=" + sharedId +
+                '}';
+    }
 
     @PrePersist
     protected void onCreate() {

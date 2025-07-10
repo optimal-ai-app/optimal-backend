@@ -35,6 +35,13 @@ public class TaskController {
         task.setStatus("todo");
         task.setPriority(request.getPriority());
         task.setGoalId(request.getGoalId());
+
+        System.out.println("--------------------------------");
+        System.out.println("task: " + task.toString());
+        System.out.println("request: " + request.getRepeatEndDate());
+        System.out.println("request repeat days: " + String.join(", ", request.getRepeatDays() != null ? request.getRepeatDays().toArray(new String[0]) : new String[]{}));
+        System.out.println("--------------------------------");
+
         return ResponseEntity.ok(
                 taskService.createTask(task, request.getRepeatEndDate(), request.getRepeatDays()));
     }

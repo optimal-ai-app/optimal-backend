@@ -33,9 +33,12 @@ langchain4j:
   open-ai:
     chat-model:
       api-key: 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
-  task-agent:
-    name: TaskAgent
-    description: "Can create tasks for a user's goals by understanding the user's goals."
+  task-planner-agent:
+    name: TaskPlannerAgent
+    description: 'Can plan tasks for a user given details about a goal.'
+  task-creator-agent:
+    name: TaskCreatorAgent
+    description: 'Can create tasks for a user given details about the task from the task planner.'
 
 management:
   endpoint:
