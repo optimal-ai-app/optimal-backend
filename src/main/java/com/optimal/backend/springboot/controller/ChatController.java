@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.optimal.backend.springboot.agent.framework.agents.TaskCreatorAgent;
 import com.optimal.backend.springboot.agent.framework.agents.TaskPlannerAgent;
+import com.optimal.backend.springboot.agent.framework.agents.GoalCreatorAgent;
 import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
@@ -29,6 +30,9 @@ public class ChatController {
 
     @Autowired
     private TaskCreatorAgent taskCreatorAgent;
+
+    @Autowired
+    private GoalCreatorAgent goalCreatorAgent;
 
     @Autowired
     private LlmClient llmClient;
@@ -76,6 +80,7 @@ public class ChatController {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
                 newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
+                newSupervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
                 return newSupervisor;
             });
 
