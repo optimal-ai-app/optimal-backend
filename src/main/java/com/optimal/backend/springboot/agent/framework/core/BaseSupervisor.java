@@ -41,62 +41,42 @@ public class BaseSupervisor implements SupervisorInterface {
         // LlmClient will be injected by Spring via @Autowired
     }
 
-    private String getInterpreterPromptBase() {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("""
-            You are an intelligent task coordinator that analyzes user requests and determines which agents should execute to fulfill the request.
+    private static final String INTERPRETER_PROMPT = """ 
+        SYSTEM
+        You are Task-Orchestrator v2. Return ONLY a JSON array of agent nodes (see INTERFACE).
 
-            Your job is to:
-            1. Analyze the user's input to understand what they want to accomplish
-            2. Determine which agents are needed to complete the task
-            3. Identify any dependencies between agents (which agents must finish before others can start)
-            4. Provide specific instructions for each agent
+        AVAILABLE AGENTS
+        - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
+        - TaskPlannerAgent ➜ Required whenever a user wants to come up with a task. This is always the first agent to select for creation. 
+        - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
 
-            Available Agents:
-            """);
+        AGENT-SELECTION GUIDELINES
+        1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
+        2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
+        3. TaskPlannerAgent is mandatory for any task-planning; it depends on GoalCreatorAgent only when that agent is included.
+        4. TaskCreatorAgent always depends on TaskPlannerAgent.
+        5. Ensure a valid DAG—no circular dependencies.
 
-        // Add each agent and its description
-        for (Map.Entry<String, BaseAgent> entry : agents.entrySet()) {
-            prompt.append("- ").append(entry.getKey()).append(": ")
-                  .append(entry.getValue().getDescription()).append("\n");
+        INTERFACE (must match exactly)
+        [
+        {
+        "name": "AgentName",
+        "instruction": "Specific instruction for this agent",
+        "dependency": ["AgentName1", "AgentName2"]
         }
+        ]
 
-        prompt.append("""
-
-            AGENT SELECTION INTELLIGENCE:
+        NSTRUCTION INTELLIGENCE:
             - Be SPECIFIC about what the agent should accomplish
             - Include relevant context from the user's request
             - Reference specific goals, targets, or requirements mentioned
             - Don't just say "handle the user's request" - explain WHAT specifically to do
 
-            INSTRUCTION INTELLIGENCE:
-            - Be SPECIFIC about what the agent should accomplish
-            - Include relevant context from the user's request
-            - Reference specific goals, targets, or requirements mentioned
-            - Don't just say "handle the user's request" - explain WHAT specifically to do
-            """);
-
-        return prompt.toString();
-    }
-
-    private static final String INTERPRETER_PROMPT_RULES = """
-            You MUST respond with a valid JSON array of agent nodes. Each agent node must have this exact structure:
-            {
-                "name": "AgentName",
-                "instruction": "Specific instruction for this agent",
-                "dependency": ["AgentName1", "AgentName2"]
-            }
-
-            Rules:
-            - The array CANNOT be empty, if there is only one agent, return an array with that agent
-            - "name" must be exactly one of the available agent names listed above
-            - "instruction" should be a clear, specific task for that agent
-            - "dependency" is an array of agent names that must complete before this agent can start (empty array [] if no dependencies)
-            - The dependency system creates a Directed Acyclic Graph (DAG) - agents with no dependencies run first, then agents whose dependencies are complete
-            - DO NOT create circular dependencies
-            - ONLY use agent names that exist in the available agents list above
-
-            Always respond with valid JSON only - no additional text or explanation.
+        RULES
+        • The JSON array cannot be empty.  
+        • Use only the three agent names above.  
+        • Output valid JSON—no extra text, comments, or explanations.
+            
             """;
 
     @Override
@@ -326,34 +306,11 @@ public class BaseSupervisor implements SupervisorInterface {
     @Override
     public Queue<AgentNode> interpret(List<Message> userInput) {
         List<Message> contexts = userInput;
-        String systemPrompt = buildInterpreterPrompt();
 
-        LlmResponse response = llmClient.generate(systemPrompt, contexts, new ArrayList<>());
+        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, new ArrayList<>());
         return parseAgentNodes(response.getContent());
     }
 
-    
-    private String buildInterpreterPrompt() {
-        StringBuilder prompt = new StringBuilder(getInterpreterPromptBase());
-        prompt.append("\nAvailable agents and their capabilities:\n");
-
-        if (agents.isEmpty()) {
-            prompt.append("- No agents are currently registered\n");
-        } else {
-            agents.forEach((name, agent) -> {
-                String description = agent.getDescription();
-                if (description == null || description.trim().isEmpty()) {
-                    description = "Agent for handling " + name.toLowerCase() + " related tasks";
-                }
-                prompt.append("- ").append(name).append(": ").append(description).append("\n");
-            });
-        }
-
-        prompt.append(INTERPRETER_PROMPT_RULES);
-        // DO NOT use GeneralPromptAppender here - it adds wrong JSON format for
-        // interpreter
-        return prompt.toString();
-    }
 
     private boolean areDependenciesMet(AgentNode current, Set<String> finishedAgents) {
         return current.getDependencies().stream().allMatch(finishedAgents::contains);
