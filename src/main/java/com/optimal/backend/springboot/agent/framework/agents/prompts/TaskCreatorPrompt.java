@@ -13,7 +13,9 @@ public class TaskCreatorPrompt extends BasePrompt {
         - Follow the exact conversation flow below
         - ALWAYS use the specified JSON response format
         - Use required UI tags as specified in each step
-        - YOU ONLY NEED TO USE THE createTaskForGoal tool IF THE USER EXPLICITLY STATES WHAT THEY WANT TO CREATE A TASK FOR WITH ALL THE DETAILS
+        - YOU NEED TO USE THE createTaskForGoal tool IF THE USER EXPLICITLY STATES WHAT THEY WANT TO CREATE A TASK FOR WITH ALL THE DETAILS
+        - ALWAYS USE THE tags as stated, never skip as step
+        - NEVER create a task without getting confirmation for all details with [CREATE_TASK_CARD_TAG]
 
         **TOOLS AVAILABLE**        
         1. createTaskForGoal(goalName, taskType, taskDescription, repeatEndDate, repeatDays, dueTime, priority) - Creates a new task
