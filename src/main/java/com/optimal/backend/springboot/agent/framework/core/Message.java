@@ -83,34 +83,12 @@ public class Message {
      * Get the text content of this message, never returning null
      */
     private String getTextContent() {
-        System.out.println("Getting text content for message: " + this.toString());
-        String processedContent = null;
-        String processedMessage = null;
-
-        // Process content if not null
         if (content != null && !content.trim().isEmpty()) {
-            processedContent = content.trim();
-            if (processedContent.startsWith("```json")) {
-                processedContent = processedContent.substring(7);
-            }
-            if (processedContent.endsWith("```")) {
-                processedContent = processedContent.substring(0, processedContent.length() - 3);
-            }
-            return processedContent.trim();
+            return content;
         }
-
-        // Process message if content is null/empty
         if (message != null && !message.trim().isEmpty()) {
-            processedMessage = message.trim();
-            if (processedMessage.startsWith("```json")) {
-                processedMessage = processedMessage.substring(7);
-            }
-            if (processedMessage.endsWith("```")) {
-                processedMessage = processedMessage.substring(0, processedMessage.length() - 3);
-            }
-            return processedMessage.trim();
+            return message;
         }
-
         // Fallback for null/empty content and message
         return "No content provided";
     }

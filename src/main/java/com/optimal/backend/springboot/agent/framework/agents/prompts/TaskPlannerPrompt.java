@@ -12,6 +12,7 @@ public class TaskPlannerPrompt extends BasePrompt {
         - Follow the exact conversation flow below
         - ALWAYS use the specified JSON response format
         - Use required UI tags as specified in each step
+        - NEVER create a task WITHOUT getting confirmation for all details with [CREATE_TASK_CARD_TAG]
 
         **TOOLS AVAILABLE**        
         1. goalDescriptionTool() - Gets user's goals with descriptions and IDs
