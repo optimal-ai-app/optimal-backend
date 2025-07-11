@@ -1,28 +1,28 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
-import com.optimal.backend.springboot.agent.framework.core.Tool;
-import com.optimal.backend.springboot.agent.framework.core.UserContext;
-import com.optimal.backend.springboot.service.GoalService;
-import com.optimal.backend.springboot.domain.entity.Goal;
-import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
-
-import dev.langchain4j.agent.tool.ToolParameters;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Arrays;
-import java.util.Optional;
-import java.util.ArrayList;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.optimal.backend.springboot.agent.framework.core.Tool;
+import com.optimal.backend.springboot.agent.framework.core.UserContext;
+import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
+import com.optimal.backend.springboot.domain.entity.Goal;
+import com.optimal.backend.springboot.service.GoalService;
+
+import dev.langchain4j.agent.tool.ToolParameters;
 
 @Component
 public class GoalAgentCreateGoalTool implements Tool {
@@ -171,7 +171,8 @@ public class GoalAgentCreateGoalTool implements Tool {
                 "Requires goalTitle, goalDescription (optional), and dueTime.";
     }
 
-    @Override
+
+     @Override
     public ToolParameters getParameters() {
         return ToolParameters.builder()
                 .type("object")
@@ -181,7 +182,7 @@ public class GoalAgentCreateGoalTool implements Tool {
                         "dueTime", Map.of("type", "string", "description",
                                 "The due date for the goal. Can be ISO date (yyyy-MM-dd) or other formats (MM/dd/yyyy, MM-dd-yyyy). " +
                                 "Goals cannot have due dates in the past."),
-                        "tags", Map.of("type", "array", "description", "Optional array of tags for the goal")))
+                        "tags", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Optional array of tags for the goal")))
                 .required(Arrays.asList("goalTitle", "dueTime"))
                 .build();
     }
