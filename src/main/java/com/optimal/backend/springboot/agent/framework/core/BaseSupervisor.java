@@ -21,7 +21,7 @@ import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptA
 public class BaseSupervisor implements SupervisorInterface {
     private final Map<String, BaseAgent> agents = new HashMap<>();
     private String handoffAgent = null;
-    private Queue<AgentNode> agentNodes = null;
+    private Queue<AgentNode> agentNodes = new LinkedList<>();
     private final Map<String, List<Message>> agentOutputs = new HashMap<>();
     private final Set<String> finishedAgents = new HashSet<>();
     private final Set<String> processingAgents = new HashSet<>();
@@ -98,16 +98,6 @@ public class BaseSupervisor implements SupervisorInterface {
 
             Always respond with valid JSON only - no additional text or explanation.
             """;
-
-    private static final String SUMMARIZER_PROMPT = String.format(
-            """
-                    You are a concise summarizer that reviews the entire conversation between the user and agents.
-
-                    1. a brief, user-friendly string describing what was done.
-
-                    Rules:
-                    - "summary" should use first-person ("I created 3 goals…").
-                    """);
 
     @Override
     public void addAgent(String name, BaseAgent agent) {
@@ -200,11 +190,11 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("\n\nHandoff to Supervisor\n\n");
 
         // First, ask the LLM which agents should handle this request
-
+        String lastAgent = null;
         while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
             AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
-
+            lastAgent = agentName;
             System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
             if (!processingAgents.add(agentName)) {
@@ -245,12 +235,13 @@ public class BaseSupervisor implements SupervisorInterface {
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
 
-        System.out.println("All agents completed, summarizing results");
-        String summary = summarizeResults(agentOutputs);
-        return parseAgentResponse(summary);
+        System.out.println("All agents completed, sending final response");
+        return parseAgentResponse(extractFinalResponse(agentOutputs.get(lastAgent)));
     }
 
     private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
+        System.out.println("Saving agent output for " + agentName);
+        System.out.println("Response: " + response);
         agentOutputs.put(agentName, response);
         finishedAgents.add(agentName);
         processingAgents.remove(agentName);
@@ -275,8 +266,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(response);
 
-                String content = jsonNode.has("summary") ? jsonNode.get("summary").asText()
-                        : jsonNode.has("content") ? jsonNode.get("content").asText() : response;
+                String content = jsonNode.has("content") ? jsonNode.get("content").asText() : response;
 
                 List<String> tags = new ArrayList<>();
                 if (jsonNode.has("tags") && jsonNode.get("tags").isArray()) {
@@ -342,13 +332,7 @@ public class BaseSupervisor implements SupervisorInterface {
         return parseAgentNodes(response.getContent());
     }
 
-    @Override
-    public String summarize(List<Message> contexts) {
-        String enhancedPrompt = GeneralPromptAppender.appendGeneralInstructions(SUMMARIZER_PROMPT);
-        LlmResponse response = llmClient.generate(enhancedPrompt, contexts, new ArrayList<>());
-        return response.getContent();
-    }
-
+    
     private String buildInterpreterPrompt() {
         StringBuilder prompt = new StringBuilder(getInterpreterPromptBase());
         prompt.append("\nAvailable agents and their capabilities:\n");
@@ -389,17 +373,9 @@ public class BaseSupervisor implements SupervisorInterface {
         return context;
     }
 
-    private String summarizeResults(Map<String, List<Message>> agentOutputs) {
-        List<Message> summaryContext = new ArrayList<>(agentOutputs.get("user"));
-        agentOutputs.entrySet().stream()
-                .filter(e -> !e.getKey().equals("user"))
-                .forEach(e -> summaryContext.addAll(e.getValue()));
 
-        return summarize(summaryContext);
-    }
 
     private Queue<AgentNode> parseAgentNodes(String responseContent) {
-        Queue<AgentNode> agentNodes = new LinkedList<>();
 
         System.out.println("Parsing LLM response for agent selection:");
         System.out.println("Response content: " + responseContent);
@@ -421,7 +397,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 for (JsonNode node : rootNode) {
                     AgentNode agentNode = parseAgentNode(node);
                     if (agentNode != null) {
-                        agentNodes.add(agentNode);
+                        this.agentNodes.add(agentNode);
                         System.out.println("Successfully parsed agent: " + agentNode.getName());
                     }
                 }

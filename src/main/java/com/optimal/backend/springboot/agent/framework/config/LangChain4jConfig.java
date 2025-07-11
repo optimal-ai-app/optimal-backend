@@ -1,11 +1,12 @@
 package com.optimal.backend.springboot.agent.framework.config;
 
-import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.chat.DisabledChatLanguageModel;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.chat.DisabledChatLanguageModel;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 
 /**
  * Configuration class for LangChain4j integration

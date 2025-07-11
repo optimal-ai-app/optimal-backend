@@ -14,5 +14,5 @@ public interface SupervisorInterface {
 
     Queue<AgentNode> interpret(List<Message> userInput);
 
-    String summarize(List<Message> contexts);
+    // String summarize(List<Message> contexts);
 }
