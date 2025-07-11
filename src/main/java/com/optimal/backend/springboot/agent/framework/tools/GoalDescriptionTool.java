@@ -69,9 +69,8 @@ public class GoalDescriptionTool implements Tool {
         return ToolParameters.builder()
                 .type("object")
                 .properties(Map.of(
-                // No parameters needed - userId comes from UserContext
-                ))
-                .required(Arrays.asList())
+                        "userId", Map.of("type", "string", "description", "The user's UUID")))
+                .required(Arrays.asList("userId"))
                 .build();
     }
 }
