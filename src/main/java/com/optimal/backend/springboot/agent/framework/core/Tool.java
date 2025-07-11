@@ -1,7 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
-import dev.langchain4j.agent.tool.ToolParameters;
 import dev.langchain4j.agent.tool.JsonSchemaProperty;
+import dev.langchain4j.agent.tool.ToolParameters;
 
 /**
  * Interface that all tools must implement to be used by agents
@@ -43,8 +43,10 @@ public interface Tool {
      * @return ToolParameters object defining the tool's input schema
      */
     default ToolParameters getParameters() {
-        // Default implementation returns empty parameters
-        return ToolParameters.builder().build();
+        // Default implementation returns empty parameters with a non-null properties map
+        return ToolParameters.builder()
+                .properties(java.util.Collections.emptyMap())
+                .build();
     }
 
     /**

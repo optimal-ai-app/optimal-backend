@@ -76,7 +76,7 @@ public abstract class BaseAgent {
 
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
             String responseContent = getResponseContent(response);
-            responseContent = responseContent.replace("```json", "").replace("```", "");
+
             System.out.println("LLM Response: " + responseContent);
             System.out.println("Has tool calls: " + response.hasToolCalls());
 

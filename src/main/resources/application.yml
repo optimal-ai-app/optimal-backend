@@ -39,6 +39,9 @@ langchain4j:
   task-creator-agent:
     name: TaskCreatorAgent
     description: 'Can create tasks for a user given details about the task from the task planner.'
+  goal-creator-agent:
+    name: GoalCreatorAgent
+    description: 'Can create goals for a user by helping the user figure out their aspirations and use that to fulfill their ambitions.'
 
 management:
   endpoint:

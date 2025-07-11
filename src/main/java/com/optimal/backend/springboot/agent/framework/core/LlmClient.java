@@ -1,16 +1,16 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import dev.langchain4j.agent.tool.ToolSpecification;
+import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.agent.tool.ToolSpecification;
-import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.List;
-import java.util.ArrayList;
 
 @Component
 public class LlmClient {
@@ -83,9 +83,7 @@ public class LlmClient {
         String promptText = (systemPrompt != null && !systemPrompt.trim().isEmpty()) ? systemPrompt
                 : "No system prompt provided";
 
-        String content = "This is a simulated response from an LLM. " +
-                "In a real implementation, this would be replaced with an actual API call to an LLM service. " +
-                "The response would be generated based on the input prompt: " + promptText;
+        String content = "LLM ERROR";
 
         LlmResponse response = new LlmResponse(content);
 
