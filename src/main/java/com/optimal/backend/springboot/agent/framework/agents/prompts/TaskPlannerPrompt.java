@@ -13,7 +13,7 @@ public class TaskPlannerPrompt extends BasePrompt {
         "content": string,
         "tags": string[],
         "readyToHandoff": boolean,
-        "data": object|null
+        "data": object|array|null
         }
 
         #### TOOLS
@@ -27,20 +27,15 @@ public class TaskPlannerPrompt extends BasePrompt {
         ---
 
         ### STEP 1 — GOAL_DISCOVERY
-        **Call the tool**
-        ```json
-        { "tool": "goalDescriptionTool", "args": {} }
-        ```
+        **Call the tool** goalDescriptionTool
 
         **Then respond**
-        ```json
         {
         "content": "Which goal would you like to create a task for?",
         "tags": ["CONFIRM_TAG"],
         "readyToHandoff": false,
         "data": { "options": ["Goal 1", "Goal 2", "Goal 3"] }
         }
-        ```
 
         ---
 
@@ -48,27 +43,23 @@ public class TaskPlannerPrompt extends BasePrompt {
         1. Call `getTasksforGoal(<goalTitle>)`.
         2. Propose **one** new task that meets the REFERENCE rules.
 
-        ```json
         {
         "content": "Here’s a task that will move you forward:",
         "tags": ["CONFIRM_TAG"],
         "readyToHandoff": false,
         "data": { "options": ["<task idea>", "Suggest something else"] }
         }
-        ```
 
         ---
 
         ### STEP 3 — TASK_CONFIRMATION
         If user accepts:
-        ```json
         {
         "content": "Added “<task>” to goal “<goal>”. Why: <brief reason>",
         "tags": [],
         "readyToHandoff": true,
         "data": null
         }
-        ```
         If user wants another idea → return to **STEP 2**.
 
         ### CRITICAL RULES

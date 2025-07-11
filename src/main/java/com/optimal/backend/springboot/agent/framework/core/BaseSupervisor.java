@@ -390,28 +390,11 @@ public class BaseSupervisor implements SupervisorInterface {
         }
 
         String cleaned = responseContent.trim();
-        
-        // Remove markdown code blocks if present
-        if (cleaned.startsWith("```json") || cleaned.startsWith("```JSON")) {
-            // Find the opening ```json or ```JSON
-            int startIndex = cleaned.indexOf('\n');
-            if (startIndex != -1) {
-                cleaned = cleaned.substring(startIndex + 1);
-            }
-        } else if (cleaned.startsWith("```")) {
-            // Handle generic ``` blocks
-            int startIndex = cleaned.indexOf('\n');
-            if (startIndex != -1) {
-                cleaned = cleaned.substring(startIndex + 1);
-            }
-        }
-        
-        // Remove closing ``` if present
-        if (cleaned.endsWith("```")) {
-            int endIndex = cleaned.lastIndexOf("```");
-            cleaned = cleaned.substring(0, endIndex);
-        }
-        
+
+        // Remove all occurrences of code block markers (```json, ```JSON, and ```)
+        cleaned = cleaned.replaceAll("(?i)```json", "");
+        cleaned = cleaned.replaceAll("(?i)```", "");
+
         return cleaned.trim();
     }
 
