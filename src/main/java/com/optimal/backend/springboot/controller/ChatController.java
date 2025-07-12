@@ -45,10 +45,11 @@ public class ChatController {
         try {
             // Extract userId from request
             String date = (String) request.get("date");
+            String chatId = (String) request.get("chatId");
             String userId = (String) request.get("userId");
-            if (userId == null || userId.trim().isEmpty()) {
+            if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
-                errorResponse.put("content", "userId is required");
+                errorResponse.put("content", "chatId and userId are required");
                 errorResponse.put("tags", new ArrayList<>());
                 errorResponse.put("readyToHandoff", false);
                 return ResponseEntity.badRequest().body(errorResponse);
@@ -56,9 +57,12 @@ public class ChatController {
 
             // Set userId in ThreadLocal context for tools to access
             UserContext.setUserId(userId);
-            System.out.println("=== ChatController: Set userId in context: " + userId);
+            UserContext.setChatId(chatId);
+            System.out.println("=== ChatController: Set userId in context: " + userId + "\nand chatId: " + chatId);
 
             @SuppressWarnings("unchecked")
+            // Extract messages from request - each message has a role (e.g. user/assistant)
+            // and content
             List<Map<String, Object>> messages = (List<Map<String, Object>>) request.get("messages");
 
             // Create a new list with userId as system message at the front
@@ -76,7 +80,7 @@ public class ChatController {
                     .forEach(convertedMessages::add);
 
             // Get or create user-specific supervisor with manually injected dependencies
-            BaseSupervisor userSupervisor = userSupervisors.computeIfAbsent(userId, id -> {
+            BaseSupervisor userSupervisor = userSupervisors.computeIfAbsent(chatId, id -> {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
                 newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);

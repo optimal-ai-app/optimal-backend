@@ -10,12 +10,26 @@ import java.util.UUID;
 public class UserContext {
 
     private static final ThreadLocal<UUID> currentUserId = new ThreadLocal<>();
+    private static final ThreadLocal<UUID> currentChatId = new ThreadLocal<>();
 
     /**
      * Set the current user ID for this thread
      */
     public static void setUserId(UUID userId) {
         currentUserId.set(userId);
+    }
+
+    /**
+     * Set the current chat ID for this thread
+     */
+    public static void setChatId(UUID chatId) {
+        currentChatId.set(chatId);
+    }
+
+    public static void setChatId(String chatId) {
+        if (chatId != null && !chatId.trim().isEmpty()) {
+            currentChatId.set(UUID.fromString(chatId));
+        }
     }
 
     /**

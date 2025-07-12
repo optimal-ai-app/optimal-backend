@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
 import com.optimal.backend.springboot.domain.entity.Task;
 import com.optimal.backend.springboot.domain.repository.TaskRepository;
 
@@ -129,6 +130,25 @@ public class TaskService {
     }
 
     public Task updateTask(Task task) {
+        return taskRepository.save(task);
+    }
+
+    public Task updateTask(UpdateTaskRequest request) {
+        System.out.println("--------------------------------");
+        System.out.println("request: " + request.toString());
+        System.out.println("--------------------------------");
+        Task task = taskRepository.findById(request.getTaskId())
+                .orElseThrow(() -> new RuntimeException("Task not found"));
+        task.setStatus(request.getStatus());
+        if (request.getCompletionDate() != null && !request.getCompletionDate().isEmpty()) {
+            // Convert ISO timestamp to SQL timestamp format
+            String isoTimestamp = request.getCompletionDate().replace("T", " ").replace("Z", "");
+            task.setCompletedDate(Timestamp.valueOf(isoTimestamp));
+        } else {
+            task.setCompletedDate(null);
+        }
+        String isoTimestamp = request.getUpdatedAt().replace("T", " ").replace("Z", "");
+        task.setUpdatedAt(Timestamp.valueOf(isoTimestamp));
         return taskRepository.save(task);
     }
 

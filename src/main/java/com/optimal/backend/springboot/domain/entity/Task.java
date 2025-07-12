@@ -11,11 +11,9 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 
-@Getter
-@Setter
+@Data
 @Entity
 @Table(name = "tasks")
 public class Task {
@@ -34,7 +32,7 @@ public class Task {
     @Column(name = "created_date", nullable = false)
     private Timestamp createdDate;
 
-    @Column(name="completed_date")
+    @Column(name = "completed_date")
     private Timestamp completedDate;
 
     @Column(name = "priority", nullable = false)
@@ -54,6 +52,9 @@ public class Task {
 
     @Column(name = "shared_id", nullable = true)
     private UUID sharedId;
+
+    @Column(name = "updated_at", nullable = true, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
+    private Timestamp updatedAt;
 
     @Override
     public String toString() {

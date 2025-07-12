@@ -2,6 +2,7 @@
 package com.optimal.backend.springboot.controller;
 
 import com.optimal.backend.springboot.controller.RequestClasses.CreateTaskRequest;
+import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
 import com.optimal.backend.springboot.domain.entity.Task;
 import com.optimal.backend.springboot.service.TaskService;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,11 @@ public class TaskController {
 
         return ResponseEntity.ok(
                 taskService.createTask(task, request.getRepeatEndDate(), request.getRepeatDays()));
+    }
+
+    @PostMapping("/update")
+    public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request) {
+        return ResponseEntity.ok(taskService.updateTask(request));
     }
 
     @DeleteMapping("/{taskId}")

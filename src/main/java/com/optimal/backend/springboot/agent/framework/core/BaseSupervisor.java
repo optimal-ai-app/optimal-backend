@@ -16,7 +16,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.interfaces.SupervisorInterface;
-import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
 
 public class BaseSupervisor implements SupervisorInterface {
     private final Map<String, BaseAgent> agents = new HashMap<>();
@@ -389,7 +388,6 @@ public class BaseSupervisor implements SupervisorInterface {
         }
 
         String cleaned = responseContent.trim();
-
         // Remove all occurrences of code block markers (```json, ```JSON, and ```)
         cleaned = cleaned.replaceAll("(?i)```json", "");
         cleaned = cleaned.replaceAll("(?i)```", "");
