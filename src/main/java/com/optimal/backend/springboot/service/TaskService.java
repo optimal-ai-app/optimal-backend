@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.optimal.backend.springboot.domain.entity.Task;
 import com.optimal.backend.springboot.domain.repository.TaskRepository;
@@ -62,8 +63,7 @@ public class TaskService {
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
             String dayName = getDayNameFromCalendar(dayOfWeek);
             String dayAbbrev = getDayAbbreviationFromCalendar(dayOfWeek);
-            if (repeatDays.stream().anyMatch(d -> 
-                d.equalsIgnoreCase(dayName) || d.equalsIgnoreCase(dayAbbrev))) {
+            if (repeatDays.stream().anyMatch(d -> d.equalsIgnoreCase(dayName) || d.equalsIgnoreCase(dayAbbrev))) {
                 Task repeatedTask = new Task();
                 repeatedTask.setTitle(task.getTitle());
                 repeatedTask.setDescription(task.getDescription());
@@ -132,8 +132,22 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @Transactional
     public void deleteTask(UUID id) {
         taskRepository.deleteById(id);
+    }
+
+    @Transactional
+    public void deleteAllRelatedTasks(UUID sharedId) {
+        taskRepository.deleteAllBySharedId(sharedId);
+    }
+
+    @Transactional
+    public void deleteTaskAndAfter(UUID taskId) {
+        System.out.println("--------------------------------");
+        System.out.println("taskId: " + taskId);
+        System.out.println("--------------------------------");
+        taskRepository.deleteTaskAndAfter(taskId);
     }
 
 }

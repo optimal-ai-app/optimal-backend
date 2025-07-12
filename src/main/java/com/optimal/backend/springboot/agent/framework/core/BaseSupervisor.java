@@ -27,7 +27,8 @@ public class BaseSupervisor implements SupervisorInterface {
     private final Set<String> processingAgents = new HashSet<>();
     private int maxIterations = 0;
     private int iterations = 0;
-    
+    private String lastAgent = null;
+
     @Autowired
     private LlmClient llmClient;
 
@@ -41,43 +42,43 @@ public class BaseSupervisor implements SupervisorInterface {
         // LlmClient will be injected by Spring via @Autowired
     }
 
-    private static final String INTERPRETER_PROMPT = """ 
-        SYSTEM
-        You are Task-Orchestrator v2. Return ONLY a JSON array of agent nodes (see INTERFACE).
+    private static final String INTERPRETER_PROMPT = """
+            SYSTEM
+            You are Task-Orchestrator v2. Return ONLY a JSON array of agent nodes (see INTERFACE).
 
-        AVAILABLE AGENTS
-        - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-        - TaskPlannerAgent ➜ Required whenever a user wants to come up with a task. This is always the first agent to select for creation. 
-        - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
+            AVAILABLE AGENTS
+            - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
+            - TaskPlannerAgent ➜ Required whenever a user wants to come up with a task. This is always the first agent to select for creation.
+            - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
 
-        AGENT-SELECTION GUIDELINES
-        1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
-        2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
-        3. TaskPlannerAgent is mandatory for any task-planning; it depends on GoalCreatorAgent only when that agent is included.
-        4. TaskCreatorAgent always depends on TaskPlannerAgent.
-        5. Ensure a valid DAG—no circular dependencies.
+            AGENT-SELECTION GUIDELINES
+            1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
+            2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
+            3. TaskPlannerAgent is mandatory for any task-planning; it depends on GoalCreatorAgent only when that agent is included.
+            4. TaskCreatorAgent always depends on TaskPlannerAgent.
+            5. Ensure a valid DAG—no circular dependencies.
 
-        INTERFACE (must match exactly)
-        [
-        {
-        "name": "AgentName",
-        "instruction": "Specific instruction for this agent",
-        "dependency": ["AgentName1", "AgentName2"]
-        }
-        ]
+            INTERFACE (must match exactly)
+            [
+            {
+            "name": "AgentName",
+            "instruction": "Specific instruction for this agent",
+            "dependency": ["AgentName1", "AgentName2"]
+            }
+            ]
 
-        NSTRUCTION INTELLIGENCE:
-            - Be SPECIFIC about what the agent should accomplish
-            - Include relevant context from the user's request
-            - Reference specific goals, targets, or requirements mentioned
-            - Don't just say "handle the user's request" - explain WHAT specifically to do
+            NSTRUCTION INTELLIGENCE:
+                - Be SPECIFIC about what the agent should accomplish
+                - Include relevant context from the user's request
+                - Reference specific goals, targets, or requirements mentioned
+                - Don't just say "handle the user's request" - explain WHAT specifically to do
 
-        RULES
-        • The JSON array cannot be empty.  
-        • Use only the three agent names above.  
-        • Output valid JSON—no extra text, comments, or explanations.
-            
-            """;
+            RULES
+            • The JSON array cannot be empty.
+            • Use only the three agent names above.
+            • Output valid JSON—no extra text, comments, or explanations.
+
+                """;
 
     @Override
     public void addAgent(String name, BaseAgent agent) {
@@ -111,13 +112,13 @@ public class BaseSupervisor implements SupervisorInterface {
         finishedAgents.clear();
         processingAgents.clear();
         iterations = 0;
-        
+
         // Normal supervisor execution - initialize state
         agentOutputs.put("user", userInput);
         System.out.println("Supervisor determining which agents to use...");
         this.agentNodes = interpret(userInput);
         this.maxIterations = this.agentNodes.size() * 2;
-        
+
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
@@ -127,12 +128,13 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
         this.agentNodes.forEach(
                 node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getContent()));
-        
+
         return executeNormal();
     }
 
     private SupervisorResponse executeHandoffAgent(List<Message> userInput) {
         BaseAgent agent = agents.get(handoffAgent);
+        this.lastAgent = handoffAgent;
         if (agent == null) {
             // Agent not found, clear handoff and return to normal execution
             handoffAgent = null;
@@ -150,7 +152,7 @@ public class BaseSupervisor implements SupervisorInterface {
             // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
                 System.out.println("Agent " + handoffAgent + " completed successfully, clearing handoff");
-                saveAgentOutput(handoffAgent, response);
+                saveAgentOutput(handoffAgent, List.of(response.get(response.size() - 1)));
                 handoffAgent = null;
                 return executeNormal(); // Return the result immediately
             }
@@ -170,11 +172,10 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("\n\nHandoff to Supervisor\n\n");
 
         // First, ask the LLM which agents should handle this request
-        String lastAgent = null;
         while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
             AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
-            lastAgent = agentName;
+            this.lastAgent = agentName;
             System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
             if (!processingAgents.add(agentName)) {
@@ -197,7 +198,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 List<Message> response = agent.run(context);
 
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
-         
+
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     System.out.println("Agent " + agentName + " requesting handoff control");
@@ -261,7 +262,8 @@ public class BaseSupervisor implements SupervisorInterface {
                 Map<String, Object> data = new HashMap<>();
                 if (jsonNode.has("data")) {
                     JsonNode dataNode = jsonNode.get("data");
-                    data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
+                    data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {
+                    });
                 }
 
                 return new SupervisorResponse(content, tags, readyToHandoff, data);
@@ -311,7 +313,6 @@ public class BaseSupervisor implements SupervisorInterface {
         return parseAgentNodes(response.getContent());
     }
 
-
     private boolean areDependenciesMet(AgentNode current, Set<String> finishedAgents) {
         return current.getDependencies().stream().allMatch(finishedAgents::contains);
     }
@@ -329,8 +330,6 @@ public class BaseSupervisor implements SupervisorInterface {
 
         return context;
     }
-
-
 
     private Queue<AgentNode> parseAgentNodes(String responseContent) {
 
