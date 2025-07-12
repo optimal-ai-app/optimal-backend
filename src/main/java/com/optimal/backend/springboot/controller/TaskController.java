@@ -39,7 +39,8 @@ public class TaskController {
         System.out.println("--------------------------------");
         System.out.println("task: " + task.toString());
         System.out.println("request: " + request.getRepeatEndDate());
-        System.out.println("request repeat days: " + String.join(", ", request.getRepeatDays() != null ? request.getRepeatDays().toArray(new String[0]) : new String[]{}));
+        System.out.println("request repeat days: " + String.join(", ",
+                request.getRepeatDays() != null ? request.getRepeatDays().toArray(new String[0]) : new String[] {}));
         System.out.println("--------------------------------");
 
         return ResponseEntity.ok(
@@ -52,4 +53,16 @@ public class TaskController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/shared/{sharedId}")
+    public ResponseEntity<Void> deleteAllRelatedTasks(@PathVariable UUID sharedId) {
+        taskService.deleteAllRelatedTasks(sharedId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/after/{taskId}")
+    public ResponseEntity<Void> deleteTaskAndAfter(@PathVariable UUID taskId) {
+
+        taskService.deleteTaskAndAfter(taskId);
+        return ResponseEntity.noContent().build();
+    }
 }

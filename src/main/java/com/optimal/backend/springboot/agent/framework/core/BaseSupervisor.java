@@ -27,7 +27,8 @@ public class BaseSupervisor implements SupervisorInterface {
     private final Set<String> processingAgents = new HashSet<>();
     private int maxIterations = 0;
     private int iterations = 0;
-    
+    private String lastAgent = null;
+
     @Autowired
     private LlmClient llmClient;
 
@@ -41,63 +42,43 @@ public class BaseSupervisor implements SupervisorInterface {
         // LlmClient will be injected by Spring via @Autowired
     }
 
-    private String getInterpreterPromptBase() {
-        StringBuilder prompt = new StringBuilder();
-        prompt.append("""
-            You are an intelligent task coordinator that analyzes user requests and determines which agents should execute to fulfill the request.
+    private static final String INTERPRETER_PROMPT = """
+            SYSTEM
+            You are Task-Orchestrator v2. Return ONLY a JSON array of agent nodes (see INTERFACE).
 
-            Your job is to:
-            1. Analyze the user's input to understand what they want to accomplish
-            2. Determine which agents are needed to complete the task
-            3. Identify any dependencies between agents (which agents must finish before others can start)
-            4. Provide specific instructions for each agent
+            AVAILABLE AGENTS
+            - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
+            - TaskPlannerAgent ➜ Required whenever a user wants to come up with a task. This is always the first agent to select for creation.
+            - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
 
-            Available Agents:
-            """);
+            AGENT-SELECTION GUIDELINES
+            1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
+            2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
+            3. TaskPlannerAgent is mandatory for any task-planning; it depends on GoalCreatorAgent only when that agent is included.
+            4. TaskCreatorAgent always depends on TaskPlannerAgent.
+            5. Ensure a valid DAG—no circular dependencies.
 
-        // Add each agent and its description
-        for (Map.Entry<String, BaseAgent> entry : agents.entrySet()) {
-            prompt.append("- ").append(entry.getKey()).append(": ")
-                  .append(entry.getValue().getDescription()).append("\n");
-        }
-
-        prompt.append("""
-
-            AGENT SELECTION INTELLIGENCE:
-            - Be SPECIFIC about what the agent should accomplish
-            - Include relevant context from the user's request
-            - Reference specific goals, targets, or requirements mentioned
-            - Don't just say "handle the user's request" - explain WHAT specifically to do
-
-            INSTRUCTION INTELLIGENCE:
-            - Be SPECIFIC about what the agent should accomplish
-            - Include relevant context from the user's request
-            - Reference specific goals, targets, or requirements mentioned
-            - Don't just say "handle the user's request" - explain WHAT specifically to do
-            """);
-
-        return prompt.toString();
-    }
-
-    private static final String INTERPRETER_PROMPT_RULES = """
-            You MUST respond with a valid JSON array of agent nodes. Each agent node must have this exact structure:
+            INTERFACE (must match exactly)
+            [
             {
-                "name": "AgentName",
-                "instruction": "Specific instruction for this agent",
-                "dependency": ["AgentName1", "AgentName2"]
+            "name": "AgentName",
+            "instruction": "Specific instruction for this agent",
+            "dependency": ["AgentName1", "AgentName2"]
             }
+            ]
 
-            Rules:
-            - The array CANNOT be empty, if there is only one agent, return an array with that agent
-            - "name" must be exactly one of the available agent names listed above
-            - "instruction" should be a clear, specific task for that agent
-            - "dependency" is an array of agent names that must complete before this agent can start (empty array [] if no dependencies)
-            - The dependency system creates a Directed Acyclic Graph (DAG) - agents with no dependencies run first, then agents whose dependencies are complete
-            - DO NOT create circular dependencies
-            - ONLY use agent names that exist in the available agents list above
+            NSTRUCTION INTELLIGENCE:
+                - Be SPECIFIC about what the agent should accomplish
+                - Include relevant context from the user's request
+                - Reference specific goals, targets, or requirements mentioned
+                - Don't just say "handle the user's request" - explain WHAT specifically to do
 
-            Always respond with valid JSON only - no additional text or explanation.
-            """;
+            RULES
+            • The JSON array cannot be empty.
+            • Use only the three agent names above.
+            • Output valid JSON—no extra text, comments, or explanations.
+
+                """;
 
     @Override
     public void addAgent(String name, BaseAgent agent) {
@@ -131,13 +112,13 @@ public class BaseSupervisor implements SupervisorInterface {
         finishedAgents.clear();
         processingAgents.clear();
         iterations = 0;
-        
+
         // Normal supervisor execution - initialize state
         agentOutputs.put("user", userInput);
         System.out.println("Supervisor determining which agents to use...");
         this.agentNodes = interpret(userInput);
         this.maxIterations = this.agentNodes.size() * 2;
-        
+
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
@@ -147,12 +128,13 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
         this.agentNodes.forEach(
                 node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getContent()));
-        
+
         return executeNormal();
     }
 
     private SupervisorResponse executeHandoffAgent(List<Message> userInput) {
         BaseAgent agent = agents.get(handoffAgent);
+        this.lastAgent = handoffAgent;
         if (agent == null) {
             // Agent not found, clear handoff and return to normal execution
             handoffAgent = null;
@@ -170,7 +152,7 @@ public class BaseSupervisor implements SupervisorInterface {
             // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
                 System.out.println("Agent " + handoffAgent + " completed successfully, clearing handoff");
-                saveAgentOutput(handoffAgent, response);
+                saveAgentOutput(handoffAgent, List.of(response.get(response.size() - 1)));
                 handoffAgent = null;
                 return executeNormal(); // Return the result immediately
             }
@@ -190,11 +172,10 @@ public class BaseSupervisor implements SupervisorInterface {
         System.out.println("\n\nHandoff to Supervisor\n\n");
 
         // First, ask the LLM which agents should handle this request
-        String lastAgent = null;
         while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
             AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
-            lastAgent = agentName;
+            this.lastAgent = agentName;
             System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
             if (!processingAgents.add(agentName)) {
@@ -217,7 +198,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 List<Message> response = agent.run(context);
 
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
-         
+
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     System.out.println("Agent " + agentName + " requesting handoff control");
@@ -281,7 +262,8 @@ public class BaseSupervisor implements SupervisorInterface {
                 Map<String, Object> data = new HashMap<>();
                 if (jsonNode.has("data")) {
                     JsonNode dataNode = jsonNode.get("data");
-                    data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {});
+                    data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {
+                    });
                 }
 
                 return new SupervisorResponse(content, tags, readyToHandoff, data);
@@ -326,33 +308,9 @@ public class BaseSupervisor implements SupervisorInterface {
     @Override
     public Queue<AgentNode> interpret(List<Message> userInput) {
         List<Message> contexts = userInput;
-        String systemPrompt = buildInterpreterPrompt();
 
-        LlmResponse response = llmClient.generate(systemPrompt, contexts, new ArrayList<>());
+        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, new ArrayList<>());
         return parseAgentNodes(response.getContent());
-    }
-
-    
-    private String buildInterpreterPrompt() {
-        StringBuilder prompt = new StringBuilder(getInterpreterPromptBase());
-        prompt.append("\nAvailable agents and their capabilities:\n");
-
-        if (agents.isEmpty()) {
-            prompt.append("- No agents are currently registered\n");
-        } else {
-            agents.forEach((name, agent) -> {
-                String description = agent.getDescription();
-                if (description == null || description.trim().isEmpty()) {
-                    description = "Agent for handling " + name.toLowerCase() + " related tasks";
-                }
-                prompt.append("- ").append(name).append(": ").append(description).append("\n");
-            });
-        }
-
-        prompt.append(INTERPRETER_PROMPT_RULES);
-        // DO NOT use GeneralPromptAppender here - it adds wrong JSON format for
-        // interpreter
-        return prompt.toString();
     }
 
     private boolean areDependenciesMet(AgentNode current, Set<String> finishedAgents) {
@@ -372,8 +330,6 @@ public class BaseSupervisor implements SupervisorInterface {
 
         return context;
     }
-
-
 
     private Queue<AgentNode> parseAgentNodes(String responseContent) {
 
@@ -433,28 +389,11 @@ public class BaseSupervisor implements SupervisorInterface {
         }
 
         String cleaned = responseContent.trim();
-        
-        // Remove markdown code blocks if present
-        if (cleaned.startsWith("```json") || cleaned.startsWith("```JSON")) {
-            // Find the opening ```json or ```JSON
-            int startIndex = cleaned.indexOf('\n');
-            if (startIndex != -1) {
-                cleaned = cleaned.substring(startIndex + 1);
-            }
-        } else if (cleaned.startsWith("```")) {
-            // Handle generic ``` blocks
-            int startIndex = cleaned.indexOf('\n');
-            if (startIndex != -1) {
-                cleaned = cleaned.substring(startIndex + 1);
-            }
-        }
-        
-        // Remove closing ``` if present
-        if (cleaned.endsWith("```")) {
-            int endIndex = cleaned.lastIndexOf("```");
-            cleaned = cleaned.substring(0, endIndex);
-        }
-        
+
+        // Remove all occurrences of code block markers (```json, ```JSON, and ```)
+        cleaned = cleaned.replaceAll("(?i)```json", "");
+        cleaned = cleaned.replaceAll("(?i)```", "");
+
         return cleaned.trim();
     }
 
