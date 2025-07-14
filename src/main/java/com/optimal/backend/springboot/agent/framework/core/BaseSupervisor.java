@@ -90,12 +90,15 @@ public class BaseSupervisor implements SupervisorInterface {
         public List<String> tags;
         public boolean readyToHandoff;
         public Map<String, Object> data;
+        public boolean reInterpret;
 
-        public SupervisorResponse(String content, List<String> tags, boolean readyToHandoff, Map<String, Object> data) {
+        public SupervisorResponse(String content, List<String> tags, boolean readyToHandoff, Map<String, Object> data,
+                boolean reInterpret) {
             this.content = content;
             this.tags = tags != null ? tags : new ArrayList<>();
             this.readyToHandoff = readyToHandoff;
             this.data = data;
+            this.reInterpret = reInterpret;
         }
     }
 
@@ -106,27 +109,20 @@ public class BaseSupervisor implements SupervisorInterface {
             return executeHandoffAgent(userInput);
         }
 
-        // Reset state for new execution
-        agentOutputs.clear();
-        finishedAgents.clear();
-        processingAgents.clear();
-        iterations = 0;
-
         // Normal supervisor execution - initialize state
-        agentOutputs.put("user", userInput);
+        this.agentOutputs.put("user", userInput);
         System.out.println("Supervisor determining which agents to use...");
-        this.agentNodes = interpret(userInput);
-        this.maxIterations = this.agentNodes.size() * 2;
+        interpret(userInput);
 
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
-                    new ArrayList<>(), true, new HashMap<>());
+                    new ArrayList<>(), true, new HashMap<>(), false);
         }
 
         System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
         this.agentNodes.forEach(
-                node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getContent()));
+                node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getMessage()));
 
         return executeNormal();
     }
@@ -150,9 +146,15 @@ public class BaseSupervisor implements SupervisorInterface {
             // If agent is ready to handoff, clear the handoff agent and return the result
             // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
-                System.out.println("Agent " + handoffAgent + " completed successfully, clearing handoff");
-                saveAgentOutput(handoffAgent, List.of(response.get(response.size() - 1)));
+                String savedName = this.handoffAgent;
                 handoffAgent = null;
+                List<Message> finalMessage = List.of(response.get(response.size() - 1));
+                if (parsedResponse.reInterpret) {
+                    System.out.println("Agent " + savedName + " requesting re-interpretation");
+                    return executeWithHandoff(finalMessage);
+                }
+                System.out.println("Agent " + savedName + " completed successfully, clearing handoff");
+                saveAgentOutput(savedName, finalMessage);
                 return executeNormal(); // Return the result immediately
             }
 
@@ -183,7 +185,9 @@ public class BaseSupervisor implements SupervisorInterface {
             }
 
             if (areDependenciesMet(current, finishedAgents)) {
-                List<Message> context = buildAgentContext(current, agentOutputs);
+                System.out.println("\n\nBuilding agent context for: " + agentName + "\n\n");
+                List<Message> context = buildAgentContext(current);
+                System.out.println("HERE");
                 System.out.println("\n\nHandoff to Agent: " + agentName + "\n\n");
 
                 BaseAgent agent = agents.get(agentName);
@@ -216,13 +220,13 @@ public class BaseSupervisor implements SupervisorInterface {
         }
 
         System.out.println("All agents completed, sending final response");
-        return parseAgentResponse(extractFinalResponse(agentOutputs.get(lastAgent)));
+        return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 
     private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
         System.out.println("Saving agent output for " + agentName);
         System.out.println("Response: " + response);
-        agentOutputs.put(agentName, response);
+        this.agentOutputs.put(agentName, response);
         finishedAgents.add(agentName);
         processingAgents.remove(agentName);
         return parseAgentResponse(extractFinalResponse(response));
@@ -265,14 +269,16 @@ public class BaseSupervisor implements SupervisorInterface {
                     });
                 }
 
-                return new SupervisorResponse(content, tags, readyToHandoff, data);
+                boolean reInterpret = jsonNode.has("reInterpret") ? jsonNode.get("reInterpret").asBoolean() : false;
+
+                return new SupervisorResponse(content, tags, readyToHandoff, data, reInterpret);
             }
         } catch (Exception e) {
             // Not JSON, treat as plain text
         }
 
         // Default response format for plain text
-        return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>());
+        return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>(), false);
     }
 
     // Legacy method for backward compatibility
@@ -305,28 +311,44 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     @Override
-    public Queue<AgentNode> interpret(List<Message> userInput) {
+    public void interpret(List<Message> userInput) {
+        this.iterations = 0;
+        this.agentOutputs.clear();
+        this.finishedAgents.clear();
+        this.processingAgents.clear();
         List<Message> contexts = userInput;
 
         LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, new ArrayList<>());
-        return parseAgentNodes(response.getContent());
+        this.agentNodes = parseAgentNodes(response.getContent());
+        this.maxIterations = this.agentNodes.size() * 2;
     }
 
     private boolean areDependenciesMet(AgentNode current, Set<String> finishedAgents) {
         return current.getDependencies().stream().allMatch(finishedAgents::contains);
     }
 
-    private List<Message> buildAgentContext(AgentNode current, Map<String, List<Message>> agentOutputs) {
-        List<Message> context = new ArrayList<>(current.getInstructions());
-
+    private List<Message> buildAgentContext(AgentNode current) {
+        // Null-safe creation of context - getInstructions() could return null
+        List<Message> instructions = current.getInstructions();
+        System.out.println("Instructions: " + instructions);
+        System.out.println("--------------------------------");
+        List<Message> context = instructions != null ? new ArrayList<>(instructions) : new ArrayList<>();
+        System.out.println("Context: " + context);
+        System.out.println("--------------------------------");
         for (String dep : current.getDependencies()) {
-            context.addAll(agentOutputs.getOrDefault(dep, List.of()));
+            context.addAll(this.agentOutputs.getOrDefault(dep, List.of()));
         }
+        System.out.println("Dependencies: " + current.getDependencies());
+        System.out.println("--------------------------------");
 
-        if (current.getDependencies().isEmpty()) {
-            context.addAll(agentOutputs.get("user"));
+        if (current.getDependencies().isEmpty() && this.agentOutputs.get("user") != null) {
+            System.out.println("Adding user input to context");
+            System.out.println("User input: " + this.agentOutputs.get("user"));
+            System.out.println("--------------------------------");
+            context.addAll(this.agentOutputs.get("user"));
         }
-
+        System.out.println("Done Building Context");
+        System.out.println("--------------------------------");
         return context;
     }
 

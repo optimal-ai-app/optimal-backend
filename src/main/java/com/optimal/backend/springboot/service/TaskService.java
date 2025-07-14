@@ -134,9 +134,6 @@ public class TaskService {
     }
 
     public Task updateTask(UpdateTaskRequest request) {
-        System.out.println("--------------------------------");
-        System.out.println("request: " + request.toString());
-        System.out.println("--------------------------------");
         Task task = taskRepository.findById(request.getTaskId())
                 .orElseThrow(() -> new RuntimeException("Task not found"));
         task.setStatus(request.getStatus());

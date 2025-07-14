@@ -12,7 +12,7 @@ public interface SupervisorInterface {
 
     String execute(List<Message> userInput);
 
-    Queue<AgentNode> interpret(List<Message> userInput);
+    void interpret(List<Message> userInput);
 
     // String summarize(List<Message> contexts);
 }
