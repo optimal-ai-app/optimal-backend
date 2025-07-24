@@ -249,8 +249,20 @@ public class BaseSupervisor implements SupervisorInterface {
             if (response.trim().startsWith("{") && response.trim().endsWith("}")) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(response);
-
+                
                 String content = jsonNode.has("content") ? jsonNode.get("content").asText() : response;
+
+                // WIP: attempt to fix JSON string issue 
+
+                // String content;
+                // if (jsonNode.has("content")) {
+                //     content = jsonNode.get("content").asText();
+                // } else if (jsonNode.has("summary")) {
+                //     // Fallback to summary field if present
+                //     content = jsonNode.get("summary").asText();
+                // } else {
+                //     content = response;
+                // }
 
                 List<String> tags = new ArrayList<>();
                 if (jsonNode.has("tags") && jsonNode.get("tags").isArray()) {

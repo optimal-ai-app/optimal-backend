@@ -51,6 +51,11 @@ public class GoalAgentCreateGoalTool implements Tool {
             String goalDescription = inputNode.has("goalDescription") && !inputNode.get("goalDescription").isNull()
                     ? inputNode.get("goalDescription").asText()
                     : null;
+
+            // Truncate description to 300 characters if necessary
+            if (goalDescription != null && goalDescription.length() > 300) {
+                goalDescription = goalDescription.substring(0, 300);
+            }
             
             // Parse tags (optional)
             String[] tags = null;
@@ -168,7 +173,7 @@ public class GoalAgentCreateGoalTool implements Tool {
     public String getDescription() {
         return "Creates a goal for a user with a simple due date. " +
                 "Uses the current user context automatically. " +
-                "Requires goalTitle, goalDescription (optional), and dueTime.";
+                "Requires goalTitle, goalDescription (optional), dueTime, and tags (optional).";
     }
 
 
