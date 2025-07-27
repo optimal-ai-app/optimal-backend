@@ -10,5 +10,6 @@ import java.util.UUID;
 @Repository
 public interface DiaryLogRepository extends JpaRepository<DiaryLog, UUID> {
     List<DiaryLog> findAllByUserId(UUID userId);
-    List<DiaryLog> findByUserIdOrderByCreatedAtDesc(UUID userId);
+
+    List<DiaryLog> findByUserIdOrderByDateDesc(UUID userId);
 }

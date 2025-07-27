@@ -1,12 +1,15 @@
 package com.optimal.backend.springboot.domain.entity;
 
-import jakarta.persistence.*;
+import java.util.UUID;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
 
 @Getter
 @Setter
@@ -16,11 +19,13 @@ import java.util.UUID;
 public class Tag {
 
     @Id
-    private UUID id;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "tag_id")
+    private UUID tagId;
 
     @Column(nullable = false, unique = true)
     private String name;
 
-    @ManyToMany(mappedBy = "tags", fetch = FetchType.LAZY)
-    private Set<DiaryLog> diaryLogs = new HashSet<>();
+    @Column(name = "diary_log_id", nullable = false)
+    private UUID diaryLogId;
 }

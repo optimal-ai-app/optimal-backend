@@ -42,6 +42,9 @@ langchain4j:
   goal-creator-agent:
     name: GoalCreatorAgent
     description: 'Can create goals for a user by helping the user figure out their aspirations and use that to fulfill their ambitions.'
+  diary-log-agent:
+    name: DiaryLogAgent
+    description: 'Can analyze diary log transcripts to generate summaries and relevant tags, and identify goals and tasks that need to be updated.'
 
 management:
   endpoint:
