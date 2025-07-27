@@ -23,6 +23,9 @@ public class GoalController {
     @PostMapping("/create")
     public ResponseEntity<Goal> createGoal(@RequestBody CreateGoalRequest request) {
         try {
+            System.out.println("=== /api/goals/create received ===");
+            System.out.println("request.userId = " + request.getUserId());
+            System.out.println("title           = " + request.getTitle());
             Goal createdGoal = goalService.createGoal(request);
             return ResponseEntity.ok(createdGoal);
         } catch (Exception e) {
