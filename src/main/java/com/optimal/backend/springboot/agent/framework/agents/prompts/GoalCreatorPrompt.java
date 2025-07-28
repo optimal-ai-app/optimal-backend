@@ -45,11 +45,11 @@ public class GoalCreatorPrompt extends BasePrompt {
         }
 
         **STEP 2: Goal Creation**
-        - If the user says: "I have created the goal, thank you for your help!"
+        - If the user confirms creation by replying "Add Goal":
             - Set readyToHandoff: true
-            - Return the following response:
+            - Respond exactly with:
             {
-                "content": "I have created the goal, thank you for your help!",
+                "content": "I have created the goal and updated your goal list. Is there anything else I can assist you with? Perhaps creating tasks for this goal?",
                 "tags": [],
                 "readyToHandoff": true,
                 "data": null

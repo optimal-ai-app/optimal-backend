@@ -47,13 +47,13 @@ public class BaseSupervisor implements SupervisorInterface {
 
             AVAILABLE AGENTS
             - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-            - TaskPlannerAgent ➜ Required whenever a user wants to come up with a task. This is always the first agent to select for creation.
+            - TaskPlannerAgent ➜ Use **only** when the **latest** user message explicitly asks to create, plan, or add tasks. Never include it just because a goal was created in a previous turn.
             - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
 
             AGENT-SELECTION GUIDELINES
             1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
             2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
-            3. TaskPlannerAgent is mandatory for any task-planning; it depends on GoalCreatorAgent only when that agent is included.
+            3. Include TaskPlannerAgent **only if** the most recent user utterance contains verbs like “create a task”, “plan tasks”, “schedule”, “add task”, etc. Do **NOT** include it automatically after a goal is created.
             4. TaskCreatorAgent always depends on TaskPlannerAgent.
             5. Ensure a valid DAG—no circular dependencies.
 
@@ -136,9 +136,14 @@ public class BaseSupervisor implements SupervisorInterface {
             return executeNormal();
         }
 
+        System.out.printf("[HANDOFF] Executing agent %s with user follow-up.\n", handoffAgent);
+
         try {
             List<Message> response = agent.run(userInput);
             String finalResponse = extractFinalResponse(response);
+            String preview = finalResponse;
+            if (preview.length() > 200) preview = preview.substring(0, 200) + "…";
+            System.out.printf("[HANDOFF] %s returned: %s%n", handoffAgent, preview);
 
             // Parse the agent response to check for handoff decision
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
@@ -153,7 +158,7 @@ public class BaseSupervisor implements SupervisorInterface {
                     System.out.println("Agent " + savedName + " requesting re-interpretation");
                     return executeWithHandoff(finalMessage);
                 }
-                System.out.println("Agent " + savedName + " completed successfully, clearing handoff");
+                System.out.println("[HANDOFF] Agent " + savedName + " completed successfully, clearing handoff");
                 saveAgentOutput(savedName, finalMessage);
                 return executeNormal(); // Return the result immediately
             }
@@ -179,6 +184,8 @@ public class BaseSupervisor implements SupervisorInterface {
             this.lastAgent = agentName;
             System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
+            System.out.printf("[SUPERVISOR] handoffAgent=%s finished=%s queueRemaining=%d%n", handoffAgent, finishedAgents, agentNodes.size());
+
             if (!processingAgents.add(agentName)) {
                 System.err.println("Dependency cycle detected at: " + agentName);
                 throw new IllegalStateException("Dependency cycle at: " + agentName);
@@ -187,6 +194,11 @@ public class BaseSupervisor implements SupervisorInterface {
             if (areDependenciesMet(current, finishedAgents)) {
                 System.out.println("\n\nBuilding agent context for: " + agentName + "\n\n");
                 List<Message> context = buildAgentContext(current);
+
+                // Log context summary (to avoid huge dumps)
+                if (!context.isEmpty()) {
+                    System.out.printf("[AGENT_RUN] %s context size=%d first='%s' last='%s'%n", agentName, context.size(), context.get(0).getContent(), context.get(context.size() - 1).getContent());
+                }
                 System.out.println("HERE");
                 System.out.println("\n\nHandoff to Agent: " + agentName + "\n\n");
 
@@ -199,6 +211,10 @@ public class BaseSupervisor implements SupervisorInterface {
                 }
 
                 List<Message> response = agent.run(context);
+
+                String preview = extractFinalResponse(response);
+                if (preview.length() > 200) preview = preview.substring(0, 200) + "…";
+                System.out.printf("[AGENT_RUN] %s returned: %s%n", agentName, preview);
 
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
 
@@ -324,6 +340,12 @@ public class BaseSupervisor implements SupervisorInterface {
 
     @Override
     public void interpret(List<Message> userInput) {
+        // --- DEBUG LOG ----------------------------------------------------
+        if (!userInput.isEmpty()) {
+            Message lastMsg = userInput.get(userInput.size() - 1);
+            System.out.printf("[INTERPRETER] Incoming user message (%s): %s%n", lastMsg.getRole(), lastMsg.getContent());
+        }
+
         this.iterations = 0;
         this.agentOutputs.clear();
         this.finishedAgents.clear();
@@ -331,7 +353,12 @@ public class BaseSupervisor implements SupervisorInterface {
         List<Message> contexts = userInput;
 
         LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, new ArrayList<>());
+
+        System.out.println("[INTERPRETER] Raw LLM response: " + response.getContent());
+
         this.agentNodes = parseAgentNodes(response.getContent());
+
+        System.out.println("[INTERPRETER] Parsed agent list: " + this.agentNodes + "\n------------------------------------------------------------------");
         this.maxIterations = this.agentNodes.size() * 2;
     }
 
