@@ -1,12 +1,15 @@
 // src/main/java/com/optimal/backend/springboot/domain/repository/GoalRepository.java
-package com.optimal.backend.springboot.domain.repository;
+package com.optimal.backend.springboot.database.repository;
 
-import com.optimal.backend.springboot.domain.entity.Goal;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.optimal.backend.springboot.database.entity.Goal;
 
 @Repository
 public interface GoalRepository extends JpaRepository<Goal, UUID> {

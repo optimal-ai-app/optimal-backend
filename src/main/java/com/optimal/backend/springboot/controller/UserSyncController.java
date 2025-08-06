@@ -1,13 +1,14 @@
 package com.optimal.backend.springboot.controller;
 
-import com.optimal.backend.springboot.model.User;
-import com.optimal.backend.springboot.model.UserRole;
-import com.optimal.backend.springboot.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+
+import com.optimal.backend.springboot.database.entity.User;
+import com.optimal.backend.springboot.database.entity.UserRole;
+import com.optimal.backend.springboot.database.repository.UserRepository;
 
 import java.util.Map;
 import java.util.UUID;

@@ -1,4 +1,4 @@
-package com.optimal.backend.springboot.domain.entity;
+package com.optimal.backend.springboot.database.entity;
 
 public enum PersonalityEnum {
     GOGGINS,

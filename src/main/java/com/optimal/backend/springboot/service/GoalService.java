@@ -1,18 +1,20 @@
 // src/main/java/com/optimal/backend/springboot/service/GoalService.java
 package com.optimal.backend.springboot.service;
 
-import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
-import com.optimal.backend.springboot.domain.entity.Goal;
-import com.optimal.backend.springboot.domain.repository.GoalRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+
+import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
+import com.optimal.backend.springboot.database.entity.Goal;
+import com.optimal.backend.springboot.database.repository.GoalRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

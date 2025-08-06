@@ -19,8 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
-import com.optimal.backend.springboot.domain.entity.Goal;
-import com.optimal.backend.springboot.domain.entity.Task;
+import com.optimal.backend.springboot.database.entity.Goal;
+import com.optimal.backend.springboot.database.entity.Task;
 import com.optimal.backend.springboot.service.GoalService;
 import com.optimal.backend.springboot.service.TaskService;
 
@@ -108,7 +108,7 @@ public class TaskAgentCreateTaskTool implements Tool {
             UUID goalId = null;
             Goal goal = null;
             if (goalName != null && userId != null) {
-                Optional<Goal> goalOpt = goalService.getGoalByUserIdAndTitle(userId, goalName);
+                Optional<Goal> goalOpt = (Optional<Goal>) goalService.getGoalByUserIdAndTitle(userId, goalName);
                 if (goalOpt.isPresent()) {
                     goal = goalOpt.get();
                     goalId = goal.getId();

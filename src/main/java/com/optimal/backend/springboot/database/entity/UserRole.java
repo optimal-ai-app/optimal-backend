@@ -1,4 +1,4 @@
-package com.optimal.backend.springboot.model;
+package com.optimal.backend.springboot.database.entity;
 
 /**
  * Created on Ağustos, 2020

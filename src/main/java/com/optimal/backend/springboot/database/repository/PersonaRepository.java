@@ -1,14 +1,17 @@
 // src/main/java/com/optimal/backend/springboot/domain/repository/PersonaRepository.java
-package com.optimal.backend.springboot.domain.repository;
-
-import com.optimal.backend.springboot.domain.entity.Persona;
-import org.springframework.data.jpa.repository.*;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
+package com.optimal.backend.springboot.database.repository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.optimal.backend.springboot.database.entity.Persona;
 
 @Repository
 public interface PersonaRepository extends JpaRepository<Persona, UUID> {

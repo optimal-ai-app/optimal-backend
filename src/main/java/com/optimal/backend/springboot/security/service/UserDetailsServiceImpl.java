@@ -1,8 +1,5 @@
 package com.optimal.backend.springboot.security.service;
 
-import com.optimal.backend.springboot.model.User;
-import com.optimal.backend.springboot.model.UserRole;
-import com.optimal.backend.springboot.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -10,6 +7,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+
+import com.optimal.backend.springboot.database.entity.User;
+import com.optimal.backend.springboot.database.entity.UserRole;
+import com.optimal.backend.springboot.database.repository.UserRepository;
 
 import java.util.Collections;
 import java.util.UUID;

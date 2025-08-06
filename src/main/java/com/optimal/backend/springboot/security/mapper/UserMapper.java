@@ -1,11 +1,12 @@
 package com.optimal.backend.springboot.security.mapper;
 
-import com.optimal.backend.springboot.model.User;
-import com.optimal.backend.springboot.security.dto.AuthenticatedUserDto;
-import com.optimal.backend.springboot.security.dto.RegistrationRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
+
+import com.optimal.backend.springboot.database.entity.User;
+import com.optimal.backend.springboot.security.dto.AuthenticatedUserDto;
+import com.optimal.backend.springboot.security.dto.RegistrationRequest;
 
 /**
  * Created on Ağustos, 2020

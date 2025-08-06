@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.optimal.backend.springboot.controller.RequestClasses.CreateTaskRequest;
 import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
-import com.optimal.backend.springboot.domain.entity.Task;
+import com.optimal.backend.springboot.database.entity.Task;
 import com.optimal.backend.springboot.service.TaskService;
 
 import lombok.RequiredArgsConstructor;

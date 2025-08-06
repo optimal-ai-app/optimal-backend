@@ -1,14 +1,16 @@
 // src/main/java/com/optimal/backend/springboot/service/PersonaService.java
 package com.optimal.backend.springboot.service;
 
-import com.optimal.backend.springboot.domain.entity.Persona;
-import com.optimal.backend.springboot.domain.repository.PersonaRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import com.optimal.backend.springboot.database.entity.Persona;
+import com.optimal.backend.springboot.database.repository.PersonaRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

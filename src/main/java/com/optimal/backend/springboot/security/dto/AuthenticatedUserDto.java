@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.security.dto;
 
-import com.optimal.backend.springboot.model.UserRole;
+import com.optimal.backend.springboot.database.entity.UserRole;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

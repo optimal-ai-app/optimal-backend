@@ -15,7 +15,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
-import com.optimal.backend.springboot.domain.entity.Task;
+import com.optimal.backend.springboot.database.entity.Task;
 import com.optimal.backend.springboot.service.TaskService;
 
 import dev.langchain4j.agent.tool.ToolParameters;

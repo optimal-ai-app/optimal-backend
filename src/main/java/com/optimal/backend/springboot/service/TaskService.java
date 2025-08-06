@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
-import com.optimal.backend.springboot.domain.entity.Task;
-import com.optimal.backend.springboot.domain.repository.TaskRepository;
+import com.optimal.backend.springboot.database.entity.Task;
+import com.optimal.backend.springboot.database.repository.TaskRepository;
 
 import lombok.RequiredArgsConstructor;
 

@@ -1,5 +1,5 @@
 // src/main/java/com/optimal/backend/springboot/domain/entity/Task.java
-package com.optimal.backend.springboot.domain.entity;
+package com.optimal.backend.springboot.database.entity;
 
 import java.sql.Timestamp;
 import java.util.UUID;

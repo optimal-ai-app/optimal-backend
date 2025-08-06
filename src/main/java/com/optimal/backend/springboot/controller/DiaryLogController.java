@@ -12,11 +12,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.agents.DiaryLogAgent;
 import com.optimal.backend.springboot.agent.framework.core.Message;
-import com.optimal.backend.springboot.controller.RequestClasses.CreateDiaryLogRequest;
-import com.optimal.backend.springboot.domain.entity.DiaryLog;
-import com.optimal.backend.springboot.domain.repository.DiaryLogRepository;
-import com.optimal.backend.springboot.domain.repository.TagRepository;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
+import com.optimal.backend.springboot.controller.RequestClasses.CreateDiaryLogRequest;
+import com.optimal.backend.springboot.database.entity.DiaryLog;
+import com.optimal.backend.springboot.database.repository.DiaryLogRepository;
+import com.optimal.backend.springboot.database.repository.TagRepository;
 
 @RestController
 @RequestMapping("/api/diary")

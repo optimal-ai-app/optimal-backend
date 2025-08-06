@@ -1,9 +1,9 @@
 package com.optimal.backend.springboot.security.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.optimal.backend.springboot.model.User;
-import com.optimal.backend.springboot.model.UserRole;
-import com.optimal.backend.springboot.repository.UserRepository;
+import com.optimal.backend.springboot.database.entity.User;
+import com.optimal.backend.springboot.database.entity.UserRole;
+import com.optimal.backend.springboot.database.repository.UserRepository;
 import com.optimal.backend.springboot.security.dto.AuthenticatedUserDto;
 import com.optimal.backend.springboot.security.dto.RegistrationRequest;
 import com.optimal.backend.springboot.security.dto.RegistrationResponse;

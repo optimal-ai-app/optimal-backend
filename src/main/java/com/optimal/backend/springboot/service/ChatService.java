@@ -1,15 +1,19 @@
 package com.optimal.backend.springboot.service;
 
-import com.optimal.backend.springboot.domain.entity.Conversation;
-import com.optimal.backend.springboot.domain.entity.Message;
-import com.optimal.backend.springboot.domain.repository.ConversationRepository;
-import com.optimal.backend.springboot.domain.repository.MessageRepository;
-import lombok.RequiredArgsConstructor;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.sql.Timestamp;
+import com.optimal.backend.springboot.database.entity.Conversation;
+import com.optimal.backend.springboot.database.entity.Message;
+import com.optimal.backend.springboot.database.repository.ConversationRepository;
+import com.optimal.backend.springboot.database.repository.MessageRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

@@ -1,14 +1,20 @@
 // src/main/java/com/optimal/backend/springboot/controller/PersonaController.java
 package com.optimal.backend.springboot.controller;
 
-import com.optimal.backend.springboot.domain.entity.Persona;
-import com.optimal.backend.springboot.service.PersonaService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.optimal.backend.springboot.database.entity.Persona;
+import com.optimal.backend.springboot.service.PersonaService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequiredArgsConstructor

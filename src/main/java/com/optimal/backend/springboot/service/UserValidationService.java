@@ -1,12 +1,14 @@
 package com.optimal.backend.springboot.service;
 
-import com.optimal.backend.springboot.utils.ExceptionMessageAccessor;
+import org.springframework.stereotype.Service;
+
+import com.optimal.backend.springboot.database.repository.UserRepository;
 import com.optimal.backend.springboot.exceptions.RegistrationException;
-import com.optimal.backend.springboot.repository.UserRepository;
 import com.optimal.backend.springboot.security.dto.RegistrationRequest;
+import com.optimal.backend.springboot.utils.ExceptionMessageAccessor;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
 
 /**
  * Created on Ağustos, 2020

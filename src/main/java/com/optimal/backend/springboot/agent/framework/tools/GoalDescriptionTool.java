@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
-import com.optimal.backend.springboot.domain.entity.Goal;
+import com.optimal.backend.springboot.database.entity.Goal;
 import com.optimal.backend.springboot.service.GoalService;
 
 import dev.langchain4j.agent.tool.ToolParameters;

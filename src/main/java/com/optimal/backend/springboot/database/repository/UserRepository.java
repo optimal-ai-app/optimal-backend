@@ -1,10 +1,10 @@
-package com.optimal.backend.springboot.repository;
-
-import com.optimal.backend.springboot.model.User;
-import org.springframework.data.jpa.repository.JpaRepository;
+package com.optimal.backend.springboot.database.repository;
 
 import java.util.UUID;
-import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.optimal.backend.springboot.database.entity.User;
 
 /**
  * Created on Ağustos, 2020
