@@ -74,29 +74,8 @@ public class LlmClient {
         } catch (Exception e) {
             // Fallback to simulated response if LangChain4j fails
             System.err.println("LangChain4j failed, falling back to simulation: " + e.getMessage());
-            return createSimulatedResponse(systemPrompt, tools);
+            return new LlmResponse("LLM ERROR");
         }
     }
 
-    private LlmResponse createSimulatedResponse(String systemPrompt, List<Tool> tools) {
-        // Ensure systemPrompt is not null for the simulated response
-        String promptText = (systemPrompt != null && !systemPrompt.trim().isEmpty()) ? systemPrompt
-                : "No system prompt provided";
-
-        String content = "LLM ERROR";
-
-        LlmResponse response = new LlmResponse(content);
-
-        // For demonstration purposes, simulate tool calls if tools are available
-        if (tools != null && !tools.isEmpty() && Math.random() > 0.7) {
-            // Simulate a tool call
-            ToolCall toolCall = new ToolCall();
-            toolCall.setId("call_" + System.currentTimeMillis());
-            toolCall.setName("exampleTool");
-            toolCall.setInput("example input");
-            response.addToolCall(toolCall);
-        }
-
-        return response;
-    }
 }

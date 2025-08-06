@@ -20,7 +20,7 @@ public class LangChain4jConfig {
     @Value("${langchain4j.open-ai.chat-model.model-name:gpt-4o-mini}")
     private String modelName;
 
-    @Value("${langchain4j.open-ai.chat-model.temperature:0.7}")
+    @Value("${langchain4j.open-ai.chat-model.temperature:0.2}")
     private Double temperature;
 
     @Value("${langchain4j.open-ai.chat-model.max-tokens:1000}")
