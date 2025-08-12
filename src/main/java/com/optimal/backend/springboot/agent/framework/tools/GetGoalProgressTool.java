@@ -31,9 +31,8 @@ public class GetGoalProgressTool implements Tool {
                 response.append("Goal ID: ").append(gp.getGoalId()).append("\n");
                 response.append("Goal Type: ").append(gp.getGoalType()).append("\n");
                 response.append("Total Units: ").append(gp.getTotalUnits()).append("\n");
-                if(gp.getUnitOfMeasure() != null) {
-                    response.append("Unit of Measure: ").append(gp.getUnitOfMeasure()).append("\n\n");
-                }
+                response.append("Completed Units: ").append(gp.getCompletedUnits()).append("\n");
+                response.append("Updated At: ").append(gp.getUpdatedAt()).append("\n\n");
             }
             return response.toString();
         } catch (JsonProcessingException e) {

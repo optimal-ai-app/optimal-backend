@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import com.optimal.backend.springboot.database.entity.GoalProgress;
 
-public interface GoalProgressPrepository extends JpaRepository<GoalProgress, UUID> {
+public interface GoalProgressRepository extends JpaRepository<GoalProgress, UUID> {
     @Query("SELECT g FROM GoalProgress g WHERE g.goalId = :goalId")
     List<GoalProgress> findByGoalId(@Param("goalId") UUID goalId);
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PostUpdate;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -33,12 +34,12 @@ public class GoalProgress {
 
     @Column(name = "total_units", nullable = false)
     private Double totalUnits;
-    
+
     @Column(name = "completed_units", nullable = false)
     private Double completedUnits;
 
-    @Column(name = "unit_of_measure", length = 64)
-    private String unitOfMeasure;
+    @Column(name = "score", nullable = false)
+    private Double score;
 
     @Column(name = "updated_at", nullable = false)
     private Timestamp updatedAt;
@@ -56,5 +57,10 @@ public class GoalProgress {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = new Timestamp(System.currentTimeMillis());
+    }
+
+    @PostUpdate
+    protected void onUpdateScore() {
+        this.score = this.completedUnits / this.totalUnits;
     }
 }

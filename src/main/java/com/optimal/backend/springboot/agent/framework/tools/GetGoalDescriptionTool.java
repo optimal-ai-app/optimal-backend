@@ -16,7 +16,7 @@ import com.optimal.backend.springboot.service.GoalService;
 import dev.langchain4j.agent.tool.ToolParameters;
 
 @Component
-public class GoalDescriptionTool implements Tool {
+public class GetGoalDescriptionTool implements Tool {
     @Override
     public String getName() {
         return "goalDescriptionTool";
