@@ -47,7 +47,7 @@ public class GoalDescriptionTool implements Tool {
                 response.append("- Description: ").append(goal.getDescription()).append("\n");
                 response.append("- End Date: ").append(goal.getDueDate()).append("\n");
                 response.append("- Status: ").append(goal.getStatus()).append("\n\n");
-                response.append("- Goal UUID: ").append(goal.getId()).append("\n\n");
+                response.append("- Goal ID: ").append(goal.getId()).append("\n\n");
             }
 
             return response.toString();
