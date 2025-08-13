@@ -7,19 +7,19 @@ import org.springframework.stereotype.Component;
 import com.optimal.backend.springboot.agent.framework.agents.prompts.TaskCreatorPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
-import com.optimal.backend.springboot.agent.framework.tools.TaskAgentCreateTaskTool;
+import com.optimal.backend.springboot.agent.framework.tools.CreateTaskTool;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class TaskCreatorAgent extends BaseAgent {
-    private final TaskAgentCreateTaskTool createTaskTool;
+    private final CreateTaskTool createTaskTool;
 
     @Autowired
     public TaskCreatorAgent(
             @Value("${langchain4j.task-creator-agent.name}") String name,
             @Value("${langchain4j.task-creator-agent.description}") String description,
-            TaskAgentCreateTaskTool createTaskTool,
+            CreateTaskTool createTaskTool,
             LlmClient llmClient) {
         super(name, description, TaskCreatorPrompt.getDefaultPrompt(), llmClient);
         this.createTaskTool = createTaskTool;

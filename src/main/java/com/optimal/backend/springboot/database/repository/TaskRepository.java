@@ -1,5 +1,5 @@
 // src/main/java/com/optimal/backend/springboot/domain/repository/TaskRepository.java
-package com.optimal.backend.springboot.domain.repository;
+package com.optimal.backend.springboot.database.repository;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import com.optimal.backend.springboot.domain.entity.Task;
+import com.optimal.backend.springboot.database.entity.Task;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
@@ -32,6 +32,26 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
       """)
   List<Task> findByUserIdAndGoalTitle(@Param("userId") UUID userId, @Param("goalTitle") String goalTitle);
 
+  @Query("""
+        SELECT t
+          FROM Task t
+         WHERE t.goalId = :goalId AND t.milestone = TRUE
+      ORDER BY t.dueDate ASC, t.createdDate DESC
+      """)
+  List<Task> findMilestonesByGoalId(@Param("goalId") UUID goalId);
+
+  @Query("""
+        SELECT t
+          FROM Task t
+         WHERE t.userId = :userId
+           AND t.dueDate IS NOT NULL
+           AND t.dueDate < :dueDate
+           AND (t.milestone = FALSE OR t.milestone IS NULL)
+      ORDER BY CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
+               t.dueDate ASC
+      """)
+  List<Task> findUserTasksBeforeDueDate(@Param("userId") UUID userId, @Param("dueDate") java.sql.Timestamp dueDate);
+
   @Modifying
   @Query("""
         DELETE FROM Task t
@@ -43,9 +63,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("""
         DELETE FROM Task t2
          WHERE EXISTS (
-             SELECT 1 FROM Task t1 
+             SELECT 1 FROM Task t1
              WHERE t1.id = :taskId
-               AND t2.sharedId = t1.sharedId 
+               AND t2.sharedId = t1.sharedId
                AND t2.dueDate >= t1.dueDate
          )
       """)

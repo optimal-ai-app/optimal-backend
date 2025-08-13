@@ -25,7 +25,7 @@ import com.optimal.backend.springboot.service.GoalService;
 import dev.langchain4j.agent.tool.ToolParameters;
 
 @Component
-public class GoalAgentCreateGoalTool implements Tool {
+public class CreateGoalTool implements Tool {
     @Autowired
     private GoalService goalService;
 

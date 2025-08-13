@@ -31,13 +31,13 @@ public class DiaryLog {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "transcript", nullable = false)
+    @Column(name = "transcript", nullable = false, columnDefinition = "TEXT")
     private String transcript;
 
     @Column(name = "date", nullable = false)
     private Timestamp date;
     
-    @Column(name = "summary", nullable = true)
+    @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
     @PrePersist

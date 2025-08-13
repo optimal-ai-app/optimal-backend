@@ -38,6 +38,12 @@ public class Task {
     @Column(name = "priority", nullable = false)
     private String priority;
 
+    @Column(name = "milestone", nullable = true, columnDefinition = "BOOLEAN DEFAULT FALSE")
+    private Boolean milestone;
+
+    @Column(name = "value", nullable = true)
+    private Double value;
+
     @Column(name = "due_date")
     private Timestamp dueDate;
 

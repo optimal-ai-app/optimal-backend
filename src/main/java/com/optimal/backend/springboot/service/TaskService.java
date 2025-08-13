@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final GoalProgressService goalProgressService;
 
     public List<Task> getAllTasks() {
         return taskRepository.findAll();
@@ -33,11 +34,30 @@ public class TaskService {
         return taskRepository.findByUserIdAndGoalTitle(userId, goalTitle);
     }
 
+    public List<Task> getMilestonesByGoalId(UUID goalId) {
+        return taskRepository.findMilestonesByGoalId(goalId);
+    }
+
+    public List<Task> getUserTasksBeforeDueDate(UUID userId, Timestamp dueDate) {
+        return taskRepository.findUserTasksBeforeDueDate(userId, dueDate);
+    }
+
     public Optional<Task> getTaskById(UUID id) {
         return taskRepository.findById(id);
     }
 
+    public void updateGoalProgress(Task task) {
+        goalProgressService.updateGoalProgress(task);
+    }
+
+    public void addTaskToProgress(Task task) {
+        goalProgressService.addTaskToProgress(task);
+    }
+
     public Task createTask(Task task) {
+        if (task.getMilestone()) {
+            addTaskToProgress(task);
+        }
         return taskRepository.save(task);
     }
 
@@ -72,6 +92,7 @@ public class TaskService {
                 repeatedTask.setStatus(task.getStatus());
                 repeatedTask.setUserId(task.getUserId());
                 repeatedTask.setGoalId(task.getGoalId());
+                repeatedTask.setValue(task.getValue());
                 repeatedTask.setDueDate(new Timestamp(calendar.getTimeInMillis()));
                 repeatedTask.setSharedId(sharedId);
                 if (!firstTaskCreated) {
@@ -83,8 +104,7 @@ public class TaskService {
             }
             calendar.add(Calendar.DAY_OF_MONTH, 1); // Move to next day
         }
-
-        return firstTask;
+        return createTask(firstTask);
     }
 
     private String getDayNameFromCalendar(int dayOfWeek) {
@@ -130,6 +150,7 @@ public class TaskService {
     }
 
     public Task updateTask(Task task) {
+        updateGoalProgress(task);
         return taskRepository.save(task);
     }
 
@@ -146,7 +167,7 @@ public class TaskService {
         }
         String isoTimestamp = request.getUpdatedAt().replace("T", " ").replace("Z", "");
         task.setUpdatedAt(Timestamp.valueOf(isoTimestamp));
-        return taskRepository.save(task);
+        return updateTask(task);
     }
 
     @Transactional

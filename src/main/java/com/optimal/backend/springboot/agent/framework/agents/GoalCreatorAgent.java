@@ -7,22 +7,22 @@ import org.springframework.stereotype.Component;
 import com.optimal.backend.springboot.agent.framework.agents.prompts.GoalCreatorPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
-import com.optimal.backend.springboot.agent.framework.tools.GoalAgentCreateGoalTool;
-import com.optimal.backend.springboot.agent.framework.tools.GoalDescriptionTool;
+import com.optimal.backend.springboot.agent.framework.tools.CreateGoalTool;
+import com.optimal.backend.springboot.agent.framework.tools.GetGoalDescriptionTool;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
 public class GoalCreatorAgent extends BaseAgent {
-    private final GoalAgentCreateGoalTool createGoalTool;
-    private final GoalDescriptionTool goalDescriptionTool;
+    private final CreateGoalTool createGoalTool;
+    private final GetGoalDescriptionTool goalDescriptionTool;
 
     @Autowired
     public GoalCreatorAgent(
             @Value("${langchain4j.goal-creator-agent.name}") String name,
             @Value("${langchain4j.goal-creator-agent.description}") String description,
-            GoalAgentCreateGoalTool createGoalTool,
-            GoalDescriptionTool goalDescriptionTool,
+            CreateGoalTool createGoalTool,
+            GetGoalDescriptionTool goalDescriptionTool,
             LlmClient llmClient) {
         super(name, description, GoalCreatorPrompt.getDefaultPrompt(), llmClient);
         this.createGoalTool = createGoalTool;
