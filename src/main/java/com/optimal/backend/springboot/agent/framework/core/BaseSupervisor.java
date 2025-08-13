@@ -49,6 +49,7 @@ public class BaseSupervisor implements SupervisorInterface {
             - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
             - TaskPlannerAgent ➜ Use **only** when the **latest** user message explicitly asks to create, plan, or add tasks. Never include it just because a goal was created in a previous turn.
             - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
+            - HabitAgent       ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions.
 
             AGENT-SELECTION GUIDELINES
             1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
@@ -74,7 +75,7 @@ public class BaseSupervisor implements SupervisorInterface {
 
             RULES
             • The JSON array cannot be empty.
-            • Use only the three agent names above.
+            • Use only the four agent names above.
             • Output valid JSON—no extra text, comments, or explanations.
 
                 """;

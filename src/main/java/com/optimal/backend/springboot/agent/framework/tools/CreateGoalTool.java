@@ -72,7 +72,7 @@ public class CreateGoalTool implements Tool {
             System.out.println("goalTitle: " + goalTitle);
             System.out.println("goalDescription: '" + goalDescription + "'");
 
-            // Simple due date parsing for goal completion
+            // Due date: LLM must provide it; this tool only parses/validates
             Timestamp dueTime = null;
             if (inputNode.has("dueTime") && !inputNode.get("dueTime").isNull()) {
                 String dateInput = inputNode.get("dueTime").asText().trim();
@@ -169,9 +169,13 @@ public class CreateGoalTool implements Tool {
         }
     }
 
+    // LLM provides the suggested due date; tool does not compute it.
+
     @Override
     public String getDescription() {
-        return "Creates a goal for a user with a simple due date. " +
+        return "Creates a goal for a user with a suggested due date. " +
+                "Due date should come from quantitative (target units / units per frequency with weekend toggle) or qualitative scope-based logic, " +
+                "and the user can edit it in the Goal Card before confirming. " +
                 "Uses the current user context automatically. " +
                 "Requires goalTitle, goalDescription (optional), dueTime, and tags (optional).";
     }
@@ -185,8 +189,10 @@ public class CreateGoalTool implements Tool {
                         "goalTitle", Map.of("type", "string", "description", "The title of the goal"),
                         "goalDescription", Map.of("type", "string", "description", "The description of the goal (optional)"),
                         "dueTime", Map.of("type", "string", "description",
-                                "The due date for the goal. Can be ISO date (yyyy-MM-dd) or other formats (MM/dd/yyyy, MM-dd-yyyy). " +
-                                "Goals cannot have due dates in the past."),
+                                "Suggested due date for the goal (editable by the user before confirmation). " +
+                                "Compute via: QUANTITATIVE = target units / units per frequency (respect 'include weekends' toggle), " +
+                                "QUALITATIVE = propose feasible date by scope/constraints. " +
+                                "Must be a valid date: ISO yyyy-MM-dd or common formats (MM/dd/yyyy, MM-dd-yyyy), not in the past."),
                         "tags", Map.of("type", "array", "items", Map.of("type", "string"), "description", "Optional array of tags for the goal")))
                 .required(Arrays.asList("goalTitle", "dueTime"))
                 .build();

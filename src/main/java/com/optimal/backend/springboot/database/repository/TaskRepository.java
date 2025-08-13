@@ -1,4 +1,4 @@
-// src/main/java/com/optimal/backend/springboot/domain/repository/TaskRepository.java
+// src/main/java/com/optimal/backend/springboot/database/repository/TaskRepository.java
 package com.optimal.backend.springboot.database.repository;
 
 import java.util.List;
@@ -63,9 +63,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("""
         DELETE FROM Task t2
          WHERE EXISTS (
-             SELECT 1 FROM Task t1
-             WHERE t1.id = :taskId
-               AND t2.sharedId = t1.sharedId
+             SELECT 1 FROM Task t1 
+             WHERE t1.taskId = :taskId
+               AND t2.sharedId = t1.sharedId 
                AND t2.dueDate >= t1.dueDate
          )
       """)

@@ -1,12 +1,11 @@
 package com.optimal.backend.springboot.database.repository;
 
-import java.util.List;
-import java.util.UUID;
-
+import com.optimal.backend.springboot.database.entity.Checkin;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.optimal.backend.springboot.database.entity.Checkin;
+import java.util.List;
+import java.util.UUID;
 
 @Repository
 public interface CheckinRepository extends JpaRepository<Checkin, UUID> {
