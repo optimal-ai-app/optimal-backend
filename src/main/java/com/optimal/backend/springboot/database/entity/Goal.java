@@ -3,6 +3,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -56,16 +58,13 @@ public class Goal {
 
     @PrePersist
     protected void onCreate() {
-        if (this.createdAt == null) {
-            this.createdAt = new Timestamp(System.currentTimeMillis());
-        }
-        if (this.updatedAt == null) {
-            this.updatedAt = new Timestamp(System.currentTimeMillis());
-        }
+        Timestamp now = DateUtils.getCurrentTimestamp();
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = new Timestamp(System.currentTimeMillis());
+        this.updatedAt = DateUtils.getCurrentTimestamp();
     }
 }

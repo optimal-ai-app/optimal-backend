@@ -1,6 +1,5 @@
 package com.optimal.backend.springboot.service;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +11,7 @@ import com.optimal.backend.springboot.database.entity.Conversation;
 import com.optimal.backend.springboot.database.entity.Message;
 import com.optimal.backend.springboot.database.repository.ConversationRepository;
 import com.optimal.backend.springboot.database.repository.MessageRepository;
+import com.optimal.backend.springboot.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -48,7 +48,6 @@ public class ChatService {
         msg.setRole("user");
         msg.setContent(content);
         msg.setSequenceIndex(nextIdx);
-        msg.setTimestamp(new Timestamp(System.currentTimeMillis()));
         return messageRepository.save(msg);
     }
 
@@ -64,7 +63,7 @@ public class ChatService {
         msg.setRole("assistant");
         msg.setContent(content);
         msg.setSequenceIndex(nextIdx);
-        msg.setTimestamp(new Timestamp(System.currentTimeMillis()));
+        msg.setCreatedAt(DateUtils.getCurrentTimestamp());
         Message assistantMsg = messageRepository.save(msg);
 
         // Fetch full history for summarization

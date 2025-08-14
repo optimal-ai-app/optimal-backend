@@ -4,6 +4,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -44,13 +46,13 @@ public class Conversation {
 
     @PrePersist
     protected void onCreate() {
-        Timestamp now = new Timestamp(System.currentTimeMillis());
+        Timestamp now = DateUtils.getCurrentTimestamp();
         this.createdAt = now;
         this.updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        this.updatedAt = new Timestamp(System.currentTimeMillis());
+        this.updatedAt = DateUtils.getCurrentTimestamp();
     }
 }
