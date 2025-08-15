@@ -3,6 +3,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -45,6 +47,6 @@ public class DiaryLog {
         if (this.diaryLogId == null) {
             this.diaryLogId = UUID.randomUUID();
         }
-        this.date = new Timestamp(System.currentTimeMillis());
+        this.date = DateUtils.getCurrentTimestamp();
     }
 }

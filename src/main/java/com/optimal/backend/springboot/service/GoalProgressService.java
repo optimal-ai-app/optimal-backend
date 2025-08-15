@@ -41,7 +41,11 @@ public class GoalProgressService {
                 goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + 1);
             }
         } else {
-            goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
+            if (task.getValue() != null) {
+                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - task.getValue());
+            } else {
+                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
+            }
         }
         goalProgressRepository.save(goalProgress);
     }

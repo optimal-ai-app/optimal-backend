@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.service;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Optional;
@@ -61,6 +62,7 @@ public class TaskService {
         return taskRepository.save(task);
     }
 
+    @Transactional
     public Task createTask(Task task, Timestamp repeatEndDate, List<String> repeatDays) {
         if (repeatEndDate == null || repeatDays == null || repeatDays.isEmpty()) {
             return taskRepository.save(task);
@@ -76,37 +78,44 @@ public class TaskService {
 
         calendar.setTime(startDate);
 
-        Task firstTask = null;
-        boolean firstTaskCreated = false;
         UUID sharedId = UUID.randomUUID();
+        List<Task> tasksToSave = new ArrayList<>();
 
         while (!calendar.getTime().after(repeatEndDate)) {
             int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
             String dayName = getDayNameFromCalendar(dayOfWeek);
             String dayAbbrev = getDayAbbreviationFromCalendar(dayOfWeek);
+
             if (repeatDays.stream().anyMatch(d -> d.equalsIgnoreCase(dayName) || d.equalsIgnoreCase(dayAbbrev))) {
-                Task repeatedTask = new Task();
-                repeatedTask.setTitle(task.getTitle());
-                repeatedTask.setDescription(task.getDescription());
-                repeatedTask.setPriority(task.getPriority());
-                repeatedTask.setStatus(task.getStatus());
-                repeatedTask.setUserId(task.getUserId());
-                repeatedTask.setGoalId(task.getGoalId());
-                repeatedTask.setValue(task.getValue());
-                repeatedTask.setDueDate(new Timestamp(calendar.getTimeInMillis()));
-                repeatedTask.setSharedId(sharedId);
-                if (!firstTaskCreated) {
-                    firstTask = taskRepository.save(repeatedTask);
-                    firstTaskCreated = true;
-                } else {
-                    taskRepository.save(repeatedTask);
-                }
+                Task repeatedTask = createTaskCopy(task, new Timestamp(calendar.getTimeInMillis()), sharedId);
+                tasksToSave.add(repeatedTask);
             }
             calendar.add(Calendar.DAY_OF_MONTH, 1); // Move to next day
         }
-        return createTask(firstTask);
+
+        if (!tasksToSave.isEmpty()) {
+            List<Task> savedTasks = taskRepository.saveAll(tasksToSave);
+            return savedTasks.get(0);
+        }
+        return taskRepository.save(task);
     }
 
+    private Task createTaskCopy(Task originalTask, Timestamp dueDate, UUID sharedId) {
+        Task taskCopy = new Task();
+        taskCopy.setTitle(originalTask.getTitle());
+        taskCopy.setDescription(originalTask.getDescription());
+        taskCopy.setPriority(originalTask.getPriority());
+        taskCopy.setStatus(originalTask.getStatus());
+        taskCopy.setUserId(originalTask.getUserId());
+        taskCopy.setGoalId(originalTask.getGoalId());
+        taskCopy.setValue(originalTask.getValue());
+        taskCopy.setMilestone(originalTask.getMilestone());
+        taskCopy.setDueDate(dueDate);
+        taskCopy.setSharedId(sharedId);
+        return taskCopy;
+    }
+
+    // TODO: move to utils
     private String getDayNameFromCalendar(int dayOfWeek) {
         switch (dayOfWeek) {
             case Calendar.SUNDAY:
@@ -128,6 +137,7 @@ public class TaskService {
         }
     }
 
+    // TODO: move to utils
     private String getDayAbbreviationFromCalendar(int dayOfWeek) {
         switch (dayOfWeek) {
             case Calendar.SUNDAY:

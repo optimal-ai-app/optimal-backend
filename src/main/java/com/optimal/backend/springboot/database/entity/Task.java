@@ -11,6 +11,8 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import lombok.Data;
 
 @Data
@@ -81,6 +83,6 @@ public class Task {
 
     @PrePersist
     protected void onCreate() {
-        this.createdDate = new Timestamp(System.currentTimeMillis());
+        this.createdDate = DateUtils.getCurrentTimestamp();
     }
 }

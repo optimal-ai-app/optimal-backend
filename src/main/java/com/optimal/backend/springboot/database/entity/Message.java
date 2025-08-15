@@ -4,6 +4,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -35,13 +37,11 @@ public class Message {
     @Column(name = "sequence_index", nullable = false)
     private Integer sequenceIndex;
 
-    @Column(name = "timestamp", nullable = false)
-    private Timestamp timestamp;
+    @Column(name = "created_at", nullable = false)
+    private Timestamp createdAt;
 
     @PrePersist
     protected void onCreate() {
-        if (this.timestamp == null) {
-            this.timestamp = new Timestamp(System.currentTimeMillis());
-        }
+        this.createdAt = DateUtils.getCurrentTimestamp();
     }
 }

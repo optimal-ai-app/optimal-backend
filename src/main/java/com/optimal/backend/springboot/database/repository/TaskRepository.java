@@ -46,9 +46,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
          WHERE t.userId = :userId
            AND t.dueDate IS NOT NULL
            AND t.dueDate < :dueDate
+           AND t.status != 'completed'
            AND (t.milestone = FALSE OR t.milestone IS NULL)
-      ORDER BY CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END ASC,
-               t.dueDate ASC
+      ORDER BY t.dueDate ASC
       """)
   List<Task> findUserTasksBeforeDueDate(@Param("userId") UUID userId, @Param("dueDate") java.sql.Timestamp dueDate);
 

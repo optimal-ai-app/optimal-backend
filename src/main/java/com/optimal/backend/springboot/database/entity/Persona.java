@@ -3,6 +3,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -51,9 +53,6 @@ public class Persona {
 
     @PrePersist
     protected void onCreate() {
-        if (this.personaId == null) {
-            this.personaId = UUID.randomUUID();
-        }
-        this.createdAt = new Timestamp(System.currentTimeMillis());
+        this.createdAt = DateUtils.getCurrentTimestamp();
     }
 }
