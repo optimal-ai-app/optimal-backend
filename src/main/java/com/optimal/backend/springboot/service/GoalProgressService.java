@@ -1,7 +1,10 @@
 package com.optimal.backend.springboot.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,12 @@ public class GoalProgressService {
 
     public List<GoalProgress> getGoalProgressByGoalId(UUID goalId) {
         return goalProgressRepository.findByGoalId(goalId);
+    }
+
+    public Map<UUID, GoalProgress> getGoalProgressByGoalIds(List<UUID> goalIds) {
+        List<GoalProgress> progressList = goalProgressRepository.findByGoalIdIn(goalIds);
+        return progressList.stream()
+                .collect(Collectors.toMap(GoalProgress::getGoalId, Function.identity(), (a, b) -> a));
     }
 
     public void addTaskToProgress(Task task) {

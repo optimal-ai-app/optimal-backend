@@ -1,7 +1,6 @@
 // src/main/java/com/optimal/backend/springboot/controller/MessageController.java
 package com.optimal.backend.springboot.controller;
 
-import java.sql.Timestamp;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,7 +32,6 @@ public class MessageController {
     @PostMapping
     public ResponseEntity<Message> createMessage(@RequestBody Message msg) {
         msg.setMessageId(UUID.randomUUID());
-        msg.setTimestamp(new Timestamp(System.currentTimeMillis()));
         return ResponseEntity.ok(messageRepository.save(msg));
     }
 }

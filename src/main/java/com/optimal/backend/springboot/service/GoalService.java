@@ -45,7 +45,6 @@ public class GoalService {
         goal.setDueDate(request.getDueDate());
         goal.setTags(request.getTags());
         goal.setStatus("active");
-        goal.setProgress(0);
         goal.setStreak(0);
         return goalRepository.save(goal);
     }

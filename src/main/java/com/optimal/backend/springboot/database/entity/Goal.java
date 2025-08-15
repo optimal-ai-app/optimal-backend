@@ -38,9 +38,6 @@ public class Goal {
     @Column(name = "status")
     private String status;
 
-    @Column(name = "progress", columnDefinition = "integer default 0")
-    private Integer progress;
-
     @Column(name = "streak", columnDefinition = "integer default 0")
     private Integer streak;
 
@@ -67,4 +64,8 @@ public class Goal {
     protected void onUpdate() {
         this.updatedAt = DateUtils.getCurrentTimestamp();
     }
+
+    private Double progress;
+
+    private String type;
 }
