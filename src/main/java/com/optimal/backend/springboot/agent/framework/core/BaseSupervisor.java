@@ -142,7 +142,8 @@ public class BaseSupervisor implements SupervisorInterface {
             List<Message> response = agent.run(userInput);
             String finalResponse = extractFinalResponse(response);
             String preview = finalResponse;
-            if (preview.length() > 200) preview = preview.substring(0, 200) + "…";
+            if (preview.length() > 200)
+                preview = preview.substring(0, 200) + "…";
             System.out.printf("[HANDOFF] %s returned: %s%n", handoffAgent, preview);
 
             // Parse the agent response to check for handoff decision
@@ -184,7 +185,8 @@ public class BaseSupervisor implements SupervisorInterface {
             this.lastAgent = agentName;
             System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
 
-            System.out.printf("[SUPERVISOR] handoffAgent=%s finished=%s queueRemaining=%d%n", handoffAgent, finishedAgents, agentNodes.size());
+            System.out.printf("[SUPERVISOR] handoffAgent=%s finished=%s queueRemaining=%d%n", handoffAgent,
+                    finishedAgents, agentNodes.size());
 
             if (!processingAgents.add(agentName)) {
                 System.err.println("Dependency cycle detected at: " + agentName);
@@ -197,7 +199,8 @@ public class BaseSupervisor implements SupervisorInterface {
 
                 // Log context summary (to avoid huge dumps)
                 if (!context.isEmpty()) {
-                    System.out.printf("[AGENT_RUN] %s context size=%d first='%s' last='%s'%n", agentName, context.size(), context.get(0).getContent(), context.get(context.size() - 1).getContent());
+                    System.out.printf("[AGENT_RUN] %s context size=%d first='%s' last='%s'%n", agentName,
+                            context.size(), context.get(0).getContent(), context.get(context.size() - 1).getContent());
                 }
                 System.out.println("HERE");
                 System.out.println("\n\nHandoff to Agent: " + agentName + "\n\n");
@@ -213,7 +216,8 @@ public class BaseSupervisor implements SupervisorInterface {
                 List<Message> response = agent.run(context);
 
                 String preview = extractFinalResponse(response);
-                if (preview.length() > 200) preview = preview.substring(0, 200) + "…";
+                if (preview.length() > 200)
+                    preview = preview.substring(0, 200) + "…";
                 System.out.printf("[AGENT_RUN] %s returned: %s%n", agentName, preview);
 
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
@@ -265,19 +269,19 @@ public class BaseSupervisor implements SupervisorInterface {
             if (response.trim().startsWith("{") && response.trim().endsWith("}")) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(response);
-                
+
                 String content = jsonNode.has("content") ? jsonNode.get("content").asText() : response;
 
-                // WIP: attempt to fix JSON string issue 
+                // WIP: attempt to fix JSON string issue
 
                 // String content;
                 // if (jsonNode.has("content")) {
-                //     content = jsonNode.get("content").asText();
+                // content = jsonNode.get("content").asText();
                 // } else if (jsonNode.has("summary")) {
-                //     // Fallback to summary field if present
-                //     content = jsonNode.get("summary").asText();
+                // // Fallback to summary field if present
+                // content = jsonNode.get("summary").asText();
                 // } else {
-                //     content = response;
+                // content = response;
                 // }
 
                 List<String> tags = new ArrayList<>();
@@ -343,7 +347,8 @@ public class BaseSupervisor implements SupervisorInterface {
         // --- DEBUG LOG ----------------------------------------------------
         if (!userInput.isEmpty()) {
             Message lastMsg = userInput.get(userInput.size() - 1);
-            System.out.printf("[INTERPRETER] Incoming user message (%s): %s%n", lastMsg.getRole(), lastMsg.getContent());
+            System.out.printf("[INTERPRETER] Incoming user message (%s): %s%n", lastMsg.getRole(),
+                    lastMsg.getContent());
         }
 
         this.iterations = 0;
@@ -352,13 +357,8 @@ public class BaseSupervisor implements SupervisorInterface {
         this.processingAgents.clear();
         List<Message> contexts = userInput;
 
-        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, new ArrayList<>());
-
-        System.out.println("[INTERPRETER] Raw LLM response: " + response.getContent());
-
+        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts);
         this.agentNodes = parseAgentNodes(response.getContent());
-
-        System.out.println("[INTERPRETER] Parsed agent list: " + this.agentNodes + "\n------------------------------------------------------------------");
         this.maxIterations = this.agentNodes.size() * 2;
     }
 

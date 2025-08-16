@@ -4,37 +4,17 @@ import java.util.Date;
 
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.utils.DateUtils;
 
+import dev.langchain4j.agent.tool.P;
+import dev.langchain4j.agent.tool.Tool;
+
 @Component
-public class GetFutureDateTool implements Tool {
+public class GetFutureDateTool {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    @Override
-    public String getName() {
-        return "get_future_date";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Get the future date";
-    }
-
-    @Override
-    public String execute(String input) {
-        try {
-            JsonNode inputNode = new ObjectMapper().readTree(input);
-            int days = inputNode.get("days").asInt();
-            Date futureDate = DateUtils.getCurrentDatePlusDays(days);
-            return objectMapper.writeValueAsString(futureDate);
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-            return "Error: " + e.getMessage();
-        }
+    @Tool("Get the future date")
+    public String GetFutureDate(@P("days") int days) {
+        Date futureDate = DateUtils.getCurrentDatePlusDays(days);
+        return futureDate.toString();
     }
 }

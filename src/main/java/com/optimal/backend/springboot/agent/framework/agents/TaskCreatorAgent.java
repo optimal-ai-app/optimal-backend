@@ -31,6 +31,6 @@ public class TaskCreatorAgent extends BaseAgent {
     @Override
     protected void initialize() {
         System.out.println("TaskCreatorAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getName() + ": " + tool.getDescription()));
+        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

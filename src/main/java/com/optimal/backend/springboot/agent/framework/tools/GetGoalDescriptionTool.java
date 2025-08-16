@@ -1,32 +1,26 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.database.entity.Goal;
 import com.optimal.backend.springboot.service.GoalService;
 
-import dev.langchain4j.agent.tool.ToolParameters;
+import dev.langchain4j.agent.tool.Tool;
 
 @Component
-public class GetGoalDescriptionTool implements Tool {
-    @Override
-    public String getName() {
-        return "goalDescriptionTool";
-    }
+public class GetGoalDescriptionTool {
 
     @Autowired
     private GoalService goalService;
 
-    @Override
-    public String execute(String input) {
+    @Tool("This tool queries the user's goals and returns a list of the goals names and descriptions. " +
+            "Uses the current user context automatically.")
+    public String GetGoalDescription() {
         try {
             UUID userId = UserContext.requireUserId();
             System.out.println("=== GoalDescriptionTool: Using userId from context: " + userId);
@@ -56,21 +50,5 @@ public class GetGoalDescriptionTool implements Tool {
             e.printStackTrace();
             return "Error retrieving goals: " + e.getMessage();
         }
-    }
-
-    @Override
-    public String getDescription() {
-        return "This tool queries the user's goals and returns a list of the goals names and descriptions. " +
-                "Uses the current user context automatically.";
-    }
-
-    @Override
-    public ToolParameters getParameters() {
-        return ToolParameters.builder()
-                .type("object")
-                .properties(Map.of(
-                        "userId", Map.of("type", "string", "description", "The user's UUID")))
-                .required(Arrays.asList("userId"))
-                .build();
     }
 }

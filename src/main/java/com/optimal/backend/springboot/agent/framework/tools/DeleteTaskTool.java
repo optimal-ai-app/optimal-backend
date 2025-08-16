@@ -1,52 +1,29 @@
 package com.optimal.backend.springboot.agent.framework.tools;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.optimal.backend.springboot.service.TaskService;
-import com.optimal.backend.springboot.agent.framework.core.Tool;
-import dev.langchain4j.agent.tool.ToolParameters;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
+
 import org.springframework.stereotype.Component;
 
-import java.util.Map;
-import java.util.UUID;
+import com.optimal.backend.springboot.service.TaskService;
+
+import dev.langchain4j.agent.tool.P;
+import dev.langchain4j.agent.tool.Tool;
+import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class DeleteTaskTool implements Tool {
+public class DeleteTaskTool {
 
     private final TaskService taskService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Override
-    public String getName() {
-        return "deleteTask";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Deletes a task by its ID.";
-    }
-
-    @Override
-    public ToolParameters getParameters() {
-        return ToolParameters.builder()
-                .type("object")
-                .properties(Map.of(
-                        "taskId", Map.of("type", "string", "description", "The ID of the task to delete.")))
-                .build();
-    }
-
-    @Override
-    public String execute(String jsonInput) {
+    @Tool("Deletes a task by its ID.")
+    public String DeleteTask(@P("taskId") String taskId) {
         try {
-            Map<String, Object> arguments = objectMapper.readValue(jsonInput, new TypeReference<>() {});
-            String taskIdStr = (String) arguments.get("taskId");
-            UUID taskId = UUID.fromString(taskIdStr);
-            taskService.deleteTask(taskId);
+            UUID taskIdUUID = UUID.fromString(taskId);
+            taskService.deleteTask(taskIdUUID);
             return "Task " + taskId + " deleted successfully.";
         } catch (Exception e) {
             return "Error deleting task: " + e.getMessage();
         }
     }
-} 
+}

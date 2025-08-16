@@ -38,15 +38,13 @@ public class DiaryLog {
 
     @Column(name = "date", nullable = false)
     private Timestamp date;
-    
+
     @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
     @PrePersist
     protected void onCreate() {
-        if (this.diaryLogId == null) {
-            this.diaryLogId = UUID.randomUUID();
-        }
+
         this.date = DateUtils.getCurrentTimestamp();
     }
 }

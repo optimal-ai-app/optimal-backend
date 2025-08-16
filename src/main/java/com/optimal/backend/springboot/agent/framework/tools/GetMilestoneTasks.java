@@ -7,36 +7,25 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.database.entity.Task;
 import com.optimal.backend.springboot.service.TaskService;
 
+import dev.langchain4j.agent.tool.P;
+import dev.langchain4j.agent.tool.Tool;
+
 @Component
-public class GetMilestoneTasks implements Tool {
+public class GetMilestoneTasks {
 
     @Autowired
     private TaskService taskService;
 
-    @Override
-    public String getName() {
-        return "get_tasks_before_due_date";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Given a milestone taskId, returns non-milestone tasks for the same user with due dates before that task's due date, sorted by completion status then due date. Includes the input task's due date in the response.";
-    }
-
-    @Override
-    public String execute(String input) {
+    @Tool("Given a milestone taskId, returns non-milestone tasks for the same user with due dates before that task's due date, sorted by completion status then due date. Includes the input task's due date in the response.")
+    public String GetMilestoneTasks(@P("taskId") String taskId) {
         try {
-            JsonNode node = new ObjectMapper().readTree(input);
-            UUID taskId = UUID.fromString(node.get("taskId").asText());
+            UUID taskIdUUID = UUID.fromString(taskId);
 
-            Task anchorTask = taskService.getTaskById(taskId)
+            Task anchorTask = taskService.getTaskById(taskIdUUID)
                     .orElseThrow(() -> new IllegalArgumentException("Task not found"));
 
             if (anchorTask.getMilestone() == null || !anchorTask.getMilestone()) {

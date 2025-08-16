@@ -103,7 +103,7 @@ public class Message {
             return message;
         } else if (chatMessage instanceof UserMessage) {
             UserMessage userMsg = (UserMessage) chatMessage;
-            Message message = new Message("user", userMsg.text(), userMsg.text());
+            Message message = new Message("user", userMsg.singleText(), userMsg.singleText());
             return message;
         } else if (chatMessage instanceof AiMessage) {
             AiMessage aiMsg = (AiMessage) chatMessage;

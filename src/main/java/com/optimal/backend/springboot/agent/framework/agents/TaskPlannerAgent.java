@@ -18,6 +18,7 @@ public class TaskPlannerAgent extends BaseAgent {
     private final GetGoalDescriptionTool goalDescriptionTool;
     private final GetTasksforGoalTool getTasksforGoalTool;
     private final GetGoalProgressTool getGoalProgressTool;
+
     @Autowired
     public TaskPlannerAgent(
             @Value("${langchain4j.task-planner-agent.name}") String name,
@@ -39,6 +40,6 @@ public class TaskPlannerAgent extends BaseAgent {
     @Override
     protected void initialize() {
         System.out.println("TaskPlannerAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getName() + ": " + tool.getDescription()));
+        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }
