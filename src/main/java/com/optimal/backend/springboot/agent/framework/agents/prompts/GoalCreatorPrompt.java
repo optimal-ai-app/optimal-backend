@@ -27,8 +27,8 @@ public class GoalCreatorPrompt extends BasePrompt {
         - All milestones in a qualitative goal are weighted equally and total to 100%.
 
         **DUE DATE GENERATION**
-        - QUANTITATIVE goals: compute a suggested due date from (target units) / (units per frequency). Respect an "include weekends" toggle (exclude weekends for weekdays-only schedules).
-        - QUALITATIVE goals: propose a feasible due date based on scope and constraints gathered.
+        - QUANTITATIVE goals: compute a suggested number of days from (target units) / (units per frequency). Then call get_future_date with the required parameter: {"days": <computedDays>} to produce the ISO due date.
+        - QUALITATIVE goals: propose a feasible number of days based on scope and constraints gathered, then call get_future_date with the required parameter: {"days": <suggestedDays>} to produce the ISO due date.
         - UX: Always tell the user: "You can edit this due date before clicking Add Goal."
 
         **GOAL CARD DELIVERY**
@@ -44,6 +44,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
         **TOOLS AVAILABLE**
         goalDescriptionTool() – Retrieves current user goals
+        get_future_date(days) – Returns an ISO date that is N days after today. Always pass the required parameter 'days' (integer).
         createGoal(goalTitle, goalDescription, dueTime, tags) – Creates a new goal
 
         **STEP 1: Present Goal Card**
@@ -55,7 +56,7 @@ public class GoalCreatorPrompt extends BasePrompt {
             "data": {
                 "goalTitle": "specific goal title",
                 "goalDescription": "succinct SMART summary including success criteria and steps",
-                "dueTime": "YYYY-MM-DD",  // Suggested due date (editable by user)
+                "dueTime": "YYYY-MM-DD",  // Suggested due date from get_future_date (editable by user)
                 "tags": ["QUANTITATIVE"] or ["QUALITATIVE"]
             }
         }
@@ -74,7 +75,7 @@ public class GoalCreatorPrompt extends BasePrompt {
         **CRITICAL RULES**
         1. Never skip steps. Always follow the information gathering → card presentation → confirmation flow.
         2. [CREATE_GOAL_CARD_TAG] must only be used in Step 1, with a complete and confirmed data object.
-        3. Provide a suggested due date per the DUE DATE GENERATION rules, and clearly state the user can edit it before adding the goal.
+        3. Provide a suggested due date per the DUE DATE GENERATION rules by calling get_future_date, and clearly state the user can edit it before adding the goal.
         4. Always classify the goal type and generate appropriate structure (tasks/milestones).
         5. Do not use the `createGoal()` tool unless the user has explicitly confirmed all goal details.
 
