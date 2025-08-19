@@ -1,6 +1,71 @@
 # Spring Boot Boilerplate
  *Spring Boot Boilerplate* is a **starter kit**. This project is simple and useful.
  
+## Development Workflow
+
+### Initial Setup
+```bash
+# 1. Backend Setup
+cd optimal-backend
+mvn clean install
+mvn -DskipTests spring-boot:run
+
+# 2. Start ngrok in new terminal
+cd optimal  # Go to project root
+ngrok http http://localhost:8080/
+
+# 3. Update API URL in frontend
+# Copy ngrok Forwarding URL (e.g., https://your-tunnel.ngrok-free.app)
+# Update in optimal/services/httpService.ts
+
+# 4. Start frontend in new terminal
+cd optimal
+npm install
+npx expo start
+```
+
+### Making Changes
+
+#### Backend Changes
+- Keep ngrok running (don't restart unless you stop it)
+- Backend has hot-reload enabled:
+  - Save any Java file
+  - Watch terminal for "Restarting due to changes..."
+  - Wait ~2-3 seconds for restart
+  - No need to restart ngrok or Expo
+
+#### Frontend Changes
+- Keep ngrok and backend running
+- After editing frontend code:
+  - Press 'r' in Expo terminal to reload app, or
+  - Save changes and wait for auto-reload
+
+### When to Restart What
+
+Never need to restart:
+- ngrok (unless you stop it)
+- Expo (unless you change dependencies)
+
+Backend auto-restarts when:
+- You save a Java file
+- DevTools detects changes
+
+Frontend auto-reloads when:
+- You save TypeScript/React files
+- Or press 'r' in Expo terminal
+
+Must manually restart if you:
+- Change dependencies (package.json/pom.xml)
+- Stop ngrok (need new URL)
+- Change Spring configs
+- Add new Maven dependencies
+
+### Testing Flow
+1. Make backend changes → Save → Wait for auto-restart
+2. Make frontend changes → Save → Wait for auto-reload (or press 'r')
+3. Test in simulator
+4. If it works, commit changes
+
 ## Technologies 
 - Spring Boot (v3.4.0)
 - Spring Data JPA

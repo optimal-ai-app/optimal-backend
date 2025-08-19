@@ -48,7 +48,7 @@ public class GoalCreatorPrompt extends BasePrompt {
         createGoal(goalTitle, goalDescription, dueTime, tags) – Creates a new goal
 
         **STEP 1: Present Goal Card**
-        Once all details are known, return this response:
+        Once all details are known, return this response EXACTLY as a valid JSON object. Do NOT include any additional prose before or after, and do NOT include comments, markdown, or trailing commas:
         {
             "content": "Here are the goal details with a suggested due date. You can edit this due date before clicking 'Add Goal'.",
             "tags": ["CREATE_GOAL_CARD_TAG"],
@@ -56,7 +56,7 @@ public class GoalCreatorPrompt extends BasePrompt {
             "data": {
                 "goalTitle": "specific goal title",
                 "goalDescription": "succinct SMART summary including success criteria and steps",
-                "dueTime": "YYYY-MM-DD",  // Suggested due date from get_future_date (editable by user)
+                "dueTime": "YYYY-MM-DD",
                 "tags": ["QUANTITATIVE"] or ["QUALITATIVE"]
             }
         }
@@ -75,7 +75,8 @@ public class GoalCreatorPrompt extends BasePrompt {
         **CRITICAL RULES**
         1. Never skip steps. Always follow the information gathering → card presentation → confirmation flow.
         2. [CREATE_GOAL_CARD_TAG] must only be used in Step 1, with a complete and confirmed data object.
-        3. Provide a suggested due date per the DUE DATE GENERATION rules by calling get_future_date, and clearly state the user can edit it before adding the goal.
+        3. Provide a suggested due date per the DUE DATE GENERATION rules by calling get_future_date with the required 'days' parameter, and clearly state the user can edit it before adding the goal.
+        6. STRICT OUTPUT: Return only the JSON object described, with double quotes, no comments, and no extra text.
         4. Always classify the goal type and generate appropriate structure (tasks/milestones).
         5. Do not use the `createGoal()` tool unless the user has explicitly confirmed all goal details.
 
