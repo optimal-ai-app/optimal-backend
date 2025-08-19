@@ -23,7 +23,7 @@ public class Message {
 
     @Id
     @Column(name = "message_id")
-    private UUID messageId;
+    private UUID id;
 
     @Column(name = "conversation_id", nullable = false)
     private UUID conversationId;

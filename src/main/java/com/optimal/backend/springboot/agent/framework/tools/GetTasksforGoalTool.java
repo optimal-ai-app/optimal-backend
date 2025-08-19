@@ -46,7 +46,7 @@ public class GetTasksforGoalTool {
                 }
                 sharedUUIDs.add(task.getSharedId()); // Add the shared UUID to the set
                 response.append("**Task ").append(i + 1).append(":**\n");
-                response.append("- Task ID: ").append(task.getTaskId()).append("\n");
+                response.append("- Task ID: ").append(task.getId()).append("\n");
                 response.append("- Shared ID: ").append(task.getSharedId()).append("\n");
                 response.append("- Title: ").append(task.getTitle()).append("\n");
                 response.append("- Description: ").append(task.getDescription()).append("\n");

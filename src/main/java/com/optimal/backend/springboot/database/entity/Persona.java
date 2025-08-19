@@ -29,8 +29,8 @@ public class Persona {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "persona_id")
-    private UUID personaId;
+    @Column(name = "id")
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;

@@ -31,7 +31,7 @@ public class MessageController {
 
     @PostMapping
     public ResponseEntity<Message> createMessage(@RequestBody Message msg) {
-        msg.setMessageId(UUID.randomUUID());
+        msg.setId(UUID.randomUUID());
         return ResponseEntity.ok(messageRepository.save(msg));
     }
 }

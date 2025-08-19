@@ -24,12 +24,13 @@ public class ChatService {
     private final SummarizationClient summarizationClient;
 
     /**
-     * Creates a new conversation for the user. Pruning is handled by the DB trigger.
+     * Creates a new conversation for the user. Pruning is handled by the DB
+     * trigger.
      */
     @Transactional
     public Conversation createConversation(UUID userId, String title) {
         Conversation convo = new Conversation();
-        convo.setConversationId(UUID.randomUUID());
+        convo.setId(UUID.randomUUID());
         convo.setUserId(userId);
         convo.setTitle(title);
         convo.setSummaryText("");
@@ -43,7 +44,7 @@ public class ChatService {
     public Message addUserMessage(UUID conversationId, String content) {
         int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
         Message msg = new Message();
-        msg.setMessageId(UUID.randomUUID());
+        msg.setId(UUID.randomUUID());
         msg.setConversationId(conversationId);
         msg.setRole("user");
         msg.setContent(content);
@@ -58,7 +59,7 @@ public class ChatService {
     public Message addAssistantMessage(UUID conversationId, String content) {
         int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
         Message msg = new Message();
-        msg.setMessageId(UUID.randomUUID());
+        msg.setId(UUID.randomUUID());
         msg.setConversationId(conversationId);
         msg.setRole("assistant");
         msg.setContent(content);
