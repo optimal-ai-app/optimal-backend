@@ -24,6 +24,15 @@ public class TaskPlannerPrompt extends BasePrompt {
             • Forbidden task types: planning, organising, research, meta, duplicates
             • Required task shape: [ACTION] + [DELIVERABLE] + [MEASURABLE OUTCOME]
 
+            #### HANDOFF SHORTCUT
+            If the previous assistant message contains HANDOFF_TAG with data.nextAgent = "TaskPlannerAgent" OR data.lastAction = "goalCreated":
+            1) Treat this as a continuation immediately after goal creation.
+            2) Determine targetGoalTitle using the following precedence:
+               - If a recent [CREATE_GOAL_CARD_TAG] message exists in context, use its data.goalTitle.
+               - Otherwise, call goalDescriptionTool() and assume the first goal in the returned list is the most recently created; use that as targetGoalTitle. If you're unsure which is newest, still pick the first one.
+            3) Skip STEP 1 entirely and begin at STEP 2 — TASK_SUGGESTION using targetGoalTitle.
+            4) Only fall back to STEP 1 if no goals exist or targetGoalTitle cannot be determined at all.
+
             ---
 
             ### STEP 1 — GOAL_DISCOVERY
@@ -40,8 +49,11 @@ public class TaskPlannerPrompt extends BasePrompt {
             ---
 
             ### STEP 2 — TASK_SUGGESTION
-            1. Call `getTasksforGoal(<goalTitle>)`.
-            2. Propose **one** new task that meets the REFERENCE rules.
+            1. Identify the goal title as follows:
+               - If starting here due to HANDOFF SHORTCUT, use targetGoalTitle determined above.
+               - Otherwise, use the user-selected goal title from STEP 1.
+            2. Call `getTasksforGoal(<goalTitle>)` for that goal.
+            3. Propose **one** new task that meets the REFERENCE rules.
 
             {
             "content": "Here’s a task that will move you forward:",
