@@ -1,6 +1,5 @@
 package com.optimal.backend.springboot.service;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +11,7 @@ import com.optimal.backend.springboot.database.entity.Conversation;
 import com.optimal.backend.springboot.database.entity.Message;
 import com.optimal.backend.springboot.database.repository.ConversationRepository;
 import com.optimal.backend.springboot.database.repository.MessageRepository;
+import com.optimal.backend.springboot.utils.DateUtils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,12 +24,13 @@ public class ChatService {
     private final SummarizationClient summarizationClient;
 
     /**
-     * Creates a new conversation for the user. Pruning is handled by the DB trigger.
+     * Creates a new conversation for the user. Pruning is handled by the DB
+     * trigger.
      */
     @Transactional
     public Conversation createConversation(UUID userId, String title) {
         Conversation convo = new Conversation();
-        convo.setConversationId(UUID.randomUUID());
+        convo.setId(UUID.randomUUID());
         convo.setUserId(userId);
         convo.setTitle(title);
         convo.setSummaryText("");
@@ -43,12 +44,11 @@ public class ChatService {
     public Message addUserMessage(UUID conversationId, String content) {
         int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
         Message msg = new Message();
-        msg.setMessageId(UUID.randomUUID());
+        msg.setId(UUID.randomUUID());
         msg.setConversationId(conversationId);
         msg.setRole("user");
         msg.setContent(content);
         msg.setSequenceIndex(nextIdx);
-        msg.setTimestamp(new Timestamp(System.currentTimeMillis()));
         return messageRepository.save(msg);
     }
 
@@ -59,12 +59,12 @@ public class ChatService {
     public Message addAssistantMessage(UUID conversationId, String content) {
         int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
         Message msg = new Message();
-        msg.setMessageId(UUID.randomUUID());
+        msg.setId(UUID.randomUUID());
         msg.setConversationId(conversationId);
         msg.setRole("assistant");
         msg.setContent(content);
         msg.setSequenceIndex(nextIdx);
-        msg.setTimestamp(new Timestamp(System.currentTimeMillis()));
+        msg.setCreatedAt(DateUtils.getCurrentTimestamp());
         Message assistantMsg = messageRepository.save(msg);
 
         // Fetch full history for summarization

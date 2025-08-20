@@ -4,6 +4,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -19,9 +21,8 @@ import lombok.Data;
 public class Task {
 
     @Id
-    @Column(name = "task_id", nullable = false)
-    @GeneratedValue(strategy = GenerationType.UUID)
-    private UUID taskId;
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private UUID id;
 
     @Column(name = "title", nullable = false)
     private String title;
@@ -65,7 +66,7 @@ public class Task {
     @Override
     public String toString() {
         return "Task{" +
-                "taskId=" + taskId +
+                "taskId=" + id +
                 ", title='" + title + '\'' +
                 ", description='" + description + '\'' +
                 ", createdDate=" + createdDate +
@@ -81,6 +82,6 @@ public class Task {
 
     @PrePersist
     protected void onCreate() {
-        this.createdDate = new Timestamp(System.currentTimeMillis());
+        this.createdDate = DateUtils.getCurrentTimestamp();
     }
 }

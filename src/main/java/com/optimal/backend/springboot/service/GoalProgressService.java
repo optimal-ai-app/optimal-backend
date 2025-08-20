@@ -1,7 +1,10 @@
 package com.optimal.backend.springboot.service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,12 @@ public class GoalProgressService {
         return goalProgressRepository.findByGoalId(goalId);
     }
 
+    public Map<UUID, GoalProgress> getGoalProgressByGoalIds(List<UUID> goalIds) {
+        List<GoalProgress> progressList = goalProgressRepository.findByGoalIdIn(goalIds);
+        return progressList.stream()
+                .collect(Collectors.toMap(GoalProgress::getGoalId, Function.identity(), (a, b) -> a));
+    }
+
     public void addTaskToProgress(Task task) {
         GoalProgress goalProgress = goalProgressRepository.findByGoalId(task.getGoalId()).get(0);
         if (goalProgress.getGoalType().equals(GoalType.QUALITATIVE)) {
@@ -41,7 +50,11 @@ public class GoalProgressService {
                 goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + 1);
             }
         } else {
-            goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
+            if (task.getValue() != null) {
+                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - task.getValue());
+            } else {
+                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
+            }
         }
         goalProgressRepository.save(goalProgress);
     }

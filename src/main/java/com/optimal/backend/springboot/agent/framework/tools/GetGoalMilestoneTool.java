@@ -6,17 +6,17 @@ import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.optimal.backend.springboot.agent.framework.core.Tool;
 import com.optimal.backend.springboot.database.entity.GoalProgress;
 import com.optimal.backend.springboot.database.entity.GoalType;
 import com.optimal.backend.springboot.database.entity.Task;
 import com.optimal.backend.springboot.service.GoalProgressService;
 import com.optimal.backend.springboot.service.TaskService;
 
+import dev.langchain4j.agent.tool.P;
+import dev.langchain4j.agent.tool.Tool;
+
 @Component
-public class GetGoalMilestoneTool implements Tool {
+public class GetGoalMilestoneTool {
 
     @Autowired
     private GoalProgressService goalProgressService;
@@ -24,23 +24,12 @@ public class GetGoalMilestoneTool implements Tool {
     @Autowired
     private TaskService taskService;
 
-    @Override
-    public String getName() {
-        return "get_goal_milestones";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Given a goalId, returns milestone tasks if the goal is QUALITATIVE; otherwise returns a notice that quantitative goals have no milestones.";
-    }
-
-    @Override
-    public String execute(String input) {
+    @Tool("Given a goalId, returns milestone tasks if the goal is QUALITATIVE; otherwise returns a notice that quantitative goals have no milestones.")
+    public String GetGoalMilestone(@P("goalId") String goalId) {
         try {
-            JsonNode node = new ObjectMapper().readTree(input);
-            UUID goalId = UUID.fromString(node.get("goalId").asText());
+            UUID goalIdUUID = UUID.fromString(goalId);
 
-            List<GoalProgress> progressList = goalProgressService.getGoalProgressByGoalId(goalId);
+            List<GoalProgress> progressList = goalProgressService.getGoalProgressByGoalId(goalIdUUID);
             if (progressList == null || progressList.isEmpty()) {
                 return "No goal progress found for this goal.";
             }
@@ -50,7 +39,7 @@ public class GetGoalMilestoneTool implements Tool {
                 return "This goal is quantitative; it has no milestones.";
             }
 
-            List<Task> milestones = taskService.getMilestonesByGoalId(goalId);
+            List<Task> milestones = taskService.getMilestonesByGoalId(goalIdUUID);
             if (milestones == null || milestones.isEmpty()) {
                 return "No milestone tasks found for this goal.";
             }

@@ -31,7 +31,7 @@ public class ConversationController {
 
     @PostMapping
     public ResponseEntity<Conversation> createConversation(@RequestBody Conversation convo) {
-        convo.setConversationId(UUID.randomUUID());
+        convo.setId(UUID.randomUUID());
         return ResponseEntity.ok(conversationRepository.save(convo));
     }
 }

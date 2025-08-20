@@ -3,6 +3,8 @@ package com.optimal.backend.springboot.database.entity;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import com.optimal.backend.springboot.utils.DateUtils;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -25,8 +27,7 @@ public class DiaryLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "diary_log_id")
-    private UUID diaryLogId;
+    private UUID id;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -36,15 +37,13 @@ public class DiaryLog {
 
     @Column(name = "date", nullable = false)
     private Timestamp date;
-    
+
     @Column(name = "summary", nullable = true, columnDefinition = "TEXT")
     private String summary;
 
     @PrePersist
     protected void onCreate() {
-        if (this.diaryLogId == null) {
-            this.diaryLogId = UUID.randomUUID();
-        }
-        this.date = new Timestamp(System.currentTimeMillis());
+
+        this.date = DateUtils.getCurrentTimestamp();
     }
 }

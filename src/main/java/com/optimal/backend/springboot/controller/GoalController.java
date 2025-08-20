@@ -2,6 +2,7 @@
 package com.optimal.backend.springboot.controller;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -18,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
 import com.optimal.backend.springboot.database.entity.Goal;
+import com.optimal.backend.springboot.database.entity.GoalProgress;
+import com.optimal.backend.springboot.service.GoalProgressService;
 import com.optimal.backend.springboot.service.GoalService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class GoalController {
 
     private final GoalService goalService;
+    private final GoalProgressService goalProgressService;
 
     @PostMapping("/create")
     public ResponseEntity<Goal> createGoal(@RequestBody CreateGoalRequest request) {
@@ -44,7 +48,21 @@ public class GoalController {
 
     @GetMapping("/user/{userId}")
     public ResponseEntity<List<Goal>> getGoalsByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(goalService.getGoalsByUser(userId));
+        List<Goal> goals = goalService.getGoalsByUser(userId);
+        List<UUID> goalIds = goals.stream().map(Goal::getId).toList();
+        if (goalIds.isEmpty()) {
+            return ResponseEntity.ok(goals);
+        }
+        Map<UUID, GoalProgress> progressByGoalId = goalProgressService
+                .getGoalProgressByGoalIds(goalIds);
+        goals.forEach(g -> {
+            GoalProgress gp = progressByGoalId.get(g.getId());
+            if (gp != null) {
+                g.setProgress(gp.getScore());
+                g.setType(gp.getGoalType().toString());
+            }
+        });
+        return ResponseEntity.ok(goals);
     }
 
     @GetMapping("/{goalId}")
