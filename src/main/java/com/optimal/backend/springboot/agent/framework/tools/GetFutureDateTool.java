@@ -16,5 +16,6 @@ public class GetFutureDateTool {
     public String GetFutureDate(@P("days") int days) {
         Date futureDate = DateUtils.getCurrentDatePlusDays(days);
         return futureDate.toString();
+
     }
 }

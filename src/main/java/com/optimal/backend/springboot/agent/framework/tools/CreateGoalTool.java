@@ -47,11 +47,11 @@ public class CreateGoalTool {
             System.out.println("goalTitle: " + goalTitle);
             System.out.println("goalDescription: '" + goalDescription + "'");
 
-            // Simple due date parsing for goal completion
             Timestamp dueDateTimestamp = null;
             if (dueTime != null && !dueTime.trim().isEmpty()) {
                 dueDateTimestamp = parseGoalDueDate(dueTime.trim());
                 System.out.println("Parsed due date: " + dueDateTimestamp + " from input: " + dueTime);
+
             }
             // Validate required fields
             if (goalTitle == null || goalTitle.trim().isEmpty()) {
@@ -141,5 +141,4 @@ public class CreateGoalTool {
             return Timestamp.valueOf(endOfDay);
         }
     }
-
 }
