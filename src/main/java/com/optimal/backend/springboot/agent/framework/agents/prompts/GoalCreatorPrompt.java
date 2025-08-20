@@ -80,14 +80,28 @@ public class GoalCreatorPrompt extends BasePrompt {
 
         ### STEP 2 — GOAL_CREATION
         When user confirms with "Add Goal":
+
+        IF QUALITATIVE:
         {
-            "content": "Great! I've added your goal to your list. Now, let's plan out the steps to achieve it.",
+            "content": "Great! I've added your goal, <goal title and short description here>, to your list. Now, let's generate a list of milestone tasks to achieve it.",
             "tags": ["HANDOFF_TAG"],
             "readyToHandoff": true,
             "reInterpret": true,
             "data": {
                 "nextAgent": "TaskPlannerAgent",
                 "lastAction": "goalCreated"
+            }
+        } 
+
+        IF QUANTITATIVE:
+        {
+            "content": "Great! I've added your goal to your list. Now, let's plan out the tasks to achieve it.",
+            "tags": ["HANDOFF_TAG"],
+            "readyToHandoff": true,
+            "reInterpret": true,
+            "data": {
+                "nextAgent": "TaskPlannerAgent",
+                "lastAction": "goalCreated",
             }
         } 
 
