@@ -45,6 +45,9 @@ langchain4j:
   diary-log-agent:
     name: DiaryLogAgent
     description: 'Can analyze diary log transcripts to generate summaries and relevant tags, and identify goals and tasks that need to be updated.'
+  habit-agent:
+    name: HabitAgent
+    description: 'Creates and manages habits (type, cadence RRULE, adherence, verification, notifications), seeds recurring actions, and logs completions.'
 
 management:
   endpoint:

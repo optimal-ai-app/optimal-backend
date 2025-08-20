@@ -47,15 +47,31 @@ public class BaseSupervisor implements SupervisorInterface {
 
             AVAILABLE AGENTS
             - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-            - TaskPlannerAgent ➜ Use **only** when the **latest** user message explicitly asks to create, plan, or add tasks. Never include it just because a goal was created in a previous turn.
+            - TaskPlannerAgent ➜ Use **only** when either:
+                1. The **latest** user message explicitly asks to plan or break down goals
+                2. The message has HANDOFF_TAG and data.nextAgent = "TaskPlannerAgent"
+                3. A goal has just been created and tasks need to be planned for it
             - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
+            - HabitAgent       ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions.
+
+            HANDOFF MODE (STRICT)
+            • If the latest message comes from the assistant and includes HANDOFF_TAG with data.nextAgent = "TaskPlannerAgent" OR data.lastAction = "goalCreated":
+              - Return EXACTLY two agent nodes in this order with these dependencies:
+                [
+                  {"name":"TaskPlannerAgent","instruction":"Plan tasks for the newly created goal.","dependency":[]},
+                  {"name":"TaskCreatorAgent","instruction":"Persist the tasks exactly as planned.","dependency":["TaskPlannerAgent"]}
+                ]
+              - Do NOT include GoalCreatorAgent.
+              - Do NOT set TaskPlannerAgent to depend on GoalCreatorAgent.
+              - Do NOT add any other agents.
 
             AGENT-SELECTION GUIDELINES
             1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
             2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
-            3. Include TaskPlannerAgent **only if** the most recent user utterance contains verbs like “create a task”, “plan tasks”, “schedule”, “add task”, etc. Do **NOT** include it automatically after a goal is created.
-            4. TaskCreatorAgent always depends on TaskPlannerAgent.
-            5. Ensure a valid DAG—no circular dependencies.
+            3. Include TaskPlannerAgent **only if** the most recent user utterance contains verbs like “create a task”, “plan tasks”, “schedule”, “add task”, etc. OR if the user just created a goal.
+            4. **GOAL CREATION HANDOFF**: After a goal is successfully created, automatically include TaskPlannerAgent to plan tasks for the new goal.
+            5. TaskCreatorAgent always depends on TaskPlannerAgent.
+            6. Ensure a valid DAG—no circular dependencies.
 
             INTERFACE (must match exactly)
             [
@@ -66,16 +82,18 @@ public class BaseSupervisor implements SupervisorInterface {
             }
             ]
 
-            NSTRUCTION INTELLIGENCE:
+            INSTRUCTION INTELLIGENCE:
                 - Be SPECIFIC about what the agent should accomplish
                 - Include relevant context from the user's request
                 - Reference specific goals, targets, or requirements mentioned
                 - Don't just say "handle the user's request" - explain WHAT specifically to do
+                - **EXAMPLE**: If user says "I want to run 50 miles in 1 year" → GoalCreatorAgent creates goal → TaskPlannerAgent plans tasks → TaskCreatorAgent persists tasks
 
             RULES
             • The JSON array cannot be empty.
-            • Use only the three agent names above.
+            • Use only the four agent names above.
             • Output valid JSON—no extra text, comments, or explanations.
+            • **GOAL FLOW**: GoalCreatorAgent → TaskPlannerAgent → TaskCreatorAgent (when creating new goals)
 
                 """;
 
