@@ -11,4 +11,6 @@ import com.optimal.backend.springboot.database.entity.Tag;
 @Repository
 public interface TagRepository extends JpaRepository<Tag, UUID> {
     Optional<Tag> findByNameIgnoreCase(String name);
+
+    
 }

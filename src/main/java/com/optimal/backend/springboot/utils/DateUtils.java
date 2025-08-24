@@ -15,4 +15,8 @@ public class DateUtils {
     public static Timestamp getCurrentTimestamp() {
         return new Timestamp(getCurrentDate().getTime());
     }
+
+    public static double getExecutionTimeInSeconds(long startTime) {
+        return (double)(System.nanoTime() - startTime) / 1000000000;
+    }
 }

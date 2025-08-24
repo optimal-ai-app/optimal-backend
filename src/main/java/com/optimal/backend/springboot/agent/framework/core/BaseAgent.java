@@ -1,11 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
 

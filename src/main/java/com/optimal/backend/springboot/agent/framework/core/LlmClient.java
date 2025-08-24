@@ -19,10 +19,14 @@ import dev.langchain4j.service.AiServices;
 @Component
 public class LlmClient {
 
-    private final ChatModel chatModel;
+    private ChatModel chatModel;
 
     @Autowired
     public LlmClient(ChatModel chatModel) {
+        this.chatModel = chatModel;
+    }
+
+    public void overrideChatModel(ChatModel chatModel) {
         this.chatModel = chatModel;
     }
 

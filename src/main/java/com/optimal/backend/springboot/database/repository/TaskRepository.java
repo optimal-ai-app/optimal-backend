@@ -64,7 +64,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
         DELETE FROM Task t2
          WHERE EXISTS (
              SELECT 1 FROM Task t1 
-             WHERE t1.taskId = :taskId
+             WHERE t1.id = :taskId
                AND t2.sharedId = t1.sharedId 
                AND t2.dueDate >= t1.dueDate
          )
