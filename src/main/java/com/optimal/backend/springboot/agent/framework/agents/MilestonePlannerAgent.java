@@ -16,7 +16,7 @@ import com.optimal.backend.springboot.agent.framework.tools.GetFutureDateTool;
 import jakarta.annotation.PostConstruct;
 
 @Component
-public class TaskPlannerAgent extends BaseAgent {
+public class MilestonePlannerAgent extends BaseAgent {
     private final GetGoalDescriptionTool goalDescriptionTool;
     private final GetTasksforGoalTool getTasksforGoalTool;
     private final GetGoalProgressTool getGoalProgressTool;
@@ -24,9 +24,9 @@ public class TaskPlannerAgent extends BaseAgent {
     private final GetFutureDateTool getFutureDateTool;
 
     @Autowired
-    public TaskPlannerAgent(
-            @Value("${langchain4j.task-planner-agent.name}") String name,
-            @Value("${langchain4j.task-planner-agent.description}") String description,
+    public MilestonePlannerAgent(
+            @Value("MilestonePlannerAgent") String name,
+            @Value("Helps the user plan milestones for their qualitative goals") String description,
             GetGoalDescriptionTool goalDescriptionTool,
             GetTasksforGoalTool getTasksforGoalTool,
             GetGoalProgressTool getGoalProgressTool,
