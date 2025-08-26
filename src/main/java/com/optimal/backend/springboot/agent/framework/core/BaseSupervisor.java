@@ -119,151 +119,137 @@ public class BaseSupervisor implements SupervisorInterface {
             this.reInterpret = reInterpret;
         }
     }
-
-    // Method to execute with handoff support
+    /*
+     * 1) Checks for handoff agent, if yes goes to executeHandoffAgent
+     * 2) add users input to agentOutputs (for context)
+     * 3) interpret user input
+     * 4) check to make sure agents were added to queue
+     * 5) execute normal
+     */
     public SupervisorResponse executeWithHandoff(List<Message> userInput) {
         // If there's an active handoff agent, execute it directly
         if (handoffAgent != null && agents.containsKey(handoffAgent)) {
             return executeHandoffAgent(userInput);
         }
-
         // Normal supervisor execution - initialize state
         this.agentOutputs.put("user", userInput);
         System.out.println("Supervisor determining which agents to use...");
         interpret(userInput);
-
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
                     new ArrayList<>(), true, new HashMap<>(), false);
         }
-
         System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
         this.agentNodes.forEach(
                 node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getMessage()));
-
         return executeNormal();
     }
 
-    private SupervisorResponse executeHandoffAgent(List<Message> userInput) {
+    /*
+     * 1) get handoff agent
+     * 2) sets lastAgent to handoffAgent
+     * 3) if agent is null we need to clear handoff and return to normal execution
+     * 4) run agent with context including latest user's message
+     * 5) extract response
+     * 6) parse the response
+     * 7) check if the agent is ready to handoff
+     * 8) if ready to handoff, save the name of the agent
+     * 9) set handoffAgent to null
+     * 10) get the final message from the agent
+     * 11) if reinterpret is true, executeWithHandoff with the final message
+     * 12) save agent output for its name and final message <--- POTENTIALLY CHANGE TO USING THE CONTEXT AGENT FOR FINAL OUTPUT
+     * 13) execute normal
+     */
+    private SupervisorResponse executeHandoffAgent(List<Message> context) {
         BaseAgent agent = agents.get(handoffAgent);
         this.lastAgent = handoffAgent;
         if (agent == null) {
-            // Agent not found, clear handoff and return to normal execution
             handoffAgent = null;
             return executeNormal();
         }
-
-        System.out.printf("[HANDOFF] Executing agent %s with user follow-up.\n", handoffAgent);
-
         try {
-            List<Message> response = agent.run(userInput);
+            List<Message> response = agent.run(context);
             String finalResponse = extractFinalResponse(response);
-            String preview = finalResponse;
-            if (preview.length() > 200)
-                preview = preview.substring(0, 200) + "…";
-            System.out.printf("[HANDOFF] %s returned: %s%n", handoffAgent, preview);
-
-            // Parse the agent response to check for handoff decision
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
-
-            // If agent is ready to handoff, clear the handoff agent and return the result
-            // DO NOT call executeNormal again as this causes duplicate execution
             if (parsedResponse.readyToHandoff) {
                 String savedName = this.handoffAgent;
                 handoffAgent = null;
+                // get all of the messages from the agent + this block scoped context
+                // create context summary with context agent
+                // get summary message
                 List<Message> finalMessage = List.of(response.get(response.size() - 1));
                 if (parsedResponse.reInterpret) {
-                    System.out.println("Agent " + savedName + " requesting re-interpretation");
+                    // Save the agent's summary + agent name on a stack for later processing
+                    // append summary to finalMessage list
                     return executeWithHandoff(finalMessage);
                 }
-                System.out.println("[HANDOFF] Agent " + savedName + " completed successfully, clearing handoff");
+                // consider changing from finalmessage to context summary 
                 saveAgentOutput(savedName, finalMessage);
-                return executeNormal(); // Return the result immediately
+                return executeNormal();
             }
-
-            // If agent is not ready to handoff, keep the handoff agent active
-            System.out.println("Agent " + handoffAgent + " keeping control (readyToHandoff=false)");
             return parsedResponse;
         } catch (Exception e) {
-            System.out.println("Error in handoff agent " + handoffAgent + ": " + e.getMessage());
-            // On error, clear handoff and return control to supervisor
             handoffAgent = null;
             return executeNormal();
         }
     }
 
+    /*
+     * Context: agentNodes is a queue of all the agents that need to be executed
+     * 1) while there are agents in the queue, poll the first and set it to current
+     * 2) set the lastAgent to the current agent's name
+     * 3) check for a cycle in agent processing
+     * 4) if all of the agents dependencies are met, build the context for the agent
+     * --- Dependencies are met when all of the elements in the dependency list are in the finishedAgents set ---
+     * 5) gets the instance of the current agent
+     * 6) run the agent with the context
+     * 7) parse the reponse to convert the JSON into a SupervisorResponse object
+     * 8) check if the agent is ready to handoff
+     * 9) if ready to handoff, set the handoffAgent to the agent's name
+     * 10) return parsed response
+     * 11) send the final response to the user
+     */
     private SupervisorResponse executeNormal() {
-        System.out.println("\n\nHandoff to Supervisor\n\n");
-
-        // First, ask the LLM which agents should handle this request
         while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
             AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
             this.lastAgent = agentName;
-            System.out.println("Processing agent: " + agentName + " (iteration " + this.iterations + ")");
-
-            System.out.printf("[SUPERVISOR] handoffAgent=%s finished=%s queueRemaining=%d%n", handoffAgent,
-                    finishedAgents, agentNodes.size());
-
             if (!processingAgents.add(agentName)) {
                 System.err.println("Dependency cycle detected at: " + agentName);
                 throw new IllegalStateException("Dependency cycle at: " + agentName);
             }
 
             if (areDependenciesMet(current, finishedAgents)) {
-                System.out.println("\n\nBuilding agent context for: " + agentName + "\n\n");
                 List<Message> context = buildAgentContext(current);
-
-                // Log context summary (to avoid huge dumps)
-                if (!context.isEmpty()) {
-                    System.out.printf("[AGENT_RUN] %s context size=%d first='%s' last='%s'%n", agentName,
-                            context.size(), context.get(0).getContent(), context.get(context.size() - 1).getContent());
-                }
-                System.out.println("HERE");
-                System.out.println("\n\nHandoff to Agent: " + agentName + "\n\n");
-
                 BaseAgent agent = agents.get(agentName);
-                if (agent == null) {
-                    System.err.println("Agent " + agentName + " not found in registered agents");
-                    finishedAgents.add(agentName);
-                    processingAgents.remove(agentName);
-                    continue;
-                }
-
                 List<Message> response = agent.run(context);
-
-                String preview = extractFinalResponse(response);
-                if (preview.length() > 200)
-                    preview = preview.substring(0, 200) + "…";
-                System.out.printf("[AGENT_RUN] %s returned: %s%n", agentName, preview);
-
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
-
+                    
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
-                    System.out.println("Agent " + agentName + " requesting handoff control");
                     handoffAgent = agentName;
                     return agentParsedResponse;
                 }
             } else {
-                System.out.println("Agent " + agentName + " dependencies not met, re-queuing");
                 this.agentNodes.add(current);
             }
         }
 
         if (iterations >= maxIterations) {
-            System.err.println("Exceeded max iterations (" + maxIterations + "), possible cycle detected");
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
 
-        System.out.println("All agents completed, sending final response");
         return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 
+    /*
+     * 1) saves the agent's output to the agentOutputs map
+     * 2) add the to finished set
+     * 3) remove the agent from the processing set
+     * 4) parse the response to convert the JSON into a SupervisorResponse object
+     */
     private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
-        System.out.println("Saving agent output for " + agentName);
-        System.out.println("Response: " + response);
         this.agentOutputs.put(agentName, response);
         finishedAgents.add(agentName);
         processingAgents.remove(agentName);
@@ -287,9 +273,7 @@ public class BaseSupervisor implements SupervisorInterface {
             if (response.trim().startsWith("{") && response.trim().endsWith("}")) {
                 ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(response);
-
                 String content = jsonNode.has("content") ? jsonNode.get("content").asText() : response;
-
                 // WIP: attempt to fix JSON string issue
 
                 // String content;
@@ -301,32 +285,26 @@ public class BaseSupervisor implements SupervisorInterface {
                 // } else {
                 // content = response;
                 // }
-
                 List<String> tags = new ArrayList<>();
                 if (jsonNode.has("tags") && jsonNode.get("tags").isArray()) {
                     for (JsonNode tag : jsonNode.get("tags")) {
                         tags.add(tag.asText());
                     }
                 }
-
                 boolean readyToHandoff = jsonNode.has("readyToHandoff") ? jsonNode.get("readyToHandoff").asBoolean()
                         : false;
-
                 Map<String, Object> data = new HashMap<>();
                 if (jsonNode.has("data")) {
                     JsonNode dataNode = jsonNode.get("data");
                     data = mapper.convertValue(dataNode, new TypeReference<Map<String, Object>>() {
                     });
                 }
-
                 boolean reInterpret = jsonNode.has("reInterpret") ? jsonNode.get("reInterpret").asBoolean() : false;
-
                 return new SupervisorResponse(content, tags, readyToHandoff, data, reInterpret);
             }
         } catch (Exception e) {
             // Not JSON, treat as plain text
         }
-
         // Default response format for plain text
         return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>(), false);
     }
@@ -384,77 +362,50 @@ public class BaseSupervisor implements SupervisorInterface {
         return current.getDependencies().stream().allMatch(finishedAgents::contains);
     }
 
+    /*
+     * 1) Input is the current agent
+     * 2) gets the instructions for the agent which is from interpreter
+     * 3) get the outputs of all the agents in the dependency list
+     * 4) if the dependency list is empty, add the user's input to the context
+     * 5) return the context
+     */
     private List<Message> buildAgentContext(AgentNode current) {
         // Null-safe creation of context - getInstructions() could return null
         List<Message> instructions = current.getInstructions();
-        System.out.println("Instructions: " + instructions);
-        System.out.println("--------------------------------");
         List<Message> context = instructions != null ? new ArrayList<>(instructions) : new ArrayList<>();
-        System.out.println("Context: " + context);
-        System.out.println("--------------------------------");
         for (String dep : current.getDependencies()) {
             context.addAll(this.agentOutputs.getOrDefault(dep, List.of()));
         }
-        System.out.println("Dependencies: " + current.getDependencies());
-        System.out.println("--------------------------------");
-
         if (current.getDependencies().isEmpty() && this.agentOutputs.get("user") != null) {
-            System.out.println("Adding user input to context");
-            System.out.println("User input: " + this.agentOutputs.get("user"));
-            System.out.println("--------------------------------");
             context.addAll(this.agentOutputs.get("user"));
         }
-        System.out.println("Done Building Context");
-        System.out.println("--------------------------------");
         return context;
     }
 
     private Queue<AgentNode> parseAgentNodes(String responseContent) {
-
-        System.out.println("Parsing LLM response for agent selection:");
-        System.out.println("Response content: " + responseContent);
-
         try {
-            // Clean the response content to handle markdown code blocks
             String cleanedContent = cleanJsonResponse(responseContent);
-            System.out.println("Cleaned content: " + cleanedContent);
-
             ObjectMapper mapper = new ObjectMapper();
             JsonNode rootNode = mapper.readTree(cleanedContent);
-
-            System.out.println("Parsed JSON node type: " + rootNode.getNodeType());
-
-            // Handle both single object and array responses
             if (rootNode.isArray()) {
-                // Response is an array of agent nodes
-                System.out.println("Processing array of " + rootNode.size() + " agent nodes");
                 for (JsonNode node : rootNode) {
                     AgentNode agentNode = parseAgentNode(node);
                     if (agentNode != null) {
                         this.agentNodes.add(agentNode);
-                        System.out.println("Successfully parsed agent: " + agentNode.getName());
                     }
                 }
             } else if (rootNode.isObject()) {
-                // Response is a single agent node object
-                System.out.println("Processing single agent node object");
                 AgentNode agentNode = parseAgentNode(rootNode);
                 if (agentNode != null) {
                     agentNodes.add(agentNode);
-                    System.out.println("Successfully parsed agent: " + agentNode.getName());
                 }
             } else {
-                System.err.println("Invalid response format - not object or array: " + rootNode.getNodeType());
                 throw new RuntimeException(
                         "Invalid response format: Expected JSON object or array, got: " + rootNode.getNodeType());
             }
         } catch (JsonProcessingException e) {
-            System.err.println("JSON parsing failed: " + e.getMessage());
-            System.err.println("Original response: " + responseContent);
             throw new RuntimeException("Failed to parse agent nodes: " + e.getMessage(), e);
         }
-
-        System.out.println("Successfully parsed " + agentNodes.size() + " agent nodes");
         return agentNodes;
     }
 
@@ -474,37 +425,23 @@ public class BaseSupervisor implements SupervisorInterface {
         return cleaned.trim();
     }
 
+    /*
+     * This takes JSON agent node and returns an AgentNode object
+     */
     private AgentNode parseAgentNode(JsonNode node) {
-        System.out.println("Parsing individual agent node: " + node.toString());
-
         if (!node.has("name") || !node.has("instruction")) {
-            System.err.println("Invalid agent node - missing required fields:");
-            System.err.println("  - has 'name': " + node.has("name"));
-            System.err.println("  - has 'instruction': " + node.has("instruction"));
-            System.err.println("  - available fields: " + node.fieldNames().toString());
-            System.err.println("  - node content: " + node.toString());
             return null;
         }
-
         String name = node.get("name").asText();
         String instruction = node.get("instruction").asText();
-
-        System.out.println("Parsed agent name: " + name);
-        System.out.println("Parsed instruction: " + instruction);
-
         HashSet<String> dependencies = new HashSet<>();
         JsonNode depsNode = node.get("dependency");
         if (depsNode != null && depsNode.isArray()) {
             for (JsonNode dep : depsNode) {
                 dependencies.add(dep.asText());
             }
-            System.out.println("Parsed dependencies: " + dependencies);
-        } else {
-            System.out.println("No dependencies found");
         }
-
         AgentNode agentNode = new AgentNode(name, dependencies, instruction);
-        System.out.println("Successfully created AgentNode: " + name);
         return agentNode;
     }
 }
