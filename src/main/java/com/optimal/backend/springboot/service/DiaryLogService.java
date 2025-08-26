@@ -2,9 +2,10 @@ package com.optimal.backend.springboot.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Calendar;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
+import java.sql.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,7 +19,7 @@ import com.optimal.backend.springboot.database.entity.Tag;
 import com.optimal.backend.springboot.database.repository.DiaryLogRepository;
 import com.optimal.backend.springboot.database.repository.TagRepository;
 import com.optimal.backend.springboot.utils.DateUtils;
-
+import com.optimal.backend.springboot.utils.DateUtils.ToFromDate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
@@ -63,7 +64,6 @@ public class DiaryLogService {
             throw new RuntimeException("Failed to save diary log due to concurrent modification. Please try again.", e);
         }
 
-
         //update tasks and goals
         System.out.println("total time: " + DateUtils.getExecutionTimeInSeconds(startTime));
         return diaryLog;
@@ -91,11 +91,35 @@ public class DiaryLogService {
         }
     }
 
-    @SuppressWarnings("unused")
+    public String getDiaryLogsForWeek(UUID userId) {
+        ToFromDate toFromDate = DateUtils.getDates();
+        List<DiaryLog> diaryLogs = diaryLogRepo.findByUserAndDateBetween(userId, toFromDate.startDate, toFromDate.endDate);
+        StringBuilder diaryLogsString = new StringBuilder();
+        for (DiaryLog diaryLog : diaryLogs) {
+            diaryLogsString.append(diaryLog.getSummary());
+        }
+
+        return diaryLogsString.toString();
+    }
+
+    public String getTagsForWeek(UUID userId) {
+        ToFromDate toFromDate = DateUtils.getDates();
+        List<Tag> tags = tagRepository.findByUserAndDateBetween(userId, toFromDate.startDate, toFromDate.endDate);
+        StringBuilder tagsString = new StringBuilder();
+        for (Tag tag : tags) {
+            tagsString.append(tag.getName());
+        }
+        return tagsString.toString();
+    }
+
+    
+
     private class DiaryJsonResponse {
         public String summary;
         public List<String> tasks;
         public List<String> goals;
         public List<String> tags;
     }
+
+    
 }
