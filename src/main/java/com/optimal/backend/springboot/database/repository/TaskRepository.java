@@ -3,6 +3,7 @@ package com.optimal.backend.springboot.database.repository;
 
 import java.util.List;
 import java.util.UUID;
+import java.sql.Date;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -14,6 +15,15 @@ import com.optimal.backend.springboot.database.entity.Task;
 
 @Repository
 public interface TaskRepository extends JpaRepository<Task, UUID> {
+
+  @Query("""
+        SELECT t
+          FROM Task t
+         WHERE t.userId = :userId
+           AND t.dueDate BETWEEN :startDate AND :endDate
+      ORDER BY t.createdDate DESC
+      """)
+  List<Task> findByUserIdAndDueDateBetween(@Param("userId") UUID userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
   @Query("""
         SELECT t

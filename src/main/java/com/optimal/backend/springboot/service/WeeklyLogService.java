@@ -24,6 +24,8 @@ public class WeeklyLogService {
     private WeeklyLogAgent weeklyLogAgent;
     @Autowired
     private WeeklyLogRespository weeklyLogRepository;
+    @Autowired
+    private TaskService taskService;
     public GetWeeklyLogRequest getWeeklyLog(UUID userId) {
         // Check if a weekly log exists within the last 7 days
         Date sevenDaysAgo = Date.valueOf(LocalDate.now().minusDays(7));
@@ -40,8 +42,9 @@ public class WeeklyLogService {
         String diaryLogs = diaryLogService.getDiaryLogsForWeek(userId);
         String tags = diaryLogService.getTagsForWeek(userId);
         ToFromDate toFromDate = DateUtils.getDates();
+        String tasks = taskService.getTasksForWeek(userId, toFromDate.startDate, toFromDate.endDate);
         String logs = "Weekly Log from " + toFromDate.startDate + " to " + toFromDate.endDate +
-                "\nDiary Logs:\n" + diaryLogs + "\nTags:\n" + tags;
+                "\nDiary Logs:\n" + diaryLogs + "\nTags:\n" + tags + "\n" + tasks;
         List<Message> instructions = new ArrayList<>();
         instructions.add(new Message("user", logs));
         List<Message> response = weeklyLogAgent.run(instructions);

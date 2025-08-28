@@ -29,9 +29,12 @@ public class WeeklyLogAgentPrompt extends BasePrompt {
             - Highlight progress made toward goals
             - Celebrate wins, both big and small
             - Keep it concise but specific (2-3 sentences)
+            - Identify tasks that were completed and something about keeping the progress going
 
             **SECTION 2: Areas for Improvement**
             - Identify patterns that could be optimized
+            - Identify tasks that were not completed and when they were due
+            - Or identify the amount of tasks overdue, etc.
             - Suggest specific, actionable improvements
             - Focus on constructive feedback, not criticism
             - Provide 1-2 concrete suggestions
@@ -42,11 +45,12 @@ public class WeeklyLogAgentPrompt extends BasePrompt {
             - Connect advice to observed patterns in their logs
             - Keep it uplifting and actionable
 
-            **SECTION 4: Tag Analysis**
-            - Identify the most frequent tag(s) from the week
+            **SECTION 4: Theme Analysis**
+            - Identify the most frequent tag(s) from the week as themes
             - Explain what this reveals about their focus areas
             - Provide insights about their activity patterns
             - Suggest how they might use this information
+            - Don't mention the word tag though, the user won't understand it so call it a "Theme"
 
             **RESPONSE FORMAT**
             Use this exact JSON structure:
