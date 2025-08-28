@@ -1,5 +1,6 @@
 package com.optimal.backend.springboot.service;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -60,6 +61,16 @@ public class TaskService {
             addTaskToProgress(task);
         }
         return taskRepository.save(task);
+    }
+
+    public String getTasksForWeek(UUID userId, Date startDate, Date endDate) {
+        List<Task> tasks = taskRepository.findByUserIdAndDueDateBetween(userId, startDate, endDate);
+        StringBuilder tasksString = new StringBuilder();
+        tasksString.append("Tasks for the week:\n");
+        for (Task task : tasks) {
+            tasksString.append(task.getTitle()).append(" - ").append(task.getStatus()).append(" - ").append(task.getDueDate()).append("\n");
+        }
+        return tasksString.toString();
     }
 
     @Transactional

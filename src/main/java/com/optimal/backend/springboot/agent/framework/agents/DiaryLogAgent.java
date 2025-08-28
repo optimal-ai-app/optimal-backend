@@ -10,6 +10,7 @@ import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.tools.GetGoalDescriptionTool;
 import com.optimal.backend.springboot.agent.framework.tools.GetTasksforGoalTool;
 
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import jakarta.annotation.PostConstruct;
 
 @Component
@@ -19,11 +20,21 @@ public class DiaryLogAgent extends BaseAgent {
 
     @Autowired
     public DiaryLogAgent(
+            @Value("${langchain4j.open-ai.chat-model.api-key:}") String apiKey,
             @Value("${langchain4j.diary-log-agent.name}") String name,
             @Value("${langchain4j.diary-log-agent.description}") String description,
-            GetGoalDescriptionTool goalDescriptionTool, GetTasksforGoalTool getTasksforGoalTool,
-            LlmClient llmClient) {
-        super(name, description, DiaryLogAgentPrompt.getDefaultPrompt(), llmClient);
+            GetGoalDescriptionTool goalDescriptionTool, GetTasksforGoalTool getTasksforGoalTool) {
+        super(
+                name,
+                description,
+                DiaryLogAgentPrompt.getDefaultPrompt(),
+                new LlmClient(
+                        OpenAiChatModel.builder()
+                                .apiKey(apiKey)
+                                .modelName("gpt-4o-mini")
+                                .temperature(0.3)
+                                .maxTokens(2000)
+                                .build()));
         this.goalDescriptionTool = goalDescriptionTool;
         this.getTasksforGoalTool = getTasksforGoalTool;
         addTool(goalDescriptionTool);

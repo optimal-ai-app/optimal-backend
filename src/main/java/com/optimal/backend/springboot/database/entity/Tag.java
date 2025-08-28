@@ -9,10 +9,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
+@NoArgsConstructor
 
 @Entity
 @Table(name = "tags")
@@ -20,12 +22,17 @@ public class Tag {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "tag_id")
-    private UUID tagId;
+    @Column(name = "id")
+    private UUID id;
 
     @Column(nullable = false, unique = true)
     private String name;
 
     @Column(name = "diary_log_id", nullable = false)
     private UUID diaryLogId;
+
+    public Tag(String name, UUID diaryLogId) {
+        this.name = name;
+        this.diaryLogId = diaryLogId;
+    }
 }
