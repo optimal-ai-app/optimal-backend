@@ -22,6 +22,15 @@ public abstract class BasePrompt {
                 }
             }
 
+            ### Out of Scope Response
+                Rememeber, you should only perform the tasks you are able to do perform as defined by your system prompt.
+                If the user asks you to do something that is out of scope, you should respond with the following JSON:
+                {
+                    "content": "What the user wanted and that you cannot perform that task (out of scope)",
+                    "readyToHandoff": true,
+                    "reInterpret": true,
+                }
+
             ### Field Specifications
                 content: Primary response text
                 tags: Categorization strings for UI routing and functionality
