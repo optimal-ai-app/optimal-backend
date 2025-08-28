@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.optimal.backend.springboot.agent.framework.agents.ContextAgent;
 import com.optimal.backend.springboot.agent.framework.core.interfaces.SupervisorInterface;
 
 public class BaseSupervisor implements SupervisorInterface {
@@ -22,12 +23,14 @@ public class BaseSupervisor implements SupervisorInterface {
     private String handoffAgent = null;
     private Queue<AgentNode> agentNodes = new LinkedList<>();
     private final Map<String, List<Message>> agentOutputs = new HashMap<>();
+    private final Map<String, List<Message>> agentContexts = new HashMap<>();
     private final Set<String> finishedAgents = new HashSet<>();
     private final Set<String> processingAgents = new HashSet<>();
     private int maxIterations = 0;
     private int iterations = 0;
     private String lastAgent = null;
-
+    @Autowired
+    private ContextAgent contextAgent;
     @Autowired
     private LlmClient llmClient;
 
@@ -178,10 +181,15 @@ public class BaseSupervisor implements SupervisorInterface {
                 // get all of the messages from the agent + this block scoped context
                 // create context summary with context agent
                 // get summary message
+                List<Message> fullContent = new ArrayList<>(context);
+                fullContent.addAll(response);
+                List<Message> summary = contextAgent.run(fullContent);
+                
                 List<Message> finalMessage = List.of(response.get(response.size() - 1));
                 if (parsedResponse.reInterpret) {
-                    // Save the agent's summary + agent name on a stack for later processing
+                    // Save the agent's summary + agent name on a map
                     // append summary to finalMessage list
+                    agentContexts.put(savedName, summary);
                     return executeWithHandoff(finalMessage);
                 }
                 // consider changing from finalmessage to context summary 
@@ -365,14 +373,18 @@ public class BaseSupervisor implements SupervisorInterface {
     /*
      * 1) Input is the current agent
      * 2) gets the instructions for the agent which is from interpreter
-     * 3) get the outputs of all the agents in the dependency list
-     * 4) if the dependency list is empty, add the user's input to the context
-     * 5) return the context
+     * 3) if the agent has a context already saved, add it to the context
+     * 4) remove the agent's context from the map
+     * 5) get the outputs of all the agents in the dependency list
+     * 6) if the dependency list is empty, add the user's input to the context
+     * 7) return the context
      */
     private List<Message> buildAgentContext(AgentNode current) {
         // Null-safe creation of context - getInstructions() could return null
         List<Message> instructions = current.getInstructions();
         List<Message> context = instructions != null ? new ArrayList<>(instructions) : new ArrayList<>();
+        context.addAll(agentContexts.getOrDefault(current.getName(), List.of()));
+        agentContexts.remove(current.getName());
         for (String dep : current.getDependencies()) {
             context.addAll(this.agentOutputs.getOrDefault(dep, List.of()));
         }
