@@ -25,6 +25,15 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
       """)
   List<Task> findByUserIdAndDueDateBetween(@Param("userId") UUID userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
 
+
+  @Modifying
+  @Query("""
+        UPDATE Task t
+         SET t.status = 'completed'
+         WHERE t.title IN :tasks
+      """)
+  void updateTasks(@Param("tasks") List<String> tasks);
+
   @Query("""
         SELECT t
           FROM Task t
