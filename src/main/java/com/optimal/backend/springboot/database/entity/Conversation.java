@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,7 +26,6 @@ import lombok.Setter;
 public class Conversation {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
@@ -33,9 +33,6 @@ public class Conversation {
 
     @Column(name = "title")
     private String title;
-
-    @Column(name = "summary_text", columnDefinition = "TEXT")
-    private String summaryText;
 
     @Column(name = "created_at")
     private Timestamp createdAt;

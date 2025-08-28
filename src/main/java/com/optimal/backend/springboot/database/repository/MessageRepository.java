@@ -14,8 +14,4 @@ import com.optimal.backend.springboot.database.entity.Message;
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
 
-    @Query("SELECT COALESCE(MAX(m.sequenceIndex), 0) FROM Message m WHERE m.conversationId = :cid")
-    int findMaxSequenceIndex(@Param("cid") UUID conversationId);
-
-    List<Message> findByConversationIdOrderBySequenceIndex(UUID conversationId);
 }

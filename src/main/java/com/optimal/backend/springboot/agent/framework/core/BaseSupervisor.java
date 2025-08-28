@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.agent.framework.agents.ContextAgent;
 import com.optimal.backend.springboot.agent.framework.core.interfaces.SupervisorInterface;
+import com.optimal.backend.springboot.service.ChatService;
 
 public class BaseSupervisor implements SupervisorInterface {
     private final Map<String, BaseAgent> agents = new HashMap<>();
@@ -33,13 +34,24 @@ public class BaseSupervisor implements SupervisorInterface {
     private ContextAgent contextAgent;
     @Autowired
     private LlmClient llmClient;
-
+    @Autowired
+    private ChatService chatService;
     // Constructor for manual dependency injection
     public BaseSupervisor(LlmClient llmClient) {
         this.llmClient = llmClient;
     }
 
-    // Default constructor for Spring dependency injection
+    public void setContextAgent(ContextAgent contextAgent) {
+        this.contextAgent = contextAgent;
+    }
+
+    public void setLlmClient(LlmClient llmClient) {
+        this.llmClient = llmClient;
+    }
+
+    public void setChatService(ChatService chatService) {
+        this.chatService = chatService;
+    }    // Default constructor for Spring dependency injection
     public BaseSupervisor() {
         // LlmClient will be injected by Spring via @Autowired
     }
@@ -190,12 +202,14 @@ public class BaseSupervisor implements SupervisorInterface {
                     // Save the agent's summary + agent name on a map
                     // append summary to finalMessage list
                     agentContexts.put(savedName, summary);
+                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content);
                     return executeWithHandoff(finalMessage);
                 }
                 // consider changing from finalmessage to context summary 
                 saveAgentOutput(savedName, finalMessage);
                 return executeNormal();
             }
+            chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content);
             return parsedResponse;
         } catch (Exception e) {
             handoffAgent = null;
@@ -237,6 +251,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     handoffAgent = agentName;
+                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), agentParsedResponse.content);
                     return agentParsedResponse;
                 }
             } else {
@@ -247,7 +262,7 @@ public class BaseSupervisor implements SupervisorInterface {
         if (iterations >= maxIterations) {
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
-
+        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
         return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 

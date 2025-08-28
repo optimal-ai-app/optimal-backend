@@ -17,7 +17,7 @@ public class LangChain4jConfig {
     @Value("${langchain4j.open-ai.chat-model.api-key:}")
     private String apiKey;
 
-    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-5-mini}")
+    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-5-nano}")
     private String modelName;
 
     @Value("${langchain4j.open-ai.chat-model.temperature:1}")
