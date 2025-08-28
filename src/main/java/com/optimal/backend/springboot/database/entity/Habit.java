@@ -48,6 +48,9 @@ public class Habit {
 	@Column(name = "updated_at")
 	private Timestamp updatedAt;
 
+	@Column(name = "user_id")
+	private UUID userId;
+
 	@PrePersist
 	protected void onCreate() {
 		if (this.createdAt == null) {

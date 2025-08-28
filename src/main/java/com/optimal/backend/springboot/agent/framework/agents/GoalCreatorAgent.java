@@ -15,8 +15,11 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class GoalCreatorAgent extends BaseAgent {
+    @SuppressWarnings("unused")
     private final CreateGoalTool createGoalTool;
+    @SuppressWarnings("unused")
     private final GetGoalDescriptionTool goalDescriptionTool;
+    @SuppressWarnings("unused")
     private final GetFutureDateTool getFutureDateTool;
 
     @Autowired

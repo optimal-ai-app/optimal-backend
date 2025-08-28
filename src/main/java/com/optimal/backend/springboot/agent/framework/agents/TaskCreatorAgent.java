@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class TaskCreatorAgent extends BaseAgent {
+    @SuppressWarnings("unused")
     private final CreateTaskTool createTaskTool;
 
     @Autowired

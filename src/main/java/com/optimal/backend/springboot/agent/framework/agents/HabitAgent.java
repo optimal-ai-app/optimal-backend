@@ -13,6 +13,7 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class HabitAgent extends BaseAgent {
+    @SuppressWarnings("unused")
     private final CreateHabitTool createHabitTool;
 
     @Autowired
