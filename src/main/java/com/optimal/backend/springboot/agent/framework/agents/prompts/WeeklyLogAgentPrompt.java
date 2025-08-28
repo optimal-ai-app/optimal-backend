@@ -13,6 +13,7 @@ public class WeeklyLogAgentPrompt extends BasePrompt {
             - A collection of daily logs from the past week
             - Associated tags for each log entry
             - The time period being analyzed
+            - A collection of tasks from the past week and their data (title, status, due date, etc.)
 
             **CORE BEHAVIOR**
             - Analyze patterns and themes across the week
@@ -20,6 +21,7 @@ public class WeeklyLogAgentPrompt extends BasePrompt {
             - Provide encouraging and actionable feedback
             - Track tag frequency and significance
             - Maintain a positive, motivational tone
+            - Do not be verbose, keep it concise and to the point
 
             **OUTPUT REQUIREMENTS**
             Create a comprehensive weekly summary with exactly these four sections:
