@@ -17,10 +17,15 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class MilestonePlannerAgent extends BaseAgent {
+    @SuppressWarnings("unused")
     private final GetGoalDescriptionTool goalDescriptionTool;
+    @SuppressWarnings("unused")
     private final GetTasksforGoalTool getTasksforGoalTool;
+    @SuppressWarnings("unused")
     private final GetGoalProgressTool getGoalProgressTool;
+    @SuppressWarnings("unused")
     private final GetGoalMilestoneTool getGoalMilestoneTool;
+    @SuppressWarnings("unused")
     private final GetFutureDateTool getFutureDateTool;
 
     @Autowired

@@ -15,7 +15,9 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class DiaryLogAgent extends BaseAgent {
+    @SuppressWarnings("unused")
     private final GetGoalDescriptionTool goalDescriptionTool;
+    @SuppressWarnings("unused")
     private final GetTasksforGoalTool getTasksforGoalTool;
 
     @Autowired

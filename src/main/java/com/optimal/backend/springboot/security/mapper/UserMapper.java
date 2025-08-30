@@ -1,7 +1,5 @@
 package com.optimal.backend.springboot.security.mapper;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.ReportingPolicy;
 import org.mapstruct.factory.Mappers;
 
 import com.optimal.backend.springboot.database.entity.User;
@@ -13,7 +11,6 @@ import com.optimal.backend.springboot.security.dto.RegistrationRequest;
  *
  * @author Faruk
  */
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface UserMapper {
 
 	UserMapper INSTANCE = Mappers.getMapper(UserMapper.class);

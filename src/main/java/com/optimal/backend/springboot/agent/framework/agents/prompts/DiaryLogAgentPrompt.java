@@ -19,7 +19,9 @@ public class DiaryLogAgentPrompt extends BasePrompt {
             3. A list of goals by name and tasks by id that need to be updated based on the diary entry
                 - Use the goalDescriptionTool to get the list of goals, if no goals are related to the diary entry, just continue
                 - Use the getTasksforGoal tool to get the list of tasks for each goal if a related goal is found
-                - find the tasks that are related to the diary entry, make sure to only update the task based on the day
+                - Find tasks that are related to the diary entry content AND are temporally relevant to the diary entry date
+                - IMPORTANT: Only update tasks that have due dates on or around the diary entry date (within 1-2 days)
+                - Do not update tasks that are significantly in the past or future relative to the diary entry date
 
             ## Instructions for Summary Generation:
             - Create a brief, coherent summary (< 255 characters) that captures the main themes and key points
@@ -36,6 +38,14 @@ public class DiaryLogAgentPrompt extends BasePrompt {
               * Emotions: "Grateful", "Stressed", "Happy", "Anxious", "Motivated", "Reflective"
               * Life Areas: "Career", "Health", "Relationships", "Personal", "Financial", "Spiritual"
               * Contexts: "Family", "Professional", "Academic", "Hobby", "Challenge", "Achievement"
+
+            ## Task Update Criteria:
+            - Only include tasks in tasksToUpdate if they meet ALL of the following:
+              1. The task content is directly related to what's mentioned in the diary entry
+              2. The task's due date is within 1-2 days of the diary entry date: %s
+              3. The diary entry provides evidence of task progress, completion, or relevant updates
+            - Ignore tasks that are due significantly before or after the diary entry date
+            - Focus on tasks that would logically be worked on around the time of the diary entry
 
             ## Output Format:
             Respond with a JSON object containing:
@@ -54,6 +64,7 @@ public class DiaryLogAgentPrompt extends BasePrompt {
             - If the transcript is unclear or incomplete, work with what's available
             - Prioritize accuracy and relevance over completeness
             - Keep tags specific enough to be useful for filtering and organization
+            - When in doubt about task relevance, err on the side of caution and exclude the task
 
             Now analyze the following transcript:
             """;

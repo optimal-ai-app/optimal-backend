@@ -48,10 +48,6 @@ public class TaskService {
         return taskRepository.findById(id);
     }
 
-    public void updateGoalProgress(Task task) {
-        goalProgressService.updateGoalProgress(task);
-    }
-
     public void addTaskToProgress(Task task) {
         goalProgressService.addTaskToProgress(task);
     }
@@ -61,6 +57,10 @@ public class TaskService {
             addTaskToProgress(task);
         }
         return taskRepository.save(task);
+    }
+
+    public void updateTasks(List<String> tasks) {
+        taskRepository.updateTasks(tasks);
     }
 
     public String getTasksForWeek(UUID userId, Date startDate, Date endDate) {
@@ -171,7 +171,6 @@ public class TaskService {
     }
 
     public Task updateTask(Task task) {
-        updateGoalProgress(task);
         return taskRepository.save(task);
     }
 

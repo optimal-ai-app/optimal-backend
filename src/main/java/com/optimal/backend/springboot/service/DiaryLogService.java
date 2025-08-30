@@ -1,11 +1,8 @@
 package com.optimal.backend.springboot.service;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Calendar;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.sql.Date;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +31,8 @@ public class DiaryLogService {
     private ObjectMapper objectMapper;
     @Autowired
     private TagRepository tagRepository;
+    @Autowired
+    private TaskService taskService;
     public DiaryLog createDiaryLog(UUID userId, String transcript) {
         long startTime = System.nanoTime();
         // Create DiaryLog entity
@@ -58,7 +57,7 @@ public class DiaryLogService {
             
             //update tags
             tagRepository.saveAll(diaryJsonResponse.tags.stream().map(tag -> new Tag(tag, savedDiaryLog.getId())).collect(Collectors.toList()));
-            
+            taskService.updateTasks(diaryJsonResponse.tasks);
             diaryLog = savedDiaryLog;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new RuntimeException("Failed to save diary log due to concurrent modification. Please try again.", e);
@@ -74,8 +73,13 @@ public class DiaryLogService {
             JsonNode jsonNode = objectMapper.readTree(agentResponse);
             if (jsonNode.has("content")) {
                 response.summary = jsonNode.get("content").get("summary").asText();
-                response.tasks = Arrays.asList(jsonNode.get("content").get("tasksToUpdate").asText().split(","));
-                response.goals = Arrays.asList(jsonNode.get("content").get("goalsToUpdate").asText().split(","));
+            }
+            JsonNode tasksNode = jsonNode.get("content").get("tasksToUpdate");
+            if (tasksNode.isArray()) {
+                response.tasks = new ArrayList<>();
+                for (JsonNode task : tasksNode) {
+                    response.tasks.add(task.asText());
+                }
             }
             JsonNode tagsNode = jsonNode.get("tags");
             if (tagsNode.isArray()) {
@@ -117,7 +121,6 @@ public class DiaryLogService {
     private class DiaryJsonResponse {
         public String summary;
         public List<String> tasks;
-        public List<String> goals;
         public List<String> tags;
     }
 
