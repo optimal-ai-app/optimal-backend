@@ -55,6 +55,7 @@ public class ChatController {
             // Extract userId from request
             String date = (String) request.get("date");
             String chatId = (String) request.get("chatId");
+            System.out.println("chatId: " + chatId);
             String userId = (String) request.get("userId");
             if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
@@ -75,7 +76,6 @@ public class ChatController {
             List<Map<String, Object>> messages = (List<Map<String, Object>>) request.get("messages");
             
             chatService.addUserMessage(UUID.fromString(chatId), UUID.fromString(userId), (String) messages.get(messages.size() - 1).get("content"));
-
             // Create a new list with userId as system message at the front
             List<Message> convertedMessages = new ArrayList<>();
 

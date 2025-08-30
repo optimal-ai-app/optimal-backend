@@ -6,7 +6,7 @@ import java.util.Calendar;
 
 public class DateUtils {
     public static Date getCurrentDate() {
-        return new Date(0);
+        return new Date(System.currentTimeMillis());
     }
 
     public static Date getCurrentDatePlusDays(int days) {
@@ -14,7 +14,7 @@ public class DateUtils {
     }
 
     public static Timestamp getCurrentTimestamp() {
-        return new Timestamp(getCurrentDate().getTime());
+        return new Timestamp(System.currentTimeMillis());
     }
 
     public static double getExecutionTimeInSeconds(long startTime) {

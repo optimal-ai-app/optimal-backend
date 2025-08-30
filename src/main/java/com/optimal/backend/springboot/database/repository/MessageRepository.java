@@ -13,5 +13,12 @@ import com.optimal.backend.springboot.database.entity.Message;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
-
+    
+    @Query("""
+            SELECT m
+              FROM Message m
+             WHERE m.conversationId = :conversationId
+          ORDER BY m.createdAt ASC
+            """)
+    List<Message> findByConversationIdOrderByCreatedAtAsc(@Param("conversationId") UUID conversationId);
 }

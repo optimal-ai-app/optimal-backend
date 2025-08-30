@@ -52,12 +52,14 @@ public class ChatService {
             System.out.println("conversationId: " + conversationId);
             Optional<Conversation> convo = conversationRepository.findById(conversationId);
             if(!convo.isPresent()) {
+                System.out.println("conversation does not exist, creating new one");
                 Conversation newConvo = new Conversation();
                 newConvo.setId(conversationId);
                 newConvo.setUserId(userId);
                 newConvo.setTitle(content);
                 convo = Optional.of(conversationRepository.save(newConvo));
             }
+            System.out.println("addming message");
             Message msg = new Message();
             msg.setConversationId(convo.get().getId());
             msg.setRole("user");
