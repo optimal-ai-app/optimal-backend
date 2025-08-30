@@ -153,6 +153,17 @@
             <classifier>osx-x86_64</classifier>
         </dependency>
 
+        <!-- Spring Retry for handling optimistic locking failures -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+        </dependency>
+
         
 
     </dependencies>

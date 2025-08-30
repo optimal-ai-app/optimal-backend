@@ -24,14 +24,14 @@ public class MessageController {
 
     private final MessageRepository messageRepository;
 
-    @GetMapping("/conversation/{conversationId}")
-    public ResponseEntity<List<Message>> getMessagesByConversation(@PathVariable UUID conversationId) {
-        return ResponseEntity.ok(messageRepository.findByConversationIdOrderBySequenceIndex(conversationId));
-    }
-
     @PostMapping
     public ResponseEntity<Message> createMessage(@RequestBody Message msg) {
         msg.setId(UUID.randomUUID());
         return ResponseEntity.ok(messageRepository.save(msg));
+    }
+
+    @GetMapping("/conversation/{conversationId}")
+    public ResponseEntity<List<Message>> getMessagesByConversation(@PathVariable UUID conversationId) {
+        return ResponseEntity.ok(messageRepository.findByConversationIdOrderByCreatedAtAsc(conversationId));
     }
 }

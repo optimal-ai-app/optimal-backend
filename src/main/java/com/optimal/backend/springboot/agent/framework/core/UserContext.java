@@ -19,6 +19,10 @@ public class UserContext {
         currentUserId.set(userId);
     }
 
+    public static UUID getChatId() {
+        return currentChatId.get();
+    }
+
     /**
      * Set the current chat ID for this thread
      */

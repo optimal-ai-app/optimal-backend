@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,10 +22,14 @@ import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
+import com.optimal.backend.springboot.service.ChatService;
 
 @RestController
 @RequestMapping("/chat")
 public class ChatController {
+
+    @Autowired
+    private ChatService chatService;
 
     @Autowired
     private TaskPlannerAgent taskPlannerAgent;
@@ -50,6 +55,7 @@ public class ChatController {
             // Extract userId from request
             String date = (String) request.get("date");
             String chatId = (String) request.get("chatId");
+            System.out.println("chatId: " + chatId);
             String userId = (String) request.get("userId");
             if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
@@ -62,13 +68,14 @@ public class ChatController {
             // Set userId in ThreadLocal context for tools to access
             UserContext.setUserId(userId);
             UserContext.setChatId(chatId);
-            System.out.println("=== ChatController: Set userId in context: " + userId + "\nand chatId: " + chatId);
+            
 
             @SuppressWarnings("unchecked")
             // Extract messages from request - each message has a role (e.g. user/assistant)
             // and content
             List<Map<String, Object>> messages = (List<Map<String, Object>>) request.get("messages");
-
+            
+            chatService.addUserMessage(UUID.fromString(chatId), UUID.fromString(userId), (String) messages.get(messages.size() - 1).get("content"));
             // Create a new list with userId as system message at the front
             List<Message> convertedMessages = new ArrayList<>();
 
@@ -90,6 +97,7 @@ public class ChatController {
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
                 newSupervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
                 newSupervisor.addAgent(habitAgent.getName(), habitAgent);
+                newSupervisor.setChatService(chatService);
                 return newSupervisor;
             });
 
