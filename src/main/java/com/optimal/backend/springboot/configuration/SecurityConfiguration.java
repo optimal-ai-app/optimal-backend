@@ -40,7 +40,7 @@ public class SecurityConfiguration {
 						.requestMatchers("/register", "/login").permitAll()
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
 						.requestMatchers("/actuator/**").permitAll()
-						.requestMatchers("/chat").permitAll()
+						.requestMatchers("/chat/**").permitAll()
 						.requestMatchers("/api/**").permitAll()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
