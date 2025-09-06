@@ -62,6 +62,27 @@ public class AuthController {
         }
     }
     
+    @PostMapping("/refresh")
+    @Operation(summary = "Refresh session", description = "Refresh session with Supabase")
+    public ResponseEntity<LoginResponse> refresh(@Valid @RequestParam String refreshToken) {
+        try {
+            JsonNode response = supabaseAuthService.refreshSession(refreshToken).block();
+            if (response != null && response.has("access_token")) {
+                LoginResponse loginResponse = new LoginResponse();
+                loginResponse.setAccessToken(response.get("access_token").asText());
+                loginResponse.setRefreshToken(response.get("refresh_token").asText());
+                return ResponseEntity.ok(loginResponse);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } catch (Exception e) {
+            log.error("Refresh failed", e);
+            LoginResponse err = new LoginResponse();
+            err.setRefreshToken(null);
+            err.setAccessToken(null);
+            return ResponseEntity.badRequest().body(err);
+        }
+    }
 
 
     @PostMapping("/login")
@@ -69,10 +90,11 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             JsonNode response = supabaseAuthService.loginUser(request.getEmail(), request.getPassword()).block();
-            
+            System.out.println("Login response: " + response.toPrettyString());
             if (response != null && response.has("access_token")) {
                 LoginResponse loginResponse = new LoginResponse();
-                loginResponse.setToken(response.get("access_token").asText());
+                loginResponse.setAccessToken(response.get("access_token").asText());
+                loginResponse.setRefreshToken(response.get("refresh_token").asText());
                 return ResponseEntity.ok(loginResponse);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

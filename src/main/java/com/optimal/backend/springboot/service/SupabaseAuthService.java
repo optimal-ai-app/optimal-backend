@@ -68,6 +68,34 @@ public class SupabaseAuthService {
                 });
     }
 
+    public Mono<JsonNode> refreshSession(String refreshToken){
+        WebClient webClient = webClientBuilder.baseUrl(supabaseUrl + "/auth/v1").build();
+        Map<String, Object> requestBody = Map.of(
+            "refresh_token", refreshToken
+        );
+        return webClient.post()
+        .uri("/token?grant_type=refresh_token")
+        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .header("apikey", supabaseAnonKey)
+        .bodyValue(requestBody)
+        .retrieve()
+        .bodyToMono(String.class)
+        .map(response -> {
+            try {
+                return objectMapper.readTree(response);
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse refresh response", e);
+            }
+        })
+        .doOnError(error -> {
+            if (error instanceof WebClientResponseException) {
+                WebClientResponseException webClientException = (WebClientResponseException) error;
+                System.err.println("Refresh session failed with status: " + webClientException.getStatusCode() + 
+                        " and body: " + webClientException.getResponseBodyAsString());
+            }
+        });
+    }
+
     /**
      * Authenticate user with Supabase - Fixed to send JSON instead of form data
      */
@@ -85,7 +113,6 @@ public class SupabaseAuthService {
                 .uri("/token?grant_type=password")
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
                 .header("apikey", supabaseAnonKey)
-                .header(HttpHeaders.AUTHORIZATION, "Bearer " + supabaseAnonKey)
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(String.class)

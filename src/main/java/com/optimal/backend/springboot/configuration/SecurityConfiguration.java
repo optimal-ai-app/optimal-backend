@@ -37,11 +37,11 @@ public class SecurityConfiguration {
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
 						.requestMatchers("/api/auth/**").permitAll()
-						.requestMatchers("/register", "/login").permitAll()
+						.requestMatchers("/register", "/login", "/refresh").permitAll()
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-						.requestMatchers("/actuator/**").permitAll()
-						.requestMatchers("/chat/**").permitAll()
-						.requestMatchers("/api/**").permitAll()
+						.requestMatchers("/actuator/**").authenticated()
+						.requestMatchers("/chat/**").authenticated()
+						.requestMatchers("/api/**").authenticated()
 						.anyRequest().authenticated())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(Customizer.withDefaults()))
@@ -68,7 +68,7 @@ public class SecurityConfiguration {
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList("http://localhost:8081", "http://127.0.0.1:8081"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 
