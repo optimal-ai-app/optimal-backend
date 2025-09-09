@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -27,7 +29,7 @@ public class SupabaseAuthService {
 
     @Autowired
     private WebClient.Builder webClientBuilder;
-    
+
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -41,8 +43,7 @@ public class SupabaseAuthService {
 
         Map<String, Object> requestBody = Map.of(
                 "email", email,
-                "password", password
-        );
+                "password", password);
 
         return webClient.post()
                 .uri("/signup")
@@ -62,38 +63,38 @@ public class SupabaseAuthService {
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
-                        System.err.println("Registration failed with status: " + webClientException.getStatusCode() + 
+                        System.err.println("Registration failed with status: " + webClientException.getStatusCode() +
                                 " and body: " + webClientException.getResponseBodyAsString());
                     }
                 });
     }
 
-    public Mono<JsonNode> refreshSession(String refreshToken){
+    @Retryable(maxAttempts = 3, backoff = @Backoff(delay = 1000, multiplier = 2))
+    public Mono<JsonNode> refreshSession(String refreshToken) {
         WebClient webClient = webClientBuilder.baseUrl(supabaseUrl + "/auth/v1").build();
         Map<String, Object> requestBody = Map.of(
-            "refresh_token", refreshToken
-        );
+                "refresh_token", refreshToken);
         return webClient.post()
-        .uri("/token?grant_type=refresh_token")
-        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-        .header("apikey", supabaseAnonKey)
-        .bodyValue(requestBody)
-        .retrieve()
-        .bodyToMono(String.class)
-        .map(response -> {
-            try {
-                return objectMapper.readTree(response);
-            } catch (Exception e) {
-                throw new RuntimeException("Failed to parse refresh response", e);
-            }
-        })
-        .doOnError(error -> {
-            if (error instanceof WebClientResponseException) {
-                WebClientResponseException webClientException = (WebClientResponseException) error;
-                System.err.println("Refresh session failed with status: " + webClientException.getStatusCode() + 
-                        " and body: " + webClientException.getResponseBodyAsString());
-            }
-        });
+                .uri("/token?grant_type=refresh_token")
+                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .header("apikey", supabaseAnonKey)
+                .bodyValue(requestBody)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> {
+                    try {
+                        return objectMapper.readTree(response);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to parse refresh response", e);
+                    }
+                })
+                .doOnError(error -> {
+                    if (error instanceof WebClientResponseException) {
+                        WebClientResponseException webClientException = (WebClientResponseException) error;
+                        System.err.println("Refresh session failed with status: " + webClientException.getStatusCode() +
+                                " and body: " + webClientException.getResponseBodyAsString());
+                    }
+                });
     }
 
     /**
@@ -106,8 +107,7 @@ public class SupabaseAuthService {
 
         Map<String, Object> requestBody = Map.of(
                 "email", email,
-                "password", password
-        );
+                "password", password);
 
         return webClient.post()
                 .uri("/token?grant_type=password")
@@ -126,9 +126,9 @@ public class SupabaseAuthService {
                 .doOnError(error -> {
                     if (error instanceof WebClientResponseException) {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
-                        System.err.println("Login failed with status: " + webClientException.getStatusCode() + 
+                        System.err.println("Login failed with status: " + webClientException.getStatusCode() +
                                 " and body: " + webClientException.getResponseBodyAsString());
                     }
                 });
     }
-} 
+}

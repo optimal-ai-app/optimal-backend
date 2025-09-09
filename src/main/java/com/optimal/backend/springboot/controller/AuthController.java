@@ -35,12 +35,12 @@ public class AuthController {
     public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody RegistrationRequest request) {
         try {
             JsonNode userNode = supabaseAuthService
-                .registerUser(request.getEmail(), request.getPassword())
-                .block();
-    
+                    .registerUser(request.getEmail(), request.getPassword())
+                    .block();
+
             // dump the JSON so we can see exactly what came back
             log.info("Raw Supabase signup response: {}", userNode.toPrettyString());
-    
+
             // Supabase signup returns the user object itself, so it has "id" at the root
             if (userNode != null && userNode.has("id")) {
                 RegistrationResponse dto = new RegistrationResponse();
@@ -48,12 +48,12 @@ public class AuthController {
                 // dto.setUserId(userNode.get("id").asText());
                 return ResponseEntity.status(HttpStatus.CREATED).body(dto);
             }
-    
+
             log.warn("Signup response did not contain expected 'id' field");
             RegistrationResponse bad = new RegistrationResponse();
             bad.setMessage("Registration failed: unexpected response from Supabase");
             return ResponseEntity.badRequest().body(bad);
-    
+
         } catch (Exception e) {
             log.error("Registration failed with exception", e);
             RegistrationResponse err = new RegistrationResponse();
@@ -61,11 +61,18 @@ public class AuthController {
             return ResponseEntity.badRequest().body(err);
         }
     }
-    
+
+    @GetMapping("/checkAuth")
+    @Operation(summary = "Check auth", description = "Check auth with Supabase")
+    public ResponseEntity<Boolean> checkAuth() {
+        return ResponseEntity.ok(true);
+    }
+
     @PostMapping("/refresh")
     @Operation(summary = "Refresh session", description = "Refresh session with Supabase")
     public ResponseEntity<LoginResponse> refresh(@Valid @RequestParam String refreshToken) {
         try {
+            System.out.println("refreshToken received " + refreshToken);
             JsonNode response = supabaseAuthService.refreshSession(refreshToken).block();
             if (response != null && response.has("access_token")) {
                 LoginResponse loginResponse = new LoginResponse();
@@ -84,17 +91,17 @@ public class AuthController {
         }
     }
 
-
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user with Supabase")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         try {
             JsonNode response = supabaseAuthService.loginUser(request.getEmail(), request.getPassword()).block();
-            System.out.println("Login response: " + response.toPrettyString());
             if (response != null && response.has("access_token")) {
                 LoginResponse loginResponse = new LoginResponse();
                 loginResponse.setAccessToken(response.get("access_token").asText());
                 loginResponse.setRefreshToken(response.get("refresh_token").asText());
+                loginResponse.setUserId(response.get("user").get("id").asText());
+                loginResponse.setEmail(response.get("user").get("email").asText());
                 return ResponseEntity.ok(loginResponse);
             } else {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -104,4 +111,4 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
-} 
+}

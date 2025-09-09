@@ -63,7 +63,12 @@ management:
 logging:
   level:
     org.springframework: INFO
-    com.optimal.backend.springboot: INFO
+    org.springframework.security: DEBUG
+    org.springframework.security.oauth2: DEBUG
+    org.springframework.web.filter: DEBUG
+    com.optimal.backend.springboot: DEBUG
+    com.optimal.backend.springboot.configuration.RequestLoggingConfig: INFO
+    root: INFO
 
 ## Supabase Configuration
 supabase:

@@ -36,15 +36,33 @@ public class SecurityConfiguration {
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 				.authorizeHttpRequests(auth -> auth
-						.requestMatchers("/api/auth/**").permitAll()
-						.requestMatchers("/register", "/login", "/refresh").permitAll()
+						// Public endpoints - completely bypass security
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
 						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						// Protected endpoints - require JWT authentication
+						.requestMatchers("/api/auth/checkAuth").authenticated()
 						.requestMatchers("/actuator/**").authenticated()
 						.requestMatchers("/chat/**").authenticated()
-						.requestMatchers("/api/**").authenticated()
-						.anyRequest().authenticated())
+						.requestMatchers("/api/**").authenticated()  
+						.anyRequest().denyAll()
+						)
 				.oauth2ResourceServer(oauth2 -> oauth2
-						.jwt(Customizer.withDefaults()))
+						.jwt(Customizer.withDefaults())
+						.bearerTokenResolver(request -> {
+							String requestURI = request.getRequestURI();
+							if (requestURI.equals("/api/auth/register") || 
+								requestURI.equals("/api/auth/login") || 
+								requestURI.equals("/api/auth/refresh") ||
+								requestURI.startsWith("/v3/api-docs") ||
+								requestURI.startsWith("/swagger-ui")) {
+								return null;
+							}
+							String authorization = request.getHeader("Authorization");
+							if (authorization != null && authorization.startsWith("Bearer ")) {
+								return authorization.substring(7);
+							}
+							return null;
+						}))
 				.build();
 	}
 
