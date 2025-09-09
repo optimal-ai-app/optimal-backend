@@ -62,23 +62,9 @@ public class BaseSupervisor implements SupervisorInterface {
 
             AVAILABLE AGENTS
             - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-            - TaskPlannerAgent ➜ Use **only** when either:
-                1. The **latest** user message explicitly asks to plan or break down goals
-                2. The message has HANDOFF_TAG and data.nextAgent = "TaskPlannerAgent"
-                3. A goal has just been created and tasks need to be planned for it
+            - TaskPlannerAgent ➜ Runs after GoalCreatorAgent to begin task planning for the newly added goal. Depends on GoalCreatorAgent if a goal was just added. 
             - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
             - HabitAgent       ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions.
-
-            HANDOFF MODE (STRICT)
-            • If the latest message comes from the assistant and includes HANDOFF_TAG with data.nextAgent = "TaskPlannerAgent" OR data.lastAction = "goalCreated":
-              - Return EXACTLY two agent nodes in this order with these dependencies:
-                [
-                  {"name":"TaskPlannerAgent","instruction":"Plan tasks for the newly created goal.","dependency":[]},
-                  {"name":"TaskCreatorAgent","instruction":"Persist the tasks exactly as planned.","dependency":["TaskPlannerAgent"]}
-                ]
-              - Do NOT include GoalCreatorAgent.
-              - Do NOT set TaskPlannerAgent to depend on GoalCreatorAgent.
-              - Do NOT add any other agents.
 
             AGENT-SELECTION GUIDELINES
             1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
@@ -86,7 +72,8 @@ public class BaseSupervisor implements SupervisorInterface {
             3. Include TaskPlannerAgent **only if** the most recent user utterance contains verbs like “create a task”, “plan tasks”, “schedule”, “add task”, etc. OR if the user just created a goal.
             4. **GOAL CREATION HANDOFF**: After a goal is successfully created, automatically include TaskPlannerAgent to plan tasks for the new goal.
             5. TaskCreatorAgent always depends on TaskPlannerAgent.
-            6. Ensure a valid DAG—no circular dependencies.
+            6. TaskPlannerAgent always depends on GoalCreatorAgent if a goal was just added (goalCreatorAgent handsoff to supervisor).
+            7. Ensure a valid DAG—no circular dependencies.
 
             INTERFACE (must match exactly)
             [
@@ -108,7 +95,7 @@ public class BaseSupervisor implements SupervisorInterface {
             • The JSON array cannot be empty.
             • Use only the four agent names above.
             • Output valid JSON—no extra text, comments, or explanations.
-            • **GOAL FLOW**: GoalCreatorAgent → TaskPlannerAgent → TaskCreatorAgent (when creating new goals)
+
 
                 """;
 
