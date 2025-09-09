@@ -352,6 +352,29 @@ public class BaseSupervisor implements SupervisorInterface {
         this.handoffAgent = null;
     }
 
+    /**
+     * Clear all internal state for memory cleanup - call when supervisor will no longer be used
+     */
+    public void clearAllState() {
+        this.handoffAgent = null;
+        this.agentNodes.clear();
+        this.agentOutputs.clear();
+        this.agentContexts.clear();
+        this.finishedAgents.clear();
+        this.processingAgents.clear();
+        this.iterations = 0;
+        this.maxIterations = 0;
+        this.lastAgent = null;
+        System.out.println("[SUPERVISOR] Cleared all internal state for memory cleanup");
+    }
+
+    /**
+     * Check if all agent processing is complete (agentNodes queue is empty and no handoff agent)
+     */
+    public boolean isProcessingComplete() {
+        return this.agentNodes.isEmpty() && this.handoffAgent == null;
+    }
+
     public boolean hasHandoffAgent() {
         return this.handoffAgent != null && !this.handoffAgent.trim().isEmpty();
     }

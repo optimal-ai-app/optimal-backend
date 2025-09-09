@@ -33,14 +33,6 @@ public class LangChain4jConfig {
             System.err.println("WARNING: OpenAI API key is not configured. Using disabled chat model.");
             return new DisabledChatModel();
         }
-        System.out.println("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n");
-        System.out.println("\n\nCONFIGURING LLM MODEL\n\n");
-        System.out.println("apiKey: " + apiKey);
-        System.out.println("modelName: " + modelName);
-        System.out.println("temperature: " + temperature);
-        System.out.println("maxTokens: " + maxTokens);
-        System.out.println("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n");
-
         try {
             return OpenAiChatModel.builder()
                     .apiKey(apiKey)
