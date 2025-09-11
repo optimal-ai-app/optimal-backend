@@ -21,6 +21,7 @@ public abstract class BaseAgent {
     protected String systemPrompt;
     protected List<Object> tools; // Changed to Object to accept @Tool annotated classes
     protected LlmClient llmClient;
+    protected int currentFlowStep;
 
     public BaseAgent() {
         this.tools = new ArrayList<>();
@@ -32,6 +33,7 @@ public abstract class BaseAgent {
         this.systemPrompt = GeneralPromptAppender.appendGeneralInstructions(systemPrompt);
         this.tools = tools != null ? tools : new ArrayList<>();
         this.llmClient = llmClient;
+        this.currentFlowStep = -1;
     }
 
     public BaseAgent(String name, String description, String systemPrompt, LlmClient llmClient) {
@@ -57,31 +59,24 @@ public abstract class BaseAgent {
         this.tools.remove(tool);
     }
 
+    public void updateFlowStep(int step) {
+        this.currentFlowStep = step;
+    }
+
     public List<Message> run(List<Message> instructions) {
         List<Message> contexts = new ArrayList<>(instructions);
 
-        System.out.println("=== Agent Run Started ===");
-        System.out.println("Initial contexts: " + contexts.size());
-
+        System.out.println("===" + name + " Run Started ===");
         for (int step = 0; step < MAX_STEPS; step++) {
             System.out.println("\n=== STEP " + (step + 1) + " ===");
-            System.out.println("Sending to LLM - Contexts: " + contexts.size());
 
-            LlmResponse response = llmClient.generate(systemPrompt, contexts, tools);
+            LlmResponse response = llmClient.generate(systemPrompt, contexts, tools, currentFlowStep);
             String responseContent = getResponseContent(response);
-
             System.out.println("LLM Response: " + responseContent);
-            System.out.println("Has tool calls: " + response.hasToolCalls());
 
             if (response.hasToolCalls()) {
                 Message assistantMessage = new Message(response.getAiMessage());
                 contexts.add(assistantMessage);
-                System.out.println("Added assistant message with tool calls to context");
-
-                // Tool calls are automatically executed by Langchain4j when using @Tool
-                // annotations
-                // The tool responses should be included in the conversation automatically
-                System.out.println("Tool execution handled automatically by Langchain4j");
             } else {
                 if (!responseContent.trim().isEmpty()) {
                     Message assistantMessage = new Message("assistant", responseContent, responseContent);
@@ -93,7 +88,7 @@ public abstract class BaseAgent {
             }
         }
 
-        System.out.println("=== Agent Run Completed ===");
+        System.out.println("===" + name + " Run Complete ===");
         return contexts;
     }
 

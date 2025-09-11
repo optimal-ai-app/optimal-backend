@@ -36,6 +36,7 @@ public class BaseSupervisor implements SupervisorInterface {
     private LlmClient llmClient;
     @Autowired
     private ChatService chatService;
+
     // Constructor for manual dependency injection
     public BaseSupervisor(LlmClient llmClient) {
         this.llmClient = llmClient;
@@ -51,7 +52,8 @@ public class BaseSupervisor implements SupervisorInterface {
 
     public void setChatService(ChatService chatService) {
         this.chatService = chatService;
-    }    // Default constructor for Spring dependency injection
+    } // Default constructor for Spring dependency injection
+
     public BaseSupervisor() {
         // LlmClient will be injected by Spring via @Autowired
     }
@@ -62,7 +64,7 @@ public class BaseSupervisor implements SupervisorInterface {
 
             AVAILABLE AGENTS
             - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-            - TaskPlannerAgent ➜ Runs after GoalCreatorAgent to begin task planning for the newly added goal. Depends on GoalCreatorAgent if a goal was just added. 
+            - TaskPlannerAgent ➜ Runs after GoalCreatorAgent to begin task planning for the newly added goal. Depends on GoalCreatorAgent if a goal was just added.
             - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
             - HabitAgent       ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions.
 
@@ -111,16 +113,19 @@ public class BaseSupervisor implements SupervisorInterface {
         public boolean readyToHandoff;
         public Map<String, Object> data;
         public boolean reInterpret;
+        public int currentStep;
 
         public SupervisorResponse(String content, List<String> tags, boolean readyToHandoff, Map<String, Object> data,
-                boolean reInterpret) {
+                boolean reInterpret, int currentStep) {
             this.content = content;
             this.tags = tags != null ? tags : new ArrayList<>();
             this.readyToHandoff = readyToHandoff;
             this.data = data;
             this.reInterpret = reInterpret;
+            this.currentStep = currentStep;
         }
     }
+
     /*
      * 1) Checks for handoff agent, if yes goes to executeHandoffAgent
      * 2) add users input to agentOutputs (for context)
@@ -140,7 +145,7 @@ public class BaseSupervisor implements SupervisorInterface {
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
-                    new ArrayList<>(), true, new HashMap<>(), false);
+                    new ArrayList<>(), true, new HashMap<>(), false, -1);
         }
         System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
         this.agentNodes.forEach(
@@ -160,13 +165,15 @@ public class BaseSupervisor implements SupervisorInterface {
      * 9) set handoffAgent to null
      * 10) get the final message from the agent
      * 11) if reinterpret is true, executeWithHandoff with the final message
-     * 12) save agent output for its name and final message <--- POTENTIALLY CHANGE TO USING THE CONTEXT AGENT FOR FINAL OUTPUT
+     * 12) save agent output for its name and final message <--- POTENTIALLY CHANGE
+     * TO USING THE CONTEXT AGENT FOR FINAL OUTPUT
      * 13) execute normal
      */
     private SupervisorResponse executeHandoffAgent(List<Message> context) {
         BaseAgent agent = agents.get(handoffAgent);
         this.lastAgent = handoffAgent;
         if (agent == null) {
+            System.out.println("Handoffagent does not exist");
             handoffAgent = null;
             return executeNormal();
         }
@@ -174,7 +181,8 @@ public class BaseSupervisor implements SupervisorInterface {
             List<Message> response = agent.run(context);
             String finalResponse = extractFinalResponse(response);
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
-            if (parsedResponse.readyToHandoff) {
+            System.out.println("Handoff = " + parsedResponse.readyToHandoff);
+            if (parsedResponse.readyToHandoff == true) {
                 String savedName = this.handoffAgent;
                 handoffAgent = null;
                 // get all of the messages from the agent + this block scoped context
@@ -182,19 +190,23 @@ public class BaseSupervisor implements SupervisorInterface {
                 // get summary message
                 List<Message> fullContent = new ArrayList<>(context);
                 fullContent.addAll(response);
-                List<Message> summary = contextAgent.run(fullContent);
-                
+                System.out.println("Handoff!");
                 List<Message> finalMessage = List.of(response.get(response.size() - 1));
                 if (parsedResponse.reInterpret) {
+                    List<Message> summary = contextAgent.run(fullContent);
                     // Save the agent's summary + agent name on a map
                     // append summary to finalMessage list
                     agentContexts.put(savedName, summary);
-                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content);
+                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                            parsedResponse.content);
                     return executeWithHandoff(finalMessage);
                 }
-                // consider changing from finalmessage to context summary 
+                // consider changing from finalmessage to context summary
                 saveAgentOutput(savedName, finalMessage);
                 return executeNormal();
+            }
+            if (parsedResponse.currentStep > 0) {
+                agent.updateFlowStep(parsedResponse.currentStep);
             }
             chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content);
             return parsedResponse;
@@ -210,7 +222,8 @@ public class BaseSupervisor implements SupervisorInterface {
      * 2) set the lastAgent to the current agent's name
      * 3) check for a cycle in agent processing
      * 4) if all of the agents dependencies are met, build the context for the agent
-     * --- Dependencies are met when all of the elements in the dependency list are in the finishedAgents set ---
+     * --- Dependencies are met when all of the elements in the dependency list are
+     * in the finishedAgents set ---
      * 5) gets the instance of the current agent
      * 6) run the agent with the context
      * 7) parse the reponse to convert the JSON into a SupervisorResponse object
@@ -234,11 +247,12 @@ public class BaseSupervisor implements SupervisorInterface {
                 BaseAgent agent = agents.get(agentName);
                 List<Message> response = agent.run(context);
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
-                    
+                agent.currentFlowStep = agentParsedResponse.currentStep;
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     handoffAgent = agentName;
-                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), agentParsedResponse.content);
+                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                            agentParsedResponse.content);
                     return agentParsedResponse;
                 }
             } else {
@@ -249,7 +263,8 @@ public class BaseSupervisor implements SupervisorInterface {
         if (iterations >= maxIterations) {
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
-        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
+        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
         return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 
@@ -260,6 +275,8 @@ public class BaseSupervisor implements SupervisorInterface {
      * 4) parse the response to convert the JSON into a SupervisorResponse object
      */
     private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
+        System.out.println("saving agent output: " + agentName);
+        System.out.println(extractFinalResponse(response));
         this.agentOutputs.put(agentName, response);
         finishedAgents.add(agentName);
         processingAgents.remove(agentName);
@@ -301,6 +318,10 @@ public class BaseSupervisor implements SupervisorInterface {
                         tags.add(tag.asText());
                     }
                 }
+                int step = -1;
+                if (jsonNode.has("currentStep")) {
+                    step = jsonNode.get("currentStep").asInt();
+                }
                 boolean readyToHandoff = jsonNode.has("readyToHandoff") ? jsonNode.get("readyToHandoff").asBoolean()
                         : false;
                 Map<String, Object> data = new HashMap<>();
@@ -310,13 +331,13 @@ public class BaseSupervisor implements SupervisorInterface {
                     });
                 }
                 boolean reInterpret = jsonNode.has("reInterpret") ? jsonNode.get("reInterpret").asBoolean() : false;
-                return new SupervisorResponse(content, tags, readyToHandoff, data, reInterpret);
+                return new SupervisorResponse(content, tags, readyToHandoff, data, reInterpret, step);
             }
         } catch (Exception e) {
             // Not JSON, treat as plain text
         }
         // Default response format for plain text
-        return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>(), false);
+        return new SupervisorResponse(response, new ArrayList<>(), false, new HashMap<>(), false, -1);
     }
 
     // Legacy method for backward compatibility
@@ -340,7 +361,8 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     /**
-     * Clear all internal state for memory cleanup - call when supervisor will no longer be used
+     * Clear all internal state for memory cleanup - call when supervisor will no
+     * longer be used
      */
     public void clearAllState() {
         this.handoffAgent = null;
@@ -356,7 +378,8 @@ public class BaseSupervisor implements SupervisorInterface {
     }
 
     /**
-     * Check if all agent processing is complete (agentNodes queue is empty and no handoff agent)
+     * Check if all agent processing is complete (agentNodes queue is empty and no
+     * handoff agent)
      */
     public boolean isProcessingComplete() {
         return this.agentNodes.isEmpty() && this.handoffAgent == null;

@@ -17,13 +17,13 @@ public class LangChain4jConfig {
     @Value("${langchain4j.open-ai.chat-model.api-key:}")
     private String apiKey;
 
-    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-4.1-mini}")
+    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-4o-mini}")
     private String modelName;
 
-    @Value("${langchain4j.open-ai.chat-model.temperature:0.3}")
+    @Value("${langchain4j.open-ai.chat-model.temperature:1}")
     private Double temperature;
 
-    @Value("${langchain4j.open-ai.chat-model.max-tokens:1000}")
+    @Value("${langchain4j.open-ai.chat-model.max-tokens:2048}")
     private Integer maxTokens;
 
     @Bean
@@ -38,7 +38,7 @@ public class LangChain4jConfig {
                     .apiKey(apiKey)
                     .modelName(modelName)
                     .temperature(temperature)
-                    // .maxCompletionTokens(maxTokens)
+                    // .maxTokens(maxTokens)
                     .build();
         } catch (Exception e) {
             System.err.println("ERROR: Failed to create OpenAI chat model: " + e.getMessage());

@@ -12,32 +12,19 @@ public class GeneralPromptAppender {
      * These instructions ensure the AI behaves consistently and reliably.
      */
     public static final String GENERAL_INSTRUCTIONS = """
+            CRITICAL INSTRUCTIONS - ALWAYS FOLLOW:
+             - Do NOT hallucinate or make up information
+             - Do NOT perform actions outside of what you are explicitly instructed to do by the system
+             - Be concise and not verbose
+             - NEVER HAVE THE FIELD SUMMARY IN YOUR RESPONSE
 
-           CRITICAL INSTRUCTIONS - ALWAYS FOLLOW:
-            - Do NOT hallucinate or make up information
-            - Do NOT perform actions outside of what you are explicitly instructed to do by the system
-            - Be concise and not verbose
-            
-            RESPONSE FORMAT REQUIREMENTS:
-            {
-                "content": "Your response message to the user",
-                "tags": ["OPTIONAL_UI_TAG1", "OPTIONAL_UI_TAG2"],
-                "readyToHandoff": true/false
-            }
-
-            HANDOFF CONTROL INSTRUCTIONS:
-            - Use "readyToHandoff": false when you need to:
-              * gather information
-              * Guide the user through a multi-step process
-              * Collect parameters needed for tool execution
-              * Continue a conversation to complete your assigned task
-
-            - Use "readyToHandoff": true when you:
-              * Have successfully completed your task
-              * Have reached a natural conclusion to the conversation
-              * MUST ALWAYS hand back control when task finished
-
-            """;
+             RESPONSE FORMAT REQUIREMENTS:
+             {
+                 "content": "Your response message to the user",
+                 "tags": ["OPTIONAL_UI_TAG1", "OPTIONAL_UI_TAG2"],
+                 "readyToHandoff": true/false
+             }
+             """;
 
     /**
      * Appends the general instructions to any given system prompt.

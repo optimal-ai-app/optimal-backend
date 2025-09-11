@@ -31,7 +31,7 @@ public class GetTasksforGoalTool {
             List<Task> tasks = taskService.getTasksByUserIdAndGoalTitle(userId, goalTitle);
 
             if (tasks.isEmpty()) {
-                return "No tasks found for this goal.";
+                return "This goal has no tasks yet.";
             }
 
             StringBuilder response = new StringBuilder();

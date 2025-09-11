@@ -2,6 +2,7 @@ package com.optimal.backend.springboot.agent.framework.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,20 +55,35 @@ public class LlmClient {
     /**
      * Generate response with tools using AiService
      */
-    public LlmResponse generate(String systemPrompt, List<Message> messages, List<Object> tools) {
+    public LlmResponse generate(String systemPrompt, List<Message> messages, List<Object> tools,
+            int currentStep) {
         try {
             System.out.println("=== Generating Standard Response with Tools ===");
             // Create chat memory and add existing messages
-            ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(100);
-
+            ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(1000);
             // Add system message if provided
-            if (systemPrompt != null && !systemPrompt.isEmpty()) {
-                chatMemory.add(SystemMessage.from(systemPrompt));
-            }
 
             // Add all messages to memory
-            messages.forEach(message -> chatMemory.add(message.toLangChain4jMessage()));
+            System.out.println("=== Adding Messages ===");
 
+            for (Message m : messages) {
+                chatMemory.add(m.toLangChain4jMessage());
+            }
+            if (systemPrompt != null && !systemPrompt.isEmpty()) {
+                System.out.println("appending the system prompt!");
+                if (currentStep > 0) {
+                    String enhancedSystemPrompt = systemPrompt +
+                            "\n\n** CURRENT STEP CONTEXT **\n" +
+                            "You are currently on STEP " + currentStep + ". " +
+                            "You MUST continue from this step and not jump ahead or go backward. " +
+                            "Include \"currentStep\": " + currentStep + " in your response data.";
+
+                    System.out.println("Adding enhanced system prompt with step: " + currentStep);
+                    chatMemory.add(SystemMessage.from(enhancedSystemPrompt));
+                } else {
+                    chatMemory.add(SystemMessage.from(systemPrompt));
+                }
+            }
             // Create AI Service with tools
             ToolCapableAssistant assistant = AiServices.builder(ToolCapableAssistant.class)
                     .chatModel(chatModel)
@@ -80,7 +96,6 @@ public class LlmClient {
 
             // Generate response using AI Service
             String response = assistant.chat(userInput);
-
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response

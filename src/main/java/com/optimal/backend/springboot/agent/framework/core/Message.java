@@ -57,7 +57,6 @@ public class Message {
         }
 
         String text = getTextContent();
-
         switch (role.toLowerCase()) {
             case "system":
                 return new SystemMessage(text);
