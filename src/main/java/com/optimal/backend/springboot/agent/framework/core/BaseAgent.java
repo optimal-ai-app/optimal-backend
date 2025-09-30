@@ -3,7 +3,11 @@ package com.optimal.backend.springboot.agent.framework.core;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
+
 import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
+import com.optimal.backend.springboot.agent.framework.tools.GetInstructionTool;
 
 import jakarta.annotation.PostConstruct;
 
@@ -13,6 +17,8 @@ import jakarta.annotation.PostConstruct;
  * 
  * This class is Spring-managed and supports dependency injection.
  */
+@Component
+@Scope("prototype")
 public abstract class BaseAgent {
     private static final int MAX_STEPS = 20;
 
@@ -34,6 +40,8 @@ public abstract class BaseAgent {
         this.tools = tools != null ? tools : new ArrayList<>();
         this.llmClient = llmClient;
         this.currentFlowStep = -1;
+        // this.tools.add(new
+        // GetInstructionTool(systemPrompt.split("<SECTION>")[1].split("Step ")));
     }
 
     public BaseAgent(String name, String description, String systemPrompt, LlmClient llmClient) {
@@ -68,22 +76,17 @@ public abstract class BaseAgent {
 
         System.out.println("===" + name + " Run Started ===");
         for (int step = 0; step < MAX_STEPS; step++) {
-            System.out.println("\n=== STEP " + (step + 1) + " ===");
-
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools, currentFlowStep);
             String responseContent = getResponseContent(response);
-            System.out.println("LLM Response: " + responseContent);
-
             if (response.hasToolCalls()) {
                 Message assistantMessage = new Message(response.getAiMessage());
                 contexts.add(assistantMessage);
             } else {
                 if (!responseContent.trim().isEmpty()) {
-                    Message assistantMessage = new Message("assistant", responseContent, responseContent);
+                    Message assistantMessage = new Message("assistant", responseContent, responseContent,
+                            response.getTokens());
                     contexts.add(assistantMessage);
-                    System.out.println("Added assistant message to context");
                 }
-                System.out.println("No tool calls, ending conversation");
                 break;
             }
         }

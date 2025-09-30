@@ -1,4 +1,5 @@
 package com.optimal.backend.springboot.service;
+
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,7 +25,7 @@ public class ChatService {
     private ConversationRepository conversationRepository;
 
     @Autowired
-    private  MessageRepository messageRepository;
+    private MessageRepository messageRepository;
 
     /**
      * Creates a new conversation for the user. Pruning is handled by the DB
@@ -35,28 +36,31 @@ public class ChatService {
         convo.setId(UUID.randomUUID());
         convo.setUserId(userId);
         convo.setTitle(title);
+        convo.setTokens(0);
         return conversationRepository.save(convo);
     }
 
     /**
-     * Adds a user message to the conversation with retry logic for optimistic locking.
+     * Adds a user message to the conversation with retry logic for optimistic
+     * locking.
      */
     // @Retryable(
-    //     value = ObjectOptimisticLockingFailureException.class,
-    //     maxAttempts = 3,
-    //     backoff = @Backoff(delay = 100, multiplier = 2)
+    // value = ObjectOptimisticLockingFailureException.class,
+    // maxAttempts = 3,
+    // backoff = @Backoff(delay = 100, multiplier = 2)
     // )
     public void addUserMessage(UUID conversationId, UUID userId, String content) {
         try {
-            //check if the conversation exists
+            // check if the conversation exists
             System.out.println("conversationId: " + conversationId);
             Optional<Conversation> convo = conversationRepository.findById(conversationId);
-            if(!convo.isPresent()) {
+            if (!convo.isPresent()) {
                 System.out.println("conversation does not exist, creating new one");
                 Conversation newConvo = new Conversation();
                 newConvo.setId(conversationId);
                 newConvo.setUserId(userId);
                 newConvo.setTitle(content);
+                newConvo.setTokens(0);
                 convo = Optional.of(conversationRepository.save(newConvo));
             }
             System.out.println("addming message");
@@ -75,12 +79,8 @@ public class ChatService {
      * Adds the assistant's reply and updates the rolling summary with retry logic.
      */
     @Transactional
-    @Retryable(
-        value = ObjectOptimisticLockingFailureException.class,
-        maxAttempts = 3,
-        backoff = @Backoff(delay = 100, multiplier = 2)
-    )
-    public Message addAgentMessage(UUID conversationId, UUID userId, String content) {
+    @Retryable(value = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    public Message addAgentMessage(UUID conversationId, UUID userId, String content, int tokens) {
         try {
             Conversation convo = conversationRepository.findById(conversationId)
                     .orElseGet(() -> {
@@ -88,12 +88,14 @@ public class ChatService {
                         newConvo.setId(conversationId);
                         newConvo.setUserId(userId);
                         newConvo.setTitle(content);
+                        newConvo.setTokens(0);
                         return conversationRepository.save(newConvo);
                     });
             Message msg = new Message();
             msg.setConversationId(convo.getId());
             msg.setRole("agent");
             msg.setContent(content);
+            msg.setTokens(tokens);
             return messageRepository.save(msg);
         } catch (ObjectOptimisticLockingFailureException e) {
             log.warn("Optimistic locking failure for conversation {}: {}", conversationId, e.getMessage());

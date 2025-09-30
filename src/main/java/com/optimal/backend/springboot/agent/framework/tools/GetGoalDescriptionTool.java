@@ -11,6 +11,7 @@ import com.optimal.backend.springboot.database.entity.Goal;
 import com.optimal.backend.springboot.service.GoalService;
 
 import dev.langchain4j.agent.tool.Tool;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class GetGoalDescriptionTool {
@@ -49,6 +50,13 @@ public class GetGoalDescriptionTool {
             System.out.println("=== Error in GoalDescriptionTool: " + e.getMessage());
             e.printStackTrace();
             return "Error retrieving goals: " + e.getMessage();
+        }
+    }
+
+    @PostConstruct
+    protected void initialize() {
+        if (goalService != null) {
+            System.out.println("\nGoal Service Initialized\n");
         }
     }
 }

@@ -42,6 +42,9 @@ public class Conversation {
     @Column(name = "is_archived")
     private Boolean isArchived;
 
+    @Column(name = "tokens")
+    private Integer tokens;
+
     @PrePersist
     protected void onCreate() {
         Timestamp now = DateUtils.getCurrentTimestamp();

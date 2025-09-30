@@ -5,6 +5,7 @@ import com.optimal.backend.springboot.agent.framework.agents.prompts.core.BasePr
 public class DiaryLogAgentPrompt extends BasePrompt {
 
     public static final String DIARY_LOG_ANALYSIS_PROMPT = """
+            <SECTION>
             You are an AI assistant specialized in diary log analysis. You help users process their daily experiences by creating
             meaningful summaries and organizing content through relevant tags. Always respond in the exact JSON format specified,
             ensuring your analysis is accurate, empathetic, and useful for personal reflection and organization.

@@ -14,6 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.PreDestroy;
 
 import com.optimal.backend.springboot.agent.framework.agents.TaskCreatorAgent;
-import com.optimal.backend.springboot.agent.framework.agents.HabitAgent;
+import com.optimal.backend.springboot.agent.framework.agents.MilestonePlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.TaskPlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.GoalCreatorAgent;
 import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
@@ -40,16 +41,7 @@ public class ChatController {
     private ChatService chatService;
 
     @Autowired
-    private TaskPlannerAgent taskPlannerAgent;
-
-    @Autowired
-    private TaskCreatorAgent taskCreatorAgent;
-
-    @Autowired
-    private GoalCreatorAgent goalCreatorAgent;
-
-    @Autowired
-    private HabitAgent habitAgent;
+    private ApplicationContext applicationContext;
 
     @Autowired
     private LlmClient llmClient;
@@ -58,21 +50,21 @@ public class ChatController {
     private static class SupervisorWrapper {
         private final BaseSupervisor supervisor;
         private volatile LocalDateTime lastAccessed;
-        
+
         public SupervisorWrapper(BaseSupervisor supervisor) {
             this.supervisor = supervisor;
             this.lastAccessed = LocalDateTime.now();
         }
-        
+
         public BaseSupervisor getSupervisor() {
             this.lastAccessed = LocalDateTime.now();
             return supervisor;
         }
-        
+
         public LocalDateTime getLastAccessed() {
             return lastAccessed;
         }
-        
+
         public boolean isExpired(int inactivityMinutes) {
             return ChronoUnit.MINUTES.between(lastAccessed, LocalDateTime.now()) >= inactivityMinutes;
         }
@@ -80,12 +72,12 @@ public class ChatController {
 
     // Map to store user-specific supervisors with access tracking
     private final Map<String, SupervisorWrapper> userSupervisors = new ConcurrentHashMap<>();
-    
+
     // Configuration constants
     private static final int SUPERVISOR_INACTIVITY_MINUTES = 30;
     private static final int MAX_SUPERVISORS = 150;
     private static final int CLEANUP_INTERVAL_MINUTES = 10;
-    
+
     // Background cleanup executor
     private final ScheduledExecutorService cleanupExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "supervisor-cleanup");
@@ -102,11 +94,10 @@ public class ChatController {
     // Initialize cleanup task
     {
         cleanupExecutor.scheduleAtFixedRate(
-            this::cleanupInactiveSupervisors, 
-            CLEANUP_INTERVAL_MINUTES, 
-            CLEANUP_INTERVAL_MINUTES, 
-            TimeUnit.MINUTES
-        );
+                this::cleanupInactiveSupervisors,
+                CLEANUP_INTERVAL_MINUTES,
+                CLEANUP_INTERVAL_MINUTES,
+                TimeUnit.MINUTES);
     }
 
     /**
@@ -122,7 +113,7 @@ public class ChatController {
             while (iterator.hasNext()) {
                 Map.Entry<String, SupervisorWrapper> entry = iterator.next();
                 SupervisorWrapper wrapper = entry.getValue();
-                
+
                 if (wrapper.isExpired(SUPERVISOR_INACTIVITY_MINUTES)) {
                     cleanupSupervisor(wrapper.getSupervisor());
                     iterator.remove();
@@ -136,8 +127,8 @@ public class ChatController {
             }
 
             if (removedCount > 0) {
-                System.out.printf("[SUPERVISOR-GC] Cleaned up %d supervisors (before: %d, after: %d)%n", 
-                    removedCount, initialSize, userSupervisors.size());
+                System.out.printf("[SUPERVISOR-GC] Cleaned up %d supervisors (before: %d, after: %d)%n",
+                        removedCount, initialSize, userSupervisors.size());
                 totalSupervisorsEvicted += removedCount;
             }
             lastCleanupTime = LocalDateTime.now();
@@ -152,15 +143,15 @@ public class ChatController {
      */
     private int evictOldestSupervisors(int countToRemove) {
         return userSupervisors.entrySet().stream()
-            .sorted(Map.Entry.<String, SupervisorWrapper>comparingByValue(
-                (a, b) -> a.getLastAccessed().compareTo(b.getLastAccessed())))
-            .limit(countToRemove)
-            .mapToInt(entry -> {
-                cleanupSupervisor(entry.getValue().getSupervisor());
-                userSupervisors.remove(entry.getKey());
-                return 1;
-            })
-            .sum();
+                .sorted(Map.Entry.<String, SupervisorWrapper>comparingByValue(
+                        (a, b) -> a.getLastAccessed().compareTo(b.getLastAccessed())))
+                .limit(countToRemove)
+                .mapToInt(entry -> {
+                    cleanupSupervisor(entry.getValue().getSupervisor());
+                    userSupervisors.remove(entry.getKey());
+                    return 1;
+                })
+                .sum();
     }
 
     /**
@@ -193,13 +184,14 @@ public class ChatController {
             // Set userId in ThreadLocal context for tools to access
             UserContext.setUserId(userId);
             UserContext.setChatId(chatId);
-            
+
             @SuppressWarnings("unchecked")
             // Extract messages from request - each message has a role (e.g. user/assistant)
             // and content
             List<Map<String, Object>> messages = (List<Map<String, Object>>) request.get("messages");
-            
-            chatService.addUserMessage(UUID.fromString(chatId), UUID.fromString(userId), (String) messages.get(messages.size() - 1).get("content"));
+
+            chatService.addUserMessage(UUID.fromString(chatId), UUID.fromString(userId),
+                    (String) messages.get(messages.size() - 1).get("content"));
             // Create a new list with userId as system message at the front
             List<Message> convertedMessages = new ArrayList<>();
 
@@ -216,19 +208,27 @@ public class ChatController {
 
             // Get or create user-specific supervisor with manually injected dependencies
             SupervisorWrapper supervisorWrapper = userSupervisors.computeIfAbsent(chatId, id -> {
+
+                TaskPlannerAgent taskPlannerAgent = applicationContext.getBean(TaskPlannerAgent.class);
+                TaskCreatorAgent taskCreatorAgent = applicationContext.getBean(TaskCreatorAgent.class);
+                GoalCreatorAgent goalCreatorAgent = applicationContext.getBean(GoalCreatorAgent.class);
+                MilestonePlannerAgent milestonePlannerAgent = applicationContext.getBean(MilestonePlannerAgent.class);
+                // HabitAgent habitAgent = new HabitAgent(llmClient);
+
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
                 newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
                 newSupervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
-                newSupervisor.addAgent(habitAgent.getName(), habitAgent);
+                newSupervisor.addAgent(milestonePlannerAgent.getName(), milestonePlannerAgent);
+                // newSupervisor.addAgent(habitAgent.getName(), habitAgent);
                 newSupervisor.setChatService(chatService);
-                
-                System.out.printf("[SUPERVISOR-GC] Created new supervisor for chatId: %s (total: %d)%n", 
-                    chatId, userSupervisors.size() + 1);
+
+                System.out.printf("[SUPERVISOR-GC] Created new supervisor for chatId: %s (total: %d)%n",
+                        chatId, userSupervisors.size() + 1);
                 totalSupervisorsCreated++;
                 return new SupervisorWrapper(newSupervisor);
             });
-            
+
             BaseSupervisor userSupervisor = supervisorWrapper.getSupervisor();
 
             // Execute supervisor with handoff support
@@ -236,7 +236,8 @@ public class ChatController {
 
             // Check if processing is complete and clean up immediately
             if (userSupervisor.isProcessingComplete()) {
-                System.out.printf("[SUPERVISOR-GC] Processing complete for chatId: %s, cleaning up immediately%n", chatId);
+                System.out.printf("[SUPERVISOR-GC] Processing complete for chatId: %s, cleaning up immediately%n",
+                        chatId);
                 cleanupSupervisor(userSupervisor);
                 userSupervisors.remove(chatId);
                 totalSupervisorsEvicted++;
@@ -282,12 +283,12 @@ public class ChatController {
         metrics.put("inactivityThresholdMinutes", SUPERVISOR_INACTIVITY_MINUTES);
         metrics.put("maxSupervisors", MAX_SUPERVISORS);
         metrics.put("cleanupIntervalMinutes", CLEANUP_INTERVAL_MINUTES);
-        
+
         // Calculate some derived metrics
-        long memoryEfficiency = totalSupervisorsCreated > 0 ? 
-            (totalSupervisorsEvicted * 100) / totalSupervisorsCreated : 0;
+        long memoryEfficiency = totalSupervisorsCreated > 0 ? (totalSupervisorsEvicted * 100) / totalSupervisorsCreated
+                : 0;
         metrics.put("memoryEfficiencyPercent", memoryEfficiency);
-        
+
         return ResponseEntity.ok(metrics);
     }
 
@@ -299,13 +300,13 @@ public class ChatController {
         int beforeCount = userSupervisors.size();
         cleanupInactiveSupervisors();
         int afterCount = userSupervisors.size();
-        
+
         Map<String, Object> result = new HashMap<>();
         result.put("supervisorsBeforeCleanup", beforeCount);
         result.put("supervisorsAfterCleanup", afterCount);
         result.put("supervisorsRemoved", beforeCount - afterCount);
         result.put("cleanupTime", LocalDateTime.now().toString());
-        
+
         return ResponseEntity.ok(result);
     }
 

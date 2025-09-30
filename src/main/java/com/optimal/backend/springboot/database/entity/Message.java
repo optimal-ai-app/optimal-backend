@@ -40,6 +40,9 @@ public class Message {
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
 
+    @Column(name = "tokens")
+    private Integer tokens;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = DateUtils.getCurrentTimestamp();

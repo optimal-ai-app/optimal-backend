@@ -5,6 +5,7 @@ import com.optimal.backend.springboot.agent.framework.agents.prompts.core.BasePr
 public class ContextAgentPrompt extends BasePrompt {
 
     public static final String DEFAULT_PROMPT = """
+            <SECTION>
             You are an AI assistant specialized in conversation summarization. You receive chat logs between a user and another agent and must create a concise summary that allows the agent to resume the conversation at the exact same point.
 
             ## Summary Requirements
@@ -25,11 +26,11 @@ public class ContextAgentPrompt extends BasePrompt {
             - Maintain chronological flow of the conversation
             - Preserve important decisions or commitments made by the agent
             """;
-                    
+
     public ContextAgentPrompt() {
         super(DEFAULT_PROMPT);
     }
-    
+
     public static String getDefaultPrompt() {
         return DEFAULT_PROMPT;
     }

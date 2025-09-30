@@ -17,7 +17,7 @@ public class LangChain4jConfig {
     @Value("${langchain4j.open-ai.chat-model.api-key:}")
     private String apiKey;
 
-    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-4o-mini}")
+    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-5-nano}")
     private String modelName;
 
     @Value("${langchain4j.open-ai.chat-model.temperature:1}")
@@ -37,11 +37,25 @@ public class LangChain4jConfig {
             return OpenAiChatModel.builder()
                     .apiKey(apiKey)
                     .modelName(modelName)
-                    .temperature(temperature)
+                    .temperature(temperature).logResponses(true).returnThinking(true)
                     // .maxTokens(maxTokens)
                     .build();
         } catch (Exception e) {
             System.err.println("ERROR: Failed to create OpenAI chat model: " + e.getMessage());
+            return new DisabledChatModel();
+        }
+    }
+
+    public ChatModel lightChatLanguageModel() {
+        try {
+            return OpenAiChatModel.builder()
+                    .apiKey(apiKey)
+                    .modelName("gpt-4.1-nano")
+                    .temperature(.2)
+                    .build();
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to create OpenAI chat model: " +
+                    e.getMessage());
             return new DisabledChatModel();
         }
     }

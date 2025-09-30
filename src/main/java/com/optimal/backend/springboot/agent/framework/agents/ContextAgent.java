@@ -13,13 +13,14 @@ import jakarta.annotation.PostConstruct;
 @Component
 public class ContextAgent extends BaseAgent {
 
-
     @Autowired
     public ContextAgent(
             @Value("ContextAgent") String name,
-            @Value("ContextAgent is an agent that gets the chat logs of a conversation between a user and another agent."+
-            "Your job is to develop a summary of the conversation so that the next time the agent is called, they can use"+
-            " the summary to get back to the same point in the conversation they were at.") String description,
+            @Value("ContextAgent is an agent that gets the chat logs of a conversation between a user and another agent."
+                    +
+                    "Your job is to develop a summary of the conversation so that the next time the agent is called, they can use"
+                    +
+                    " the summary to get back to the same point in the conversation they were at.") String description,
             LlmClient llmClient) {
         super(name, description, ContextAgentPrompt.getDefaultPrompt(), llmClient);
     }
@@ -27,7 +28,7 @@ public class ContextAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("TaskPlannerAgent initialized with tools: " + getTools().size());
+        System.out.println("ContextAgent initialized with tools: " + getTools().size());
         getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

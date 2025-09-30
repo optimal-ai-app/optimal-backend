@@ -5,6 +5,7 @@ import com.optimal.backend.springboot.agent.framework.agents.prompts.core.BasePr
 public class WeeklyLogAgentPrompt extends BasePrompt {
 
     private static final String WEEKLY_LOG_PROMPT = """
+            <SECTION>
             **ROLE**
             You are a Weekly Summary Agent that analyzes a user's weekly logs and tags to create an insightful weekly wrapped summary.
 

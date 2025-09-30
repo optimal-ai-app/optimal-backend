@@ -1,7 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.agents;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.optimal.backend.springboot.agent.framework.agents.prompts.TaskCreatorPrompt;
@@ -12,20 +12,18 @@ import com.optimal.backend.springboot.agent.framework.tools.CreateTaskTool;
 import jakarta.annotation.PostConstruct;
 
 @Component
+@Scope("prototype")
 public class TaskCreatorAgent extends BaseAgent {
-    @SuppressWarnings("unused")
-    private final CreateTaskTool createTaskTool;
+    private CreateTaskTool createTaskTool;
 
     @Autowired
     public TaskCreatorAgent(
-            @Value("${langchain4j.task-creator-agent.name}") String name,
-            @Value("${langchain4j.task-creator-agent.description}") String description,
-            CreateTaskTool createTaskTool,
-            LlmClient llmClient) {
-        super(name, description, TaskCreatorPrompt.getDefaultPrompt(), llmClient);
+            LlmClient llmClient, CreateTaskTool createTaskTool) {
+        super("TaskCreatorAgent",
+                "Creates and structures individual tasks based on task planner suggestions or direct user input. Depends on the TaskPlannerAgent's output.",
+                TaskCreatorPrompt.getDefaultPrompt(), llmClient);
         this.createTaskTool = createTaskTool;
-
-        addTool(createTaskTool);
+        addTool(this.createTaskTool);
     }
 
     @PostConstruct

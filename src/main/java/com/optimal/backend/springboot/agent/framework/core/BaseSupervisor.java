@@ -60,46 +60,50 @@ public class BaseSupervisor implements SupervisorInterface {
 
     private static final String INTERPRETER_PROMPT = """
             SYSTEM
-            You are Task-Orchestrator v2. Return ONLY a JSON array of agent nodes (see INTERFACE).
+            You are Task-Orchestrator. Return ONLY a JSON array of agent nodes (see INTERFACE).
 
             AVAILABLE AGENTS
-            - GoalCreatorAgent  ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Never include if the user directly requests a task.
-            - TaskPlannerAgent ➜ Runs after GoalCreatorAgent to begin task planning for the newly added goal. Depends on GoalCreatorAgent if a goal was just added.
-            - TaskCreatorAgent ➜ Runs after TaskPlannerAgent to persist tasks exactly as planned. Always depends on TaskPlannerAgent; never runs alone and never depends on GoalCreatorAgent.
-            - HabitAgent       ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions.
+            - GoalCreatorAgent    ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Runs fully standalone.
+            - MilestonePlannerAgent ➜ Breaks a goal or project into high-level milestones. Always followed by TaskCreatorAgent.
+            - TaskPlannerAgent    ➜ Breaks down milestones into concrete tasks. Always followed by TaskCreatorAgent.
+            - TaskCreatorAgent    ➜ Persists tasks exactly as planned. Always depends on TaskPlannerAgent or MilestonePlannerAgent. Never runs alone. Never depends directly on GoalCreatorAgent.
+            - HabitAgent          ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions. Runs standalone.
 
             AGENT-SELECTION GUIDELINES
-            1. If the message contains something like“set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
-            2. If the message references a specific goal or says “create a task”, “add a task to …”, skip GoalCreatorAgent.
-            3. Include TaskPlannerAgent **only if** the most recent user utterance contains verbs like “create a task”, “plan tasks”, “schedule”, “add task”, etc. OR if the user just created a goal.
-            4. **GOAL CREATION HANDOFF**: After a goal is successfully created, automatically include TaskPlannerAgent to plan tasks for the new goal.
-            5. TaskCreatorAgent always depends on TaskPlannerAgent.
-            6. TaskPlannerAgent always depends on GoalCreatorAgent if a goal was just added (goalCreatorAgent handsoff to supervisor).
-            7. Ensure a valid DAG—no circular dependencies.
+            1. If the message contains “set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
+            2. If the message references a specific goal or says “create a task”, “plan tasks”, “schedule”, “add task”, etc. ➜ skip GoalCreatorAgent.
+            3. If milestones are explicitly mentioned (e.g., “break this project into phases/stages/milestones”), include MilestonePlannerAgent before TaskCreatorAgent.
+            4. If tasks are explicitly mentioned, include TaskPlannerAgent followed by TaskCreatorAgent.
+            5. Ensure a valid DAG. No circular dependencies.
+               • GoalCreatorAgent has no dependencies.
+               • MilestonePlannerAgent has no dependencies.
+               • TaskCreatorAgent always depends on TaskPlannerAgent.
+               • TaskCreatorAgent always depends on MilestonePlannerAgent.
+               • HabitAgent runs standalone.
 
             INTERFACE (must match exactly)
             [
-            {
-            "name": "AgentName",
-            "instruction": "Specific instruction for this agent",
-            "dependency": ["AgentName1", "AgentName2"]
-            }
+              {
+                "name": "AgentName",
+                "instruction": "Specific instruction for this agent",
+                "dependency": ["AgentName1", "AgentName2"]
+              }
             ]
 
-            INSTRUCTION INTELLIGENCE:
-                - Be SPECIFIC about what the agent should accomplish
-                - Include relevant context from the user's request
-                - Reference specific goals, targets, or requirements mentioned
-                - Don't just say "handle the user's request" - explain WHAT specifically to do
-                - **EXAMPLE**: If user says "I want to run 50 miles in 1 year" → GoalCreatorAgent creates goal → TaskPlannerAgent plans tasks → TaskCreatorAgent persists tasks
+            INSTRUCTION INTELLIGENCE
+            - Be SPECIFIC about what the agent should accomplish based on the users input.
+            - Include relevant context from the user's request.
+            - Reference explicit goals, milestones, or requirements if mentioned.
+            - Remind the agent to follow their instructions, do not provide instructions for the agent they have a system prompt.
+            - Example: If user says “I want to run 50 miles in 1 year” →
+              GoalCreatorAgent defines goal → MilestonePlannerAgent sets quarterly milestones → TaskPlannerAgent breaks milestones into weekly runs → TaskCreatorAgent persists tasks.
 
             RULES
             • The JSON array cannot be empty.
-            • Use only the four agent names above.
+            • Use only the five agent names above.
             • Output valid JSON—no extra text, comments, or explanations.
 
-
-                """;
+                            """;
 
     @Override
     public void addAgent(String name, BaseAgent agent) {
@@ -135,7 +139,9 @@ public class BaseSupervisor implements SupervisorInterface {
      */
     public SupervisorResponse executeWithHandoff(List<Message> userInput) {
         // If there's an active handoff agent, execute it directly
+        System.out.println("\n\nExecuting With Handoff");
         if (handoffAgent != null && agents.containsKey(handoffAgent)) {
+            System.out.println("\n\n" + handoffAgent + " still in control");
             return executeHandoffAgent(userInput);
         }
         // Normal supervisor execution - initialize state
@@ -171,36 +177,35 @@ public class BaseSupervisor implements SupervisorInterface {
      */
     private SupervisorResponse executeHandoffAgent(List<Message> context) {
         BaseAgent agent = agents.get(handoffAgent);
-        this.lastAgent = handoffAgent;
+        this.lastAgent = this.handoffAgent;
         if (agent == null) {
             System.out.println("Handoffagent does not exist");
-            handoffAgent = null;
+            this.handoffAgent = null;
             return executeNormal();
         }
         try {
             List<Message> response = agent.run(context);
             String finalResponse = extractFinalResponse(response);
+            int tokens = response.get(response.size() - 1).getTokens();
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
             System.out.println("Handoff = " + parsedResponse.readyToHandoff);
+            System.out.println("ReInterpret = " + parsedResponse.reInterpret);
             if (parsedResponse.readyToHandoff == true) {
                 String savedName = this.handoffAgent;
-                handoffAgent = null;
-                // get all of the messages from the agent + this block scoped context
-                // create context summary with context agent
-                // get summary message
+                this.handoffAgent = null;
                 List<Message> fullContent = new ArrayList<>(context);
                 fullContent.addAll(response);
-                System.out.println("Handoff!");
                 List<Message> finalMessage = List.of(response.get(response.size() - 1));
-                if (parsedResponse.reInterpret) {
-                    List<Message> summary = contextAgent.run(fullContent);
-                    // Save the agent's summary + agent name on a map
-                    // append summary to finalMessage list
-                    agentContexts.put(savedName, summary);
+                if (parsedResponse.reInterpret == true) {
+                    System.out.println("Executing Re-interpret");
+                    // List<Message> summary = contextAgent.run(fullContent);
+                    // System.out.println("\nSummary: " + summary.get(0).getContent());
+                    agentContexts.put(savedName, finalMessage);
                     chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                            parsedResponse.content);
+                            parsedResponse.content, tokens);
                     return executeWithHandoff(finalMessage);
                 }
+                System.out.println("Executing Normal");
                 // consider changing from finalmessage to context summary
                 saveAgentOutput(savedName, finalMessage);
                 return executeNormal();
@@ -208,10 +213,11 @@ public class BaseSupervisor implements SupervisorInterface {
             if (parsedResponse.currentStep > 0) {
                 agent.updateFlowStep(parsedResponse.currentStep);
             }
-            chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content);
+            chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content,
+                    tokens);
             return parsedResponse;
         } catch (Exception e) {
-            handoffAgent = null;
+            this.handoffAgent = null;
             return executeNormal();
         }
     }
@@ -233,6 +239,7 @@ public class BaseSupervisor implements SupervisorInterface {
      * 11) send the final response to the user
      */
     private SupervisorResponse executeNormal() {
+        int tokens = 0;
         while (!this.agentNodes.isEmpty() && this.iterations++ < this.maxIterations) {
             AgentNode current = this.agentNodes.poll();
             String agentName = current.getName();
@@ -246,13 +253,14 @@ public class BaseSupervisor implements SupervisorInterface {
                 List<Message> context = buildAgentContext(current);
                 BaseAgent agent = agents.get(agentName);
                 List<Message> response = agent.run(context);
+                tokens = response.get(response.size() - 1).getTokens();
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
                 agent.currentFlowStep = agentParsedResponse.currentStep;
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     handoffAgent = agentName;
                     chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                            agentParsedResponse.content);
+                            agentParsedResponse.content, tokens);
                     return agentParsedResponse;
                 }
             } else {
@@ -264,7 +272,7 @@ public class BaseSupervisor implements SupervisorInterface {
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
         chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
+                extractFinalResponse(this.agentOutputs.get(this.lastAgent)), tokens);
         return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 
@@ -320,7 +328,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 }
                 int step = -1;
                 if (jsonNode.has("currentStep")) {
-                    step = jsonNode.get("currentStep").asInt();
+                    step = Integer.parseInt(jsonNode.get("currentStep").asText());
                 }
                 boolean readyToHandoff = jsonNode.has("readyToHandoff") ? jsonNode.get("readyToHandoff").asBoolean()
                         : false;
@@ -408,7 +416,6 @@ public class BaseSupervisor implements SupervisorInterface {
         this.finishedAgents.clear();
         this.processingAgents.clear();
         List<Message> contexts = userInput;
-
         LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts);
         this.agentNodes = parseAgentNodes(response.getContent());
         this.maxIterations = this.agentNodes.size() * 2;

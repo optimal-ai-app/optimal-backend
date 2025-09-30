@@ -13,18 +13,13 @@ import jakarta.annotation.PostConstruct;
 
 @Component
 public class HabitAgent extends BaseAgent {
-    @SuppressWarnings("unused")
-    private final CreateHabitTool createHabitTool;
+    private final CreateHabitTool createHabitTool = new CreateHabitTool();
 
     @Autowired
     public HabitAgent(
-            @Value("${langchain4j.habit-agent.name:HabitAgent}") String name,
-            @Value("${langchain4j.habit-agent.description:Creates and manages habits, seeds actions, and logs completions}") String description,
-            CreateHabitTool createHabitTool,
             LlmClient llmClient) {
-        super(name, description, HabitAgentPrompt.getDefaultPrompt(), llmClient);
-        this.createHabitTool = createHabitTool;
-
+        super("HabitAgent", "Creates and manages habits, seeds actions, and logs completions",
+                HabitAgentPrompt.getDefaultPrompt(), llmClient);
         addTool(createHabitTool);
     }
 
@@ -35,5 +30,3 @@ public class HabitAgent extends BaseAgent {
         getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }
-
-

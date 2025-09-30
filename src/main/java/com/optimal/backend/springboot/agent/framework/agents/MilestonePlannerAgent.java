@@ -2,9 +2,10 @@ package com.optimal.backend.springboot.agent.framework.agents;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
-import com.optimal.backend.springboot.agent.framework.agents.prompts.TaskPlannerPrompt;
+import com.optimal.backend.springboot.agent.framework.agents.prompts.MilestonePlannerPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.tools.GetGoalDescriptionTool;
@@ -16,43 +17,46 @@ import com.optimal.backend.springboot.agent.framework.tools.GetFutureDateTool;
 import jakarta.annotation.PostConstruct;
 
 @Component
+@Scope("prototype")
 public class MilestonePlannerAgent extends BaseAgent {
-    @SuppressWarnings("unused")
-    private final GetGoalDescriptionTool goalDescriptionTool;
-    @SuppressWarnings("unused")
-    private final GetTasksforGoalTool getTasksforGoalTool;
-    @SuppressWarnings("unused")
-    private final GetGoalProgressTool getGoalProgressTool;
-    @SuppressWarnings("unused")
-    private final GetGoalMilestoneTool getGoalMilestoneTool;
-    @SuppressWarnings("unused")
-    private final GetFutureDateTool getFutureDateTool;
+
+    private GetGoalDescriptionTool goalDescriptionTool;
+    private GetTasksforGoalTool getTasksforGoalTool;
+    private GetGoalProgressTool getGoalProgressTool;
+    private GetGoalMilestoneTool getGoalMilestoneTool;
+    private GetFutureDateTool getFutureDateTool;
 
     @Autowired
     public MilestonePlannerAgent(
-            @Value("MilestonePlannerAgent") String name,
-            @Value("Helps the user plan milestones for their qualitative goals") String description,
+            LlmClient llmClient,
             GetGoalDescriptionTool goalDescriptionTool,
             GetTasksforGoalTool getTasksforGoalTool,
             GetGoalProgressTool getGoalProgressTool,
             GetGoalMilestoneTool getGoalMilestoneTool,
-            GetFutureDateTool getFutureDateTool,
-            LlmClient llmClient) {
-        super(name, description, TaskPlannerPrompt.getDefaultPrompt(), llmClient);
+            GetFutureDateTool getFutureDateTool) {
+
+        super("MilestonePlannerAgent",
+                "Helps the user plan milestones for their qualitative goals",
+                MilestonePlannerPrompt.getDefaultPrompt(),
+                llmClient);
+
         this.goalDescriptionTool = goalDescriptionTool;
         this.getTasksforGoalTool = getTasksforGoalTool;
         this.getGoalProgressTool = getGoalProgressTool;
         this.getGoalMilestoneTool = getGoalMilestoneTool;
         this.getFutureDateTool = getFutureDateTool;
-        addTool(goalDescriptionTool);
-        addTool(getTasksforGoalTool);
-        addTool(getGoalProgressTool);
+
+        addTool(this.goalDescriptionTool);
+        addTool(this.getTasksforGoalTool);
+        addTool(this.getGoalProgressTool);
+        addTool(this.getGoalMilestoneTool);
+        addTool(this.getFutureDateTool);
     }
 
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("TaskPlannerAgent initialized with tools: " + getTools().size());
+        System.out.println("MilestonePlannerAgent initialized with tools: " + getTools().size());
         getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

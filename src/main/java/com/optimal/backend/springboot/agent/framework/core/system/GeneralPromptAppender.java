@@ -16,7 +16,7 @@ public class GeneralPromptAppender {
              - Do NOT hallucinate or make up information
              - Do NOT perform actions outside of what you are explicitly instructed to do by the system
              - Be concise and not verbose
-             - NEVER HAVE THE FIELD SUMMARY IN YOUR RESPONSE
+             - NEVER HAVE THE FIELD "SUMMARY" IN YOUR RESPONSE
 
              RESPONSE FORMAT REQUIREMENTS:
              {
