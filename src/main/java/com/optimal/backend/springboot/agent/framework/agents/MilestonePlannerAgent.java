@@ -1,7 +1,6 @@
 package com.optimal.backend.springboot.agent.framework.agents;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 

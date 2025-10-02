@@ -2,6 +2,7 @@ package com.optimal.backend.springboot.agent.framework.core;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,24 +34,40 @@ public class LlmClient {
     }
 
     public static final String INSTRUCTION_AGENT_PROMPT = """
-            Task
-            Read last 2 messages + system prompt. Return the ONE most relevant instruction for the next response.
-            Rules
+                                    Task
+            You are a meta-coordinator that analyzes conversation flow and identifies which step number from an agent's system prompt should be executed next.
 
-            Find current position in workflow/steps
-            Return appropriate step:
+            Analysis Process
+            1. Identify the agent type from the system prompt
+            2. Parse the system prompt structure to find discrete instruction sections/steps (numbered or labeled)
+            3. Analyze recent messages to determine conversation state:
+               - What has the user provided?
+               - What was the agent's last action/question?
+               - Is the user confirming/completing something?
+               - Is the user providing new information?
+               - Is the user stuck or confused?
+            4. Determine which step number is most relevant for the NEXT response
 
-            User stuck/confused → previous step
-            User completed task → next step
-            User needs clarification → current step
-            User starting → first step
+            State Detection Patterns
+            - Starting conversation: Return first step number
+            - Mid-flow: User answering questions → Return next logical step number
+            - User provided multiple things at once: Return step number that handles bulk input
+            - Confirmation detected ("yes", "confirm", "add", "submit", "looks good"):
+              Return step number for completion/finalization
+            - User seems confused/stuck: Return step number for clarification or previous step
+            - User requests change: Return step number for modification/edit
 
-            Output
-            Return instruction text exactly as written
+            Output Format
+            Return ONLY the step number as a single integer.
+            No text, no explanation, no punctuation - just the number.
+
+            Examples:
+            - If Step 3 should be executed next, output: 3
+            - If instruction section labeled "Step 7" is relevant, output: 7
 
             Input
-            Messages: [INSERT_LAST_2_MESSAGES]
-            System: [INSERT_SYSTEM_PROMPT]
+            Recent Messages: [INSERT_LAST_3_MESSAGES]
+            Agent System Prompt: [INSERT_FULL_SYSTEM_PROMPT]
                         """;
 
     public void overrideChatModel(ChatModel chatModel) {
@@ -67,7 +84,9 @@ public class LlmClient {
                 allMessages.add(SystemMessage.from(systemPrompt));
             }
             allMessages.addAll(messages.stream().map(Message::toLangChain4jMessage).collect(Collectors.toList()));
-            ChatResponse response = chatModel.chat(allMessages);
+            ChatModel lightModel = applicationContext.getBean(LangChain4jConfig.class)
+                    .lightChatLanguageModel();
+            ChatResponse response = lightModel.chat(allMessages);
             AiMessage aiMessage = response.aiMessage();
             return new LlmResponse(aiMessage, response.tokenUsage().totalTokenCount());
         } catch (Exception e) {
@@ -82,21 +101,19 @@ public class LlmClient {
     public LlmResponse generate(String systemPrompt, List<Message> messages, List<Object> tools,
             int currentStep) {
         try {
-            ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(6);
+            ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(1000);
+            UUID uuid = UUID.randomUUID();
+            chatMemory.add(SystemMessage.from(uuid + systemPrompt));
+
             for (Message m : messages) {
                 chatMemory.add(m.toLangChain4jMessage());
             }
             if (systemPrompt != null && !systemPrompt.isEmpty()) {
-                if (currentStep < 0) {
-                    chatMemory.add(SystemMessage.from(systemPrompt));
-                    System.out.println("\n\nSystemPrompt");
-
-                } else {
-                    // StringBuilder addedPrompt = new StringBuilder();
-                    // String[] systemPromptSections = systemPrompt.split("<SECTION>");
-                    // addedPrompt.append(systemPromptSections[0]);
-                    // String[] promptSteps = systemPromptSections[1].split("Step ");
-                    // addedPrompt.append(promptSteps[currentStep]);
+                if (currentStep > 0) {
+                    StringBuilder addedPrompt = new StringBuilder();
+                    String[] systemPromptSections = systemPrompt.split("<SECTION>");
+                    addedPrompt.append(systemPromptSections[0]);
+                    String[] promptSteps = systemPromptSections[1].split("Step ");
                     // addedPrompt.append("Current Step in the process: " + currentStep);
                     // chatMemory.add(SystemMessage.from(addedPrompt.toString()));
                     // System.out.println("\n\nPrompt: " + addedPrompt.toString());
@@ -110,11 +127,22 @@ public class LlmClient {
                         selectorMemory.add(SystemMessage.from(INSTRUCTION_AGENT_PROMPT));
 
                         // Format the input properly
-                        String contextInput = String.format(
-                                "Last 2 messages:\n%s\n%s\n\nSystem prompt:\n%s",
-                                messages.get(count - 2).getTextContent(),
-                                messages.get(count - 1).getTextContent(),
-                                systemPrompt);
+                        String contextInput;
+                        if (count < 4) {
+                            contextInput = String.format(
+                                    "Last 2 messages:\n%s\n%s\n\nSystem prompt:\n%s",
+                                    messages.get(count - 2).getTextContent(),
+                                    messages.get(count - 1).getTextContent(),
+                                    systemPromptSections[1]);
+                        } else {
+                            contextInput = String.format(
+                                    "Last 4 messages:\n%s\n%s\n%s\n%s\n\nSystem prompt:\n%s",
+                                    messages.get(count - 4).getTextContent(),
+                                    messages.get(count - 3).getTextContent(),
+                                    messages.get(count - 2).getTextContent(),
+                                    messages.get(count - 1).getTextContent(),
+                                    systemPromptSections[1]);
+                        }
 
                         ChatModel instructionModel = applicationContext.getBean(LangChain4jConfig.class)
                                 .lightChatLanguageModel();
@@ -124,14 +152,12 @@ public class LlmClient {
                                 .build();
 
                         Response<AiMessage> instruction = instructionAgent.chat(contextInput);
-
-                        // Handle the response properly
-                        String selectedInstruction = instruction.content().text().trim();
-
-                        System.out.println("SelectedInstruction: " + selectedInstruction);
-
-                        String enhancedMessage = "[INSTRUCTION: " + selectedInstruction + "]\n\n";
-                        chatMemory.add(SystemMessage.from(enhancedMessage));
+                        int instructionStep = Integer.parseInt(instruction.content().text().trim());
+                        addedPrompt
+                                .append("\n\n[INSTRUCTION: " + promptSteps[instructionStep] +
+                                        "]\n\n");
+                        chatMemory.add(SystemMessage.from(addedPrompt.toString()));
+                        System.out.println("PROMPT: " + addedPrompt.toString());
                     }
                 }
             }
@@ -157,7 +183,9 @@ public class LlmClient {
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
-            return new LlmResponse(response.content().text(), response.tokenUsage().totalTokenCount());
+
+            return new LlmResponse(response.content().text().toString().replaceAll("```json", "").replace("```", ""),
+                    response.tokenUsage().totalTokenCount());
 
         } catch (Exception e) {
             System.err.println("Error generating response with tools: " + e.getMessage());

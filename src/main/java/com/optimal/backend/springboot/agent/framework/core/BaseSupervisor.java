@@ -102,8 +102,7 @@ public class BaseSupervisor implements SupervisorInterface {
             • The JSON array cannot be empty.
             • Use only the five agent names above.
             • Output valid JSON—no extra text, comments, or explanations.
-
-                            """;
+            """;
 
     @Override
     public void addAgent(String name, BaseAgent agent) {
@@ -341,6 +340,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 boolean reInterpret = jsonNode.has("reInterpret") ? jsonNode.get("reInterpret").asBoolean() : false;
                 return new SupervisorResponse(content, tags, readyToHandoff, data, reInterpret, step);
             }
+
         } catch (Exception e) {
             // Not JSON, treat as plain text
         }

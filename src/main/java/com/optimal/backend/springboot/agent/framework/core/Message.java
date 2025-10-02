@@ -1,5 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
+import java.util.UUID;
+
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -59,11 +61,13 @@ public class Message {
         }
 
         String text = getTextContent();
+
         switch (role.toLowerCase()) {
             case "system":
                 return new SystemMessage(text);
             case "user":
-                return new UserMessage(text);
+                UUID uuid = UUID.randomUUID();
+                return new UserMessage(uuid + text);
             case "assistant":
             case "ai":
                 return new AiMessage(text);
