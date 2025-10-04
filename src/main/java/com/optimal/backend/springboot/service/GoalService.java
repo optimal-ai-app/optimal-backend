@@ -1,6 +1,7 @@
 // src/main/java/com/optimal/backend/springboot/service/GoalService.java
 package com.optimal.backend.springboot.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,8 +11,15 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.optimal.backend.springboot.agent.framework.agents.GoalClassifierAgent;
+import com.optimal.backend.springboot.agent.framework.core.Message;
 import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
 import com.optimal.backend.springboot.database.entity.Goal;
+import com.optimal.backend.springboot.database.entity.GoalProgress;
+import com.optimal.backend.springboot.database.entity.GoalType;
+import com.optimal.backend.springboot.database.repository.GoalProgressRepository;
 import com.optimal.backend.springboot.database.repository.GoalRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +31,12 @@ public class GoalService {
 
     @Autowired
     private final GoalRepository goalRepository;
+
+    @Autowired
+    private GoalClassifierAgent goalClassifierAgent;
+
+    @Autowired
+    private GoalProgressRepository goalProgressRepository;
 
     @Transactional(readOnly = true)
     public List<Goal> getGoalsByUser(UUID userId) {
@@ -46,7 +60,49 @@ public class GoalService {
         goal.setTags(request.getTags());
         goal.setStatus("active");
         goal.setStreak(0);
-        return goalRepository.save(goal);
+
+        Goal savedGoal = goalRepository.save(goal);
+        List<Message> instructions = new ArrayList<>();
+        instructions.add(new Message("user",
+                "\nDescription: " + savedGoal.getDescription()));
+        List<Message> response = goalClassifierAgent.run(instructions);
+        String agentResponse = response.get(response.size() - 1).getContent();
+        try {
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode jsonNode = mapper.readTree(agentResponse).get("content");
+            String goalType = jsonNode.get("type").asText().toLowerCase();
+
+            double metric = 0;
+            GoalType goalTypeEnum;
+            if (goalType == "quantitative") {
+                goalTypeEnum = GoalType.QUANTITATIVE;
+                metric = Integer.parseInt(jsonNode.get("metric").asText());
+            } else {
+                goalTypeEnum = GoalType.QUALITATIVE;
+            }
+
+            GoalProgress goalProgress = new GoalProgress();
+            goalProgress.setGoalId(savedGoal.getId());
+            goalProgress.setGoalType(goalTypeEnum);
+            goalProgress.setTotalUnits(metric);
+            goalProgress.setCompletedUnits(0.0);
+            goalProgress.setScore(0.0);
+            goalProgressRepository.save(goalProgress);
+
+        } catch (Exception e) {
+
+            GoalProgress goalProgress = new GoalProgress();
+            goalProgress.setGoalId(savedGoal.getId());
+            goalProgress.setGoalType(GoalType.QUANTITATIVE);
+            goalProgress.setTotalUnits(0.0);
+            goalProgress.setCompletedUnits(0.0);
+            goalProgress.setScore(0.0);
+            goalProgressRepository.save(goalProgress);
+
+        }
+
+        return savedGoal;
     }
 
     public Goal updateGoal(Goal goal) {
