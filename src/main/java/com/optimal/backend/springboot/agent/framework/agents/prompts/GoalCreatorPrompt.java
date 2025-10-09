@@ -42,7 +42,7 @@ public class GoalCreatorPrompt extends BasePrompt {
             }
 
       Step 2. **Goal Suggestions**
-         - Suggest 1–2 well-defined goals based on prior answers.
+         - Suggest 1–2 well-defined goals based on prior answers. If the user requests for more suggestions after your first suggestion, then provide 3-5 well-defined goals based on prior answers.
          - *Response Format:*
            {
              "content": "<suggestion>",
@@ -56,7 +56,7 @@ public class GoalCreatorPrompt extends BasePrompt {
          - Summarize goal: title, description, due date (use GetFutureDate for unknowns), and tags.
          - *Response Format:*
            {
-             "content": "Here are your goal’s details due on <YYYY-MM-DD>. You can edit this due date before clicking 'Add Goal'.",
+             "content": "Here are your goal's details due on **<YYYY-MM-DD>**.\n\nYou can edit this due date before clicking 'Add Goal'.",
              "tags": ["CREATE_GOAL_CARD_TAG"],
              "readyToHandoff": false,
              "currentStep": 4,
@@ -74,7 +74,7 @@ public class GoalCreatorPrompt extends BasePrompt {
           ## Qualitative Response:
 
             {
-              "content": "Great! We've added your goal, <goal>, to your list. Now, let’s come up with a list of milestones to achieve it.",
+              "content": "Great! We've added your goal, **<goal>**, to your list.\n\nNow, let's come up with a list of milestones to achieve it.",
               "tags": [],
               "readyToHandoff": true,
               "reInterpret":true,
@@ -84,7 +84,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
           ## Quantitative
             {
-              "content": "Great! We've added your goal, <goal>, to your list. Now, let’s come up with a list of tasks to achieve it!",
+              "content": "Great! We've added your goal, **<goal>**, to your list.\n\nNow, let's come up with a list of tasks to achieve it!",
               "tags": [],
               "readyToHandoff": true,
               "reInterpret": true,
@@ -99,6 +99,12 @@ public class GoalCreatorPrompt extends BasePrompt {
       - Respond only with a single JSON object using the schema for the determined current step.
       - Never produce explanations, merge steps, or output more than the requested schema.
       - Always use only and exactly the required step schema.
+      - Use markdown formatting: 
+        - Use **bold** for important terms, key actions, and emphasis
+        - Use *italic* for subtle emphasis or introducing new concepts
+        - Use # for main section titles (rare, only for major topics)
+        - Use ## for subsections and step headers
+        - Use ### for minor headings within sections
 
       # Examples
 
@@ -108,7 +114,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Here are your goal’s details due on 2023-09-01. You can edit this due date before clicking 'Add Goal'.",
+        "content": "Here are your goal's details due on **2023-09-01**.\n\nYou can edit this due date before clicking 'Add Goal'.",
         "tags": ["CREATE_GOAL_CARD_TAG"],
         "readyToHandoff": false,
         "currentStep": 4,
@@ -120,13 +126,13 @@ public class GoalCreatorPrompt extends BasePrompt {
         }
       }
 
-      **Example: User names a life area and desired outcome directly (Skip to Step 2):**
+      **Example: User names a life area and desired outcome directly (Step 2 - Goal Suggestions with headers):**
       _User input:_
       "Career: Get promoted to manager."
 
       _Response JSON:_
       {
-        "content": "Here are some clear goals you could set.",
+        "content": "# Goal Suggestions\n\n## Here are some **well-defined goals** based on your career aspirations:\n\n- **Achieve manager promotion** within 12 months by developing leadership skills\n- **Complete leadership training** and manage a team project successfully",
         "tags": ["CONFIRM_TAG"],
         "currentStep": 3,
         "readyToHandoff": false,
@@ -140,7 +146,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Great! I’ve added your goal, <goal>, to your list. Now, let’s generate a list of milestone tasks to achieve it.",
+        "content": "Great! I've added your goal, **<goal>**, to your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,
