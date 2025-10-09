@@ -14,12 +14,14 @@ import com.optimal.backend.springboot.agent.framework.config.LangChain4jConfig;
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.ToolExecutionResultMessage;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.service.AiServices;
+import dev.langchain4j.service.tool.HallucinatedToolNameStrategy;
 
 @Component
 public class LlmClient {
@@ -108,67 +110,58 @@ public class LlmClient {
             for (Message m : messages) {
                 chatMemory.add(m.toLangChain4jMessage());
             }
-            if (systemPrompt != null && !systemPrompt.isEmpty()) {
-                if (currentStep > 0) {
-                    StringBuilder addedPrompt = new StringBuilder();
-                    String[] systemPromptSections = systemPrompt.split("<SECTION>");
-                    addedPrompt.append(systemPromptSections[0]);
-                    String[] promptSteps = systemPromptSections[1].split("Step ");
-                    // addedPrompt.append("Current Step in the process: " + currentStep);
-                    // chatMemory.add(SystemMessage.from(addedPrompt.toString()));
-                    // System.out.println("\n\nPrompt: " + addedPrompt.toString());
 
-                    int count = messages.size();
-                    if (count < 2) {
-                        chatMemory.add(SystemMessage.from(systemPrompt));
-                    } else {
-                        // Create clean memory for instruction selector
-                        ChatMemory selectorMemory = MessageWindowChatMemory.withMaxMessages(10);
-                        selectorMemory.add(SystemMessage.from(INSTRUCTION_AGENT_PROMPT));
+            int count = messages.size();
 
-                        // Format the input properly
-                        String contextInput;
-                        if (count < 4) {
-                            contextInput = String.format(
-                                    "Last 2 messages:\n%s\n%s\n\nSystem prompt:\n%s",
-                                    messages.get(count - 2).getTextContent(),
-                                    messages.get(count - 1).getTextContent(),
-                                    systemPromptSections[1]);
-                        } else {
-                            contextInput = String.format(
-                                    "Last 4 messages:\n%s\n%s\n%s\n%s\n\nSystem prompt:\n%s",
-                                    messages.get(count - 4).getTextContent(),
-                                    messages.get(count - 3).getTextContent(),
-                                    messages.get(count - 2).getTextContent(),
-                                    messages.get(count - 1).getTextContent(),
-                                    systemPromptSections[1]);
-                        }
+            if (count > 2) {
+                StringBuilder addedPrompt = new StringBuilder();
+                String[] systemPromptSections = systemPrompt.split("<SECTION>");
+                addedPrompt.append(systemPromptSections[0]);
+                String[] promptSteps = systemPromptSections[1].split("Step ");
+                // Create clean memory for instruction selector
+                ChatMemory selectorMemory = MessageWindowChatMemory.withMaxMessages(10);
+                selectorMemory.add(SystemMessage.from(INSTRUCTION_AGENT_PROMPT));
 
-                        ChatModel instructionModel = applicationContext.getBean(LangChain4jConfig.class)
-                                .lightChatLanguageModel();
-                        ToolCapableAssistant instructionAgent = AiServices.builder(ToolCapableAssistant.class)
-                                .chatModel(instructionModel)
-                                .chatMemory(selectorMemory)
-                                .build();
-
-                        Response<AiMessage> instruction = instructionAgent.chat(contextInput);
-                        int instructionStep = Integer.parseInt(instruction.content().text().trim());
-                        addedPrompt
-                                .append("\n\n[INSTRUCTION: " + promptSteps[instructionStep] +
-                                        "]\n\n");
-                        chatMemory.add(SystemMessage.from(addedPrompt.toString()));
-                        System.out.println("PROMPT: " + addedPrompt.toString());
-                    }
+                // Format the input properly
+                String contextInput;
+                if (count < 4) {
+                    contextInput = String.format(
+                            "Last 2 messages:\n%s\n%s\n\nSystem prompt:\n%s",
+                            messages.get(count - 2).getTextContent(),
+                            messages.get(count - 1).getTextContent(),
+                            systemPromptSections[1]);
+                } else {
+                    contextInput = String.format(
+                            "Last 4 messages:\n%s\n%s\n%s\n%s\n\nSystem prompt:\n%s",
+                            messages.get(count - 4).getTextContent(),
+                            messages.get(count - 3).getTextContent(),
+                            messages.get(count - 2).getTextContent(),
+                            messages.get(count - 1).getTextContent(),
+                            systemPromptSections[1]);
                 }
+
+                ChatModel instructionModel = applicationContext.getBean(LangChain4jConfig.class)
+                        .lightChatLanguageModel();
+                ToolCapableAssistant instructionAgent = AiServices.builder(ToolCapableAssistant.class)
+                        .chatModel(instructionModel)
+                        .chatMemory(selectorMemory)
+                        .build();
+
+                Response<AiMessage> instruction = instructionAgent.chat(contextInput);
+                int instructionStep = Integer.parseInt(instruction.content().text().trim());
+                addedPrompt
+                        .append("\n\n[INSTRUCTION: " + promptSteps[instructionStep] +
+                                "]\n\n");
+                chatMemory.add(SystemMessage.from(addedPrompt.toString()));
+                System.out.println("\n\nPROMPT: " + addedPrompt.toString());
             }
-            for (int i = 0; i < tools.size(); i++) {
-                System.out.println("\n\nAvailable Tool: " + tools.get(i).getClass().getSimpleName());
-            }
+
             // Create AI Service with tools
             ToolCapableAssistant assistant = AiServices.builder(ToolCapableAssistant.class)
                     .chatModel(chatModel)
                     .chatMemory(chatMemory)
-                    .tools(tools)
+                    .tools(tools).hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
+                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()))
                     .build();
 
             // Get the latest user message to send to assistant
@@ -176,21 +169,27 @@ public class LlmClient {
 
             // Generate response using AI Service
             Response<AiMessage> response = assistant.chat(userInput);
-            System.out.println(
-                    "\n\nTokens: " + response.tokenUsage().totalTokenCount());
-            System.out.println(
-                    "\n\nResponse: " + response.content().text());
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
+            String cleanedResponse = response.content().text().toString().replaceAll("```json", "").replace("```", "");
 
-            return new LlmResponse(response.content().text().toString().replaceAll("```json", "").replace("```", ""),
+            try {
+                if (cleanedResponse.charAt(0) != '{') {
+                    int objStart = cleanedResponse.indexOf('{');
+                    int objEnd = cleanedResponse.lastIndexOf('}') + 1;
+                    cleanedResponse = cleanedResponse.substring(objStart, objEnd);
+                }
+            } catch (Exception e) {
+            }
+
+            return new LlmResponse(cleanedResponse,
                     response.tokenUsage().totalTokenCount());
 
         } catch (Exception e) {
             System.err.println("Error generating response with tools: " + e.getMessage());
             e.printStackTrace();
-            return new LlmResponse("Error generating response with tools: " + e.getMessage());
+            return new LlmResponse("Error occured, please try again");
         }
     }
 

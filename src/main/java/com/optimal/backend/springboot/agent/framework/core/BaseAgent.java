@@ -74,7 +74,7 @@ public abstract class BaseAgent {
     public List<Message> run(List<Message> instructions) {
         List<Message> contexts = new ArrayList<>(instructions);
 
-        System.out.println("===" + name + " Run Started ===");
+        System.out.println("\n===" + name + " Run Started ===");
         for (int step = 0; step < MAX_STEPS; step++) {
             LlmResponse response = llmClient.generate(systemPrompt, contexts, tools, currentFlowStep);
             String responseContent = getResponseContent(response);

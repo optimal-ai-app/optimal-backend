@@ -61,46 +61,45 @@ public class BaseSupervisor implements SupervisorInterface {
     private static final String INTERPRETER_PROMPT = """
             SYSTEM
             You are Task-Orchestrator. Return ONLY a JSON array of agent nodes (see INTERFACE).
+            You never assemble ad-hoc mixes. You select from predefined teams, but you OUTPUT ONLY AGENTS in the shown format.
 
-            AVAILABLE AGENTS
-            - GoalCreatorAgent    ➜ Use **only** when the user explicitly asks to define/clarify a goal **or** provides no clear goal/task. Runs fully standalone.
-            - MilestonePlannerAgent ➜ Breaks a goal or project into high-level milestones. Always followed by TaskCreatorAgent.
-            - TaskPlannerAgent    ➜ Breaks down milestones into concrete tasks. Always followed by TaskCreatorAgent.
-            - TaskCreatorAgent    ➜ Persists tasks exactly as planned. Always depends on TaskPlannerAgent or MilestonePlannerAgent. Never runs alone. Never depends directly on GoalCreatorAgent.
-            - HabitAgent          ➜ Use when the user wants to create or manage a habit (type, cadence, verification, notifications) or log/complete habitual actions. Runs standalone.
+            PREDEFINED TEAMS
+                GoalDefinitionTeam → [GoalCreatorAgent]
+                MilestoneExecutionTeam → [MilestonePlannerAgent, TaskCreatorAgent]
+                • TaskCreatorAgent depends on MilestonePlannerAgent
+                TaskExecutionTeam → [TaskPlannerAgent, TaskCreatorAgent]
+                • TaskCreatorAgent depends on TaskPlannerAgent
 
-            AGENT-SELECTION GUIDELINES
-            1. If the message contains “set a goal”, “define my objective”, “I don’t know my goal”, etc. ➜ include GoalCreatorAgent.
-            2. If the message references a specific goal or says “create a task”, “plan tasks”, “schedule”, “add task”, etc. ➜ skip GoalCreatorAgent.
-            3. If milestones are explicitly mentioned (e.g., “break this project into phases/stages/milestones”), include MilestonePlannerAgent before TaskCreatorAgent.
-            4. If tasks are explicitly mentioned, include TaskPlannerAgent followed by TaskCreatorAgent.
-            5. Ensure a valid DAG. No circular dependencies.
-               • GoalCreatorAgent has no dependencies.
-               • MilestonePlannerAgent has no dependencies.
-               • TaskCreatorAgent always depends on TaskPlannerAgent.
-               • TaskCreatorAgent always depends on MilestonePlannerAgent.
-               • HabitAgent runs standalone.
+            TEAM SELECTION
+            If the user says "goal" or "plan a goal" → select GoalDefinitionTeam.
+            If the user mentions "milestones" or "milestone" for some specific goal → select MilestoneExecutionTeam.
+            If the user asks to “create tasks”, “plan tasks” and “schedule tasks” → select TaskExecutionTeam.
 
-            INTERFACE (must match exactly)
-            [
-              {
-                "name": "AgentName",
-                "instruction": "Specific instruction for this agent",
-                "dependency": ["AgentName1", "AgentName2"]
-              }
-            ]
+            OUTPUT CONSTRUCTION
+            Output the union of agents from all selected teams as an array of agent nodes per INTERFACE.
+            Ensure valid dependencies:
+                • TaskCreatorAgent must depend on every planner it draws from:
+                    - If MilestonePlannerAgent present → include "MilestonePlannerAgent" in dependency.
+                    - If TaskPlannerAgent present → include "TaskPlannerAgent" in dependency.
+                • GoalCreatorAgent and MilestonePlannerAgent have no dependencies.
+            Do not include team names in the output.
 
             INSTRUCTION INTELLIGENCE
-            - Be SPECIFIC about what the agent should accomplish based on the users input.
-            - Include relevant context from the user's request.
-            - Reference explicit goals, milestones, or requirements if mentioned.
-            - Remind the agent to follow their instructions, do not provide instructions for the agent they have a system prompt.
-            - Example: If user says “I want to run 50 miles in 1 year” →
-              GoalCreatorAgent defines goal → MilestonePlannerAgent sets quarterly milestones → TaskPlannerAgent breaks milestones into weekly runs → TaskCreatorAgent persists tasks.
+            Make each agent's "instruction" specific to the user's context, constraints, timelines, and success metrics.
+            Reference explicit goals, milestones, or requirements if given.
+
+            OUTPUT (must match exactly)
+            [
+                {
+                    "name": "AgentName",
+                    "instruction": "Specific instruction for this agent",
+                    "dependency": ["AgentName1", "AgentName2"]
+                }
+            ]
 
             RULES
             • The JSON array cannot be empty.
-            • Use only the five agent names above.
+            • Use only the five allowed agent names.
             • Output valid JSON—no extra text, comments, or explanations.
             """;
 
@@ -138,9 +137,11 @@ public class BaseSupervisor implements SupervisorInterface {
      */
     public SupervisorResponse executeWithHandoff(List<Message> userInput) {
         // If there's an active handoff agent, execute it directly
-        System.out.println("\n\nExecuting With Handoff");
+        System.out.println(
+                "\n\n====================================================================================================");
+        System.out.print("\n\nExecuting With Handoff - ");
         if (handoffAgent != null && agents.containsKey(handoffAgent)) {
-            System.out.println("\n\n" + handoffAgent + " still in control");
+            System.out.println(handoffAgent + " still in control\n");
             return executeHandoffAgent(userInput);
         }
         // Normal supervisor execution - initialize state
@@ -249,9 +250,15 @@ public class BaseSupervisor implements SupervisorInterface {
             }
 
             if (areDependenciesMet(current, finishedAgents)) {
-                List<Message> context = buildAgentContext(current);
+
+                Message context = buildAgentContext(current);
+                List<Message> structuredContext = new ArrayList<Message>();
+                structuredContext.add(context);
+
                 BaseAgent agent = agents.get(agentName);
-                List<Message> response = agent.run(context);
+                agent.systemPrompt = context.getTextContent() + agent.systemPrompt;
+
+                List<Message> response = agent.run(structuredContext);
                 tokens = response.get(response.size() - 1).getTokens();
                 SupervisorResponse agentParsedResponse = saveAgentOutput(agentName, response);
                 agent.currentFlowStep = agentParsedResponse.currentStep;
@@ -282,8 +289,6 @@ public class BaseSupervisor implements SupervisorInterface {
      * 4) parse the response to convert the JSON into a SupervisorResponse object
      */
     private SupervisorResponse saveAgentOutput(String agentName, List<Message> response) {
-        System.out.println("saving agent output: " + agentName);
-        System.out.println(extractFinalResponse(response));
         this.agentOutputs.put(agentName, response);
         finishedAgents.add(agentName);
         processingAgents.remove(agentName);
@@ -407,8 +412,8 @@ public class BaseSupervisor implements SupervisorInterface {
         // --- DEBUG LOG ----------------------------------------------------
         if (!userInput.isEmpty()) {
             Message lastMsg = userInput.get(userInput.size() - 1);
-            System.out.printf("[INTERPRETER] Incoming user message (%s): %s%n", lastMsg.getRole(),
-                    lastMsg.getContent());
+            System.out.printf("\n[INTERPRETER] Incoming user message (%s): %s%n", lastMsg.getRole(),
+                    lastMsg.getTextContent());
         }
 
         this.iterations = 0;
@@ -434,10 +439,9 @@ public class BaseSupervisor implements SupervisorInterface {
      * 6) if the dependency list is empty, add the user's input to the context
      * 7) return the context
      */
-    private List<Message> buildAgentContext(AgentNode current) {
+    private Message buildAgentContext(AgentNode current) {
         // Null-safe creation of context - getInstructions() could return null
-        List<Message> instructions = current.getInstructions();
-        List<Message> context = instructions != null ? new ArrayList<>(instructions) : new ArrayList<>();
+        List<Message> context = new ArrayList<>();
         context.addAll(agentContexts.getOrDefault(current.getName(), List.of()));
         agentContexts.remove(current.getName());
         for (String dep : current.getDependencies()) {
@@ -446,7 +450,22 @@ public class BaseSupervisor implements SupervisorInterface {
         if (current.getDependencies().isEmpty() && this.agentOutputs.get("user") != null) {
             context.addAll(this.agentOutputs.get("user"));
         }
-        return context;
+        System.out.println("====== BUILDING AGENT CONTEXT ======");
+        for (Message m : context) {
+            try {
+                ObjectMapper mapper = new ObjectMapper();
+                System.out.println("\n" + mapper.writeValueAsString(m));
+            } catch (Exception e) {
+                System.out.println();
+            }
+        }
+        try {
+            int lastIndex = context.size() - 1;
+            return context.get(lastIndex);
+        } catch (Exception e) {
+            List<Message> instructions = current.getInstructions();
+            return instructions.get(0);
+        }
     }
 
     private Queue<AgentNode> parseAgentNodes(String responseContent) {

@@ -17,4 +17,5 @@ public class CreateTaskRequest {
     private UUID goalId;
     private Timestamp repeatEndDate;
     private List<String> repeatDays;
+    private Boolean milestone;
 }

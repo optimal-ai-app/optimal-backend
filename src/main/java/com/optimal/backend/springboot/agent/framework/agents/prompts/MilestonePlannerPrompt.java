@@ -27,11 +27,9 @@ public class MilestonePlannerPrompt extends BasePrompt {
         "data": {"options": ["<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>"]}
       }
       ### Step 2. **Milestone Suggestion**
-
+      * Call `getFutureDate(0) to get current date
       * Call `getGoalProgress(goalId)` and check type:
-
-        * Quantitative → stop, cannot create milestones.
-        * Qualitative → call `getGoalMilestone(goalId)`.
+      * call `getGoalMilestone(goalId)`.
       * If no milestones exist → propose 3+ natural progression milestones.
       * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes.
       * *Response Format:*
@@ -45,15 +43,17 @@ public class MilestonePlannerPrompt extends BasePrompt {
       ### Step 3. **Confirm & Complete**
 
       * On confirmation, finalize the milestone(s).
+      * This step should not be used if the user asks for a different set of milestone, it should only be used if "Accept" is the user's response
       * *Response Format:*
 
       {
-        "content": "Completed planning '<milestone(s) with due dates>' for goal '<goal>'.",
+        "content": "These are the milestones that need to be created: '<milestone(s) with due dates>' for goal '<goal>'.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,
         "data": null
       }
+
       <SECTION>
 
       ### Output Format
@@ -77,12 +77,12 @@ public class MilestonePlannerPrompt extends BasePrompt {
         "tags": ["CONFIRM_TAG"],
         "currentStep": 3,
         "readyToHandoff": false,
-        "data": {"options": ["Run 5 km", "Run 10 km", "Run 15 km"]}
+        "data": {"options": ["Accept", "Make new list"]}
       }
 
       **Example 2: User selects milestone from suggestions (Step 2 → Step 3):**
       *User input:*
-      “I’ll take Run 10 km.”
+      “Accept.”
 
       *Response JSON:*
 

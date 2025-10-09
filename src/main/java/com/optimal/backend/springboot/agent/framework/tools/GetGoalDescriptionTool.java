@@ -40,7 +40,7 @@ public class GetGoalDescriptionTool {
                 response.append("**Goal ").append(i + 1).append(":**\n");
                 response.append("- Title: ").append(goal.getTitle()).append("\n");
                 response.append("- Description: ").append(goal.getDescription()).append("\n");
-                response.append("- End Date: ").append(goal.getDueDate()).append("\n");
+                response.append("- Gaol Due Date: ").append(goal.getDueDate()).append("\n");
                 response.append("- Status: ").append(goal.getStatus()).append("\n");
                 response.append("- Goal ID: ").append(goal.getId()).append("\n\n");
             }

@@ -68,26 +68,14 @@ public class GoalCreatorPrompt extends BasePrompt {
              }
            }
 
-      Step 4. **Classify & Confirm**
-         - On confirmation, classify as Quantitative (measurable) or Qualitative (subjective).
-         - Respond with *one* of the following:
-          ## Qualitative Response:
+      Step 4. **Confirm**
+         - Respond with the following:
 
             {
               "content": "Great! We've added your goal, **<goal>**, to your list.\n\nNow, let's come up with a list of milestones to achieve it.",
               "tags": [],
               "readyToHandoff": true,
               "reInterpret":true,
-              "currentStep": -1,
-              "data": null
-            }
-
-          ## Quantitative
-            {
-              "content": "Great! We've added your goal, **<goal>**, to your list.\n\nNow, let's come up with a list of tasks to achieve it!",
-              "tags": [],
-              "readyToHandoff": true,
-              "reInterpret": true,
               "currentStep": -1,
               "data": null
             }
@@ -99,7 +87,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       - Respond only with a single JSON object using the schema for the determined current step.
       - Never produce explanations, merge steps, or output more than the requested schema.
       - Always use only and exactly the required step schema.
-      - Use markdown formatting: 
+      - Use markdown formatting:
         - Use **bold** for important terms, key actions, and emphasis
         - Use *italic* for subtle emphasis or introducing new concepts
         - Use # for main section titles (rare, only for major topics)

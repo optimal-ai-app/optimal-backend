@@ -42,6 +42,7 @@ public class TaskController {
         task.setStatus("todo");
         task.setPriority(request.getPriority());
         task.setGoalId(request.getGoalId());
+        task.setMilestone(request.getMilestone());
 
         System.out.println("--------------------------------");
         System.out.println("task: " + task.toString());

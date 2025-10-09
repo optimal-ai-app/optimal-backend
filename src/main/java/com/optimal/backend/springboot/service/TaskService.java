@@ -126,7 +126,6 @@ public class TaskService {
         return taskCopy;
     }
 
-    // TODO: move to utils
     private String getDayNameFromCalendar(int dayOfWeek) {
         switch (dayOfWeek) {
             case Calendar.SUNDAY:

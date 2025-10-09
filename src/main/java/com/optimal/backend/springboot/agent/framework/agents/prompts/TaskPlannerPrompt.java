@@ -47,24 +47,6 @@ public class TaskPlannerPrompt extends BasePrompt {
             - Call `getGoalProgress(goalId)` for the selected goal for detailed info
             - After each tool call, validate results (1-2 lines); proceed or self-correct
             - If errors/empty results, clearly inform the user and suggest next steps
-
-            #### If Goal is Quantitative:
-            - Call `getTasksforGoal(goalTitle)` for related tasks
-            - Use the goal's due date as scope
-            - Each task has a value (e.g., Reading 100 pages; unit = 1 page)
-            - Suggest creative, varied tasks. Then present options with this formatted response:
-
-            {
-                "content": "Here are some tasks to help reach your goal: <concise task list>",
-                "tags": ["CONFIRM_TAG"],
-                "readyToHandoff": false,
-                "currentStep": 3,
-                "data": { "options": ["<task idea>", "Suggest something else"] }
-            }
-
-            - If no tasks/error, respond in JSON: explain and offer retry/different goal
-
-            #### If Qualitative:
             - Call `getGoalMilestone(goalId)` and present milestones:
 
             {
@@ -83,7 +65,7 @@ public class TaskPlannerPrompt extends BasePrompt {
 
             ### Step 3 – Task Confirmation
             - On task acceptance:
-
+            - Only go here if user does not ask if there are more milestone tasks
             {
                 "content": "Completed planning for "<task>" to goal "<goal>".",
                 "tags": [],
