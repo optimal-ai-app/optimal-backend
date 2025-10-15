@@ -4,6 +4,7 @@ import java.util.Date;
 
 import org.springframework.stereotype.Component;
 
+import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.utils.DateUtils;
 
 import dev.langchain4j.agent.tool.P;

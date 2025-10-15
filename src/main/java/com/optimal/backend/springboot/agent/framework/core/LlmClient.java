@@ -10,18 +10,23 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 
 import com.optimal.backend.springboot.agent.framework.config.LangChain4jConfig;
+import com.optimal.backend.springboot.agent.framework.core.guardrails.OutputValidationGuard;
+import com.optimal.backend.springboot.agent.framework.core.guardrails.PromptInjectionGuard;
 
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
 import dev.langchain4j.data.message.ToolExecutionResultMessage;
+import dev.langchain4j.guardrail.InputGuardrailException;
+import dev.langchain4j.guardrail.OutputGuardrail;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.service.AiServices;
-import dev.langchain4j.service.tool.HallucinatedToolNameStrategy;
+import dev.langchain4j.service.guardrail.InputGuardrails;
+import dev.langchain4j.service.guardrail.OutputGuardrails;
 
 @Component
 public class LlmClient {
@@ -29,6 +34,9 @@ public class LlmClient {
     private ApplicationContext applicationContext;
 
     private ChatModel chatModel;
+
+    @Autowired
+    private PromptInjectionGuard piGuard;
 
     @Autowired
     public LlmClient(ChatModel chatModel) {
@@ -100,18 +108,18 @@ public class LlmClient {
     /**
      * Generate response with tools using AiService
      */
-    public LlmResponse generate(String systemPrompt, List<Message> messages, List<Object> tools,
-            int currentStep) {
+    public LlmResponse generate(String systemPrompt, List<Message> messages, List<Object> tools) {
         try {
             ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(1000);
+            String userInput = getLatestUserMessage(messages);
+            messages.remove(messages.size() - 1);
+            int count = messages.size();
             UUID uuid = UUID.randomUUID();
             chatMemory.add(SystemMessage.from(uuid + systemPrompt));
 
             for (Message m : messages) {
                 chatMemory.add(m.toLangChain4jMessage());
             }
-
-            int count = messages.size();
 
             if (count > 2) {
                 StringBuilder addedPrompt = new StringBuilder();
@@ -150,45 +158,38 @@ public class LlmClient {
                 Response<AiMessage> instruction = instructionAgent.chat(contextInput);
                 int instructionStep = Integer.parseInt(instruction.content().text().trim());
                 addedPrompt
-                        .append("\n\n[INSTRUCTION: " + promptSteps[instructionStep] +
-                                "]\n\n");
+                        .append("\n\nINSTRUCTION: " + promptSteps[instructionStep] +
+                                "\n\n");
                 chatMemory.add(SystemMessage.from(addedPrompt.toString()));
                 System.out.println("\n\nPROMPT: " + addedPrompt.toString());
             }
 
             // Create AI Service with tools
+
             ToolCapableAssistant assistant = AiServices.builder(ToolCapableAssistant.class)
                     .chatModel(chatModel)
                     .chatMemory(chatMemory)
-                    .tools(tools).hallucinatedToolNameStrategy(toolExecutionRequest -> ToolExecutionResultMessage.from(
-                            toolExecutionRequest, "Error: there is no tool called " + toolExecutionRequest.name()))
+                    .tools(tools)
+                    .hallucinatedToolNameStrategy(toolReq -> ToolExecutionResultMessage.from(toolReq,
+                            "Error: there is no tool called " + toolReq.name()))
+                    .outputGuardrailClasses(List.<Class<? extends OutputGuardrail>>of(
+                            OutputValidationGuard.class))
                     .build();
 
             // Get the latest user message to send to assistant
-            String userInput = getLatestUserMessage(messages);
-
             // Generate response using AI Service
             Response<AiMessage> response = assistant.chat(userInput);
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
-            String cleanedResponse = response.content().text().toString().replaceAll("```json", "").replace("```", "");
-
-            try {
-                if (cleanedResponse.charAt(0) != '{') {
-                    int objStart = cleanedResponse.indexOf('{');
-                    int objEnd = cleanedResponse.lastIndexOf('}') + 1;
-                    cleanedResponse = cleanedResponse.substring(objStart, objEnd);
-                }
-            } catch (Exception e) {
-            }
-
-            return new LlmResponse(cleanedResponse,
+            return new LlmResponse(response.content().text().toString(),
                     response.tokenUsage().totalTokenCount());
 
+        } catch (InputGuardrailException e) {
+            System.err.println("\nError generating response with tools: " + e.getMessage());
+            return new LlmResponse("Invalid input, please rephrase");
         } catch (Exception e) {
-            System.err.println("Error generating response with tools: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("\nError generating response with tools: " + e.getMessage());
             return new LlmResponse("Error occured, please try again");
         }
     }
@@ -221,6 +222,7 @@ public class LlmClient {
      * This interface is used by AiServices to handle chat with tool support.
      */
     public interface ToolCapableAssistant {
+        @InputGuardrails({ PromptInjectionGuard.class })
         Response<AiMessage> chat(String userMessage);
     }
 

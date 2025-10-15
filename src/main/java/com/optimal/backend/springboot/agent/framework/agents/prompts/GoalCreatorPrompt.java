@@ -37,7 +37,6 @@ public class GoalCreatorPrompt extends BasePrompt {
               "content": "<question>",
               "tags": ["CONFIRM_TAG"],
               "readyToHandoff": false,
-              "currentStep": 2,
               "data": {"options": ["<ex1>", "<ex2>", "<ex3>"]}
             }
 

@@ -45,6 +45,7 @@ public class ChatController {
 
     @Autowired
     private LlmClient llmClient;
+    final Integer MESSAGE_MAXIMUM = 100;
 
     // Wrapper class to track supervisor access time
     private static class SupervisorWrapper {
@@ -173,6 +174,13 @@ public class ChatController {
             String chatId = (String) request.get("chatId");
             System.out.println("chatId: " + chatId);
             String userId = (String) request.get("userId");
+            long messagesSentToday = chatService.countUsersMessages(userId);
+            if (messagesSentToday > MESSAGE_MAXIMUM) {
+                Map<String, Object> resp = new HashMap();
+                resp.put("content", "Maximum requests used today");
+                return ResponseEntity.ok(resp);
+            }
+
             if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("content", "chatId and userId are required");

@@ -13,12 +13,21 @@ import com.optimal.backend.springboot.database.entity.Message;
 
 @Repository
 public interface MessageRepository extends JpaRepository<Message, UUID> {
-    
-    @Query("""
-            SELECT m
-              FROM Message m
-             WHERE m.conversationId = :conversationId
-          ORDER BY m.createdAt ASC
-            """)
-    List<Message> findByConversationIdOrderByCreatedAtAsc(@Param("conversationId") UUID conversationId);
+
+  @Query(value = """
+      select count(*)
+      from messages m
+      join conversations c on c.id = m.conversation_id
+      where c.user_id = cast(:userId as uuid)
+        and c.updated_at >= current_date and m.created_at >= current_date
+      """, nativeQuery = true)
+  long countUsersMessages(@Param("userId") String userId);
+
+  @Query("""
+        SELECT m
+          FROM Message m
+         WHERE m.conversationId = :conversationId
+      ORDER BY m.createdAt ASC
+        """)
+  List<Message> findByConversationIdOrderByCreatedAtAsc(@Param("conversationId") UUID conversationId);
 }

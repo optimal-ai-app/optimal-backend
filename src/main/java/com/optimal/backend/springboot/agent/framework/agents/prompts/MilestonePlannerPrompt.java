@@ -28,7 +28,7 @@ public class MilestonePlannerPrompt extends BasePrompt {
       }
       ### Step 2. **Milestone Suggestion**
       * Call `getFutureDate(0) to get current date
-      * Call `getGoalProgress(goalId)` and check type:
+      * Call `getGoalProgress(goalId)`:
       * call `getGoalMilestone(goalId)`.
       * If no milestones exist → propose 3+ natural progression milestones.
       * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes.

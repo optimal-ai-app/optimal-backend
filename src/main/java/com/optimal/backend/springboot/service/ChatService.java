@@ -102,4 +102,8 @@ public class ChatService {
             throw e; // Re-throw to trigger retry
         }
     }
+
+    public long countUsersMessages(String userId) {
+        return messageRepository.countUsersMessages(userId) / 2;
+    }
 }
