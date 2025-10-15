@@ -107,8 +107,9 @@ public class CreateTaskTool {
      * to calculate proper repeat dates based on repeatDays.
      */
     private LocalDateTime parseDateTime(String timeInput) {
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
+        // Use user's local date from context (their timezone)
+        LocalDate today = UserContext.getUserLocalDate();
+        LocalDateTime now = LocalDateTime.of(today, LocalTime.now());
         try {
             if (timeInput.contains(" ") && timeInput.length() >= 16) {
                 LocalDateTime parsed = LocalDateTime.parse(timeInput,
