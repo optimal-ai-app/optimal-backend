@@ -94,20 +94,7 @@ public class MilestonePlannerPrompt extends BasePrompt {
         "data": null
       }
 
-      **Example 3: Quantitative goal (terminate early):**
-      *User input:*
-      “My goal is to lose 10 pounds.”
-
-      *Response JSON:*
-
-      {
-        "content": "I am unable to create standard milestones for quantitative goals.",
-        "tags": ["CONFIRM_TAG"],
-        "readyToHandoff": true,
-        "currentStep": -1,
-        "data": null
-      }
-
+      
       ### Notes
 
       * Never require the user to repeat or re-enter known information.

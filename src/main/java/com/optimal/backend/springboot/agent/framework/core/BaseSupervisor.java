@@ -71,9 +71,13 @@ public class BaseSupervisor implements SupervisorInterface {
                 • TaskCreatorAgent depends on TaskPlannerAgent
 
             TEAM SELECTION
-            If the user says "goal" or "plan a goal" → select GoalDefinitionTeam.
+            If the user says "goal" or "plan a goal" or "create a goal" → select GoalDefinitionTeam.
             If the user mentions "milestones" or "milestone" for some specific goal → select MilestoneExecutionTeam.
-            If the user asks to “create tasks”, “plan tasks” and “schedule tasks” → select TaskExecutionTeam.
+            If the user asks to "create tasks", "plan tasks" and "schedule tasks" → select TaskExecutionTeam.
+            
+            IMPORTANT RULES:
+            - If the message indicates a goal was ALREADY created (e.g., "We've added your goal", "goal has been created"), do NOT select GoalDefinitionTeam.
+            - If the message says "let's create milestones" or "come up with milestones", select ONLY MilestoneExecutionTeam.
 
             OUTPUT CONSTRUCTION
             Output the union of agents from all selected teams as an array of agent nodes per INTERFACE.
