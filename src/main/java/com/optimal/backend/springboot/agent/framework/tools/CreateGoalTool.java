@@ -95,13 +95,11 @@ public class CreateGoalTool {
     /**
      * Parse goal due date from various date formats.
      * Supports ISO date format (yyyy-MM-dd) and other common formats.
+     * Uses user's local date from context instead of server date.
      */
     private Timestamp parseGoalDueDate(String dateInput) {
-        LocalDate today = LocalDate.now();
-
-        System.out.println("=== parseGoalDueDate Debug:");
-        System.out.println("Today: " + today);
-        System.out.println("Date input: " + dateInput);
+        // Use user's local date from their time zone
+        LocalDate today = UserContext.getUserLocalDate();
 
         try {
             LocalDate parsedDate;
@@ -120,9 +118,8 @@ public class CreateGoalTool {
                 parsedDate = LocalDate.parse(dateInput);
             }
 
-            // Ensure the date is not in the past
+            // Ensure the date is not in the past (relative to user's today)
             if (parsedDate.isBefore(today)) {
-                System.out.println("Date " + parsedDate + " is in the past, using today instead");
                 parsedDate = today;
             }
 
@@ -135,7 +132,7 @@ public class CreateGoalTool {
 
         } catch (DateTimeParseException e) {
             System.out.println("Failed to parse date '" + dateInput + "': " + e.getMessage() +
-                    ", defaulting to 30 days from today");
+                    ", defaulting to 30 days from user's today");
             LocalDate defaultDate = today.plusDays(30);
             LocalDateTime endOfDay = defaultDate.atTime(23, 59, 59);
             return Timestamp.valueOf(endOfDay);

@@ -168,11 +168,17 @@ public class ChatController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> request) {
         try {
-            // Extract userId from request
-            String date = (String) request.get("date");
+            // Extract request parameters
+            String date = (String) request.get("date");           // User's local date (yyyy-MM-dd)
+            String timestamp = (String) request.get("timestamp"); // Full UTC timestamp for logging
             String chatId = (String) request.get("chatId");
-            System.out.println("chatId: " + chatId);
+
             String userId = (String) request.get("userId");
+            
+            System.out.println("chatId: " + chatId);
+            System.out.println("User's local date: " + date);
+            System.out.println("Request timestamp: " + timestamp);
+            
             if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("content", "chatId and userId are required");
@@ -181,9 +187,10 @@ public class ChatController {
                 return ResponseEntity.badRequest().body(errorResponse);
             }
 
-            // Set userId in ThreadLocal context for tools to access
+            // Set context in ThreadLocal for tools to access
             UserContext.setUserId(userId);
             UserContext.setChatId(chatId);
+            UserContext.setUserDate(date); // Store user's local date for date calculations
 
             @SuppressWarnings("unchecked")
             // Extract messages from request - each message has a role (e.g. user/assistant)
