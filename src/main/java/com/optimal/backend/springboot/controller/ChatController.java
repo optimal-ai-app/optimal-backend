@@ -45,7 +45,8 @@ public class ChatController {
 
     @Autowired
     private LlmClient llmClient;
-    final Integer MESSAGE_MAXIMUM = 100;
+
+    final Integer MESSAGE_MAXIMUM = 20;
 
     // Wrapper class to track supervisor access time
     private static class SupervisorWrapper {

@@ -26,7 +26,6 @@ import dev.langchain4j.model.chat.response.ChatResponse;
 import dev.langchain4j.model.output.Response;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.guardrail.InputGuardrails;
-import dev.langchain4j.service.guardrail.OutputGuardrails;
 
 @Component
 public class LlmClient {
@@ -34,9 +33,6 @@ public class LlmClient {
     private ApplicationContext applicationContext;
 
     private ChatModel chatModel;
-
-    @Autowired
-    private PromptInjectionGuard piGuard;
 
     @Autowired
     public LlmClient(ChatModel chatModel) {
@@ -163,17 +159,17 @@ public class LlmClient {
                 chatMemory.add(SystemMessage.from(addedPrompt.toString()));
                 System.out.println("\n\nPROMPT: " + addedPrompt.toString());
             }
-
+            OutputValidationGuard guard = applicationContext.getBean(OutputValidationGuard.class);
+            List<OutputGuardrail> guardrails = new ArrayList<>();
+            guardrails.add(guard);
             // Create AI Service with tools
-
             ToolCapableAssistant assistant = AiServices.builder(ToolCapableAssistant.class)
                     .chatModel(chatModel)
                     .chatMemory(chatMemory)
                     .tools(tools)
                     .hallucinatedToolNameStrategy(toolReq -> ToolExecutionResultMessage.from(toolReq,
                             "Error: there is no tool called " + toolReq.name()))
-                    .outputGuardrailClasses(List.<Class<? extends OutputGuardrail>>of(
-                            OutputValidationGuard.class))
+                    .outputGuardrails(guardrails)
                     .build();
 
             // Get the latest user message to send to assistant

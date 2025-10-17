@@ -58,7 +58,12 @@ public class GoalController {
         goals.forEach(g -> {
             GoalProgress gp = progressByGoalId.get(g.getId());
             if (gp != null) {
-                g.setProgress(gp.getScore());
+                System.out.println(gp.getCompletedUnits() + "//" + gp.getTotalUnits());
+                if (gp.getTotalUnits() != 0) {
+                    g.setProgress(gp.getCompletedUnits() / gp.getTotalUnits());
+                } else {
+                    g.setProgress(0.0);
+                }
                 g.setType(gp.getGoalType().toString());
             }
         });

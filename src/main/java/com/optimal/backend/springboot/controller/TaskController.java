@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.controller.RequestClasses.CreateTaskRequest;
 import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
 import com.optimal.backend.springboot.database.entity.Task;
@@ -57,6 +59,9 @@ public class TaskController {
 
     @PostMapping("/update")
     public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode js = mapper.valueToTree(request);
+        System.out.println(js.toPrettyString());
         return ResponseEntity.ok(taskService.updateTask(request));
     }
 
