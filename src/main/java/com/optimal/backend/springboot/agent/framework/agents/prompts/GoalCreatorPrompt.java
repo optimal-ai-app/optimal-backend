@@ -68,6 +68,7 @@ public class GoalCreatorPrompt extends BasePrompt {
            }
 
       Step 4. **Confirm**
+         - ALWAYS suggest creating milestones at the end when a goal has been added.
          - Respond with the following:
 
             {
