@@ -114,7 +114,8 @@ public class LangChain4jConfig {
             return GoogleAiGeminiChatModel.builder()
                     .apiKey(geminiApiKey)
                     .modelName("gemini-2.5-flash")
-                    .temperature(temperature).logResponses(true)
+                    .temperature(.5)
+                    .logResponses(true)
                     .returnThinking(true)
                     .build();
         } catch (Exception e) {
@@ -128,7 +129,8 @@ public class LangChain4jConfig {
         try {
             return OpenAiChatModel.builder()
                     .apiKey(gptApiKey)
-                    .modelName("gpt-4o-mini")
+                    //.modelName("gpt-4o-mini")
+                    .modelName("gpt-4.1-mini")
                     .temperature(.2)
                     .build();
         } catch (Exception e) {
