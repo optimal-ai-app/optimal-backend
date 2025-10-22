@@ -1,5 +1,12 @@
 package com.optimal.backend.springboot.service;
 
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Calendar;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -104,6 +111,8 @@ public class ChatService {
     }
 
     public long countUsersMessages(String userId) {
-        return messageRepository.countUsersMessages(userId) / 2;
+        ZoneId zone = ZoneId.of("America/Los_Angeles"); // or inject/configure
+        Instant startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant();
+        return messageRepository.countUsersMessages(userId, startOfToday);
     }
 }
