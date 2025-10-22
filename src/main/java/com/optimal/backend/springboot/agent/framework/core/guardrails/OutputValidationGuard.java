@@ -23,9 +23,10 @@ public class OutputValidationGuard implements OutputGuardrail {
             You are a formatter. Your job is take any input in, extract text from it and output it in the following JSON format:
             {
                 "content": “<input>”,
-                "readyToHandoff": true,
-                "reInterpret": true
+                "readyToHandoff": false,
+                "reInterpret": false
             }
+            
             """;
 
     @Autowired
@@ -35,7 +36,8 @@ public class OutputValidationGuard implements OutputGuardrail {
     public OutputGuardrailResult validate(AiMessage assistantMessage) {
 
         String text = assistantMessage.text().replaceAll("```json", "").replace("```", "");
-        text = text.replaceAll("\n", "");
+        text = text.replaceAll("\n", "").replaceAll("\"summary\":", "\"content\":");
+        
         try {
             int objStart = text.indexOf("{");
             text = text.substring(objStart);

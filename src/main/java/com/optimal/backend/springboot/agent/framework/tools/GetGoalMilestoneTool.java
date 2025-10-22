@@ -24,7 +24,7 @@ public class GetGoalMilestoneTool {
     @Autowired
     private TaskService taskService;
 
-    @Tool("Given a goalId, returns milestone tasks if the goal is QUALITATIVE; otherwise returns a notice that quantitative goals have no milestones.")
+    @Tool("Given a goalId, returns milestone tasks.")
     public String GetGoalMilestone(@P("goalId") String goalId) {
         try {
             UUID goalIdUUID = UUID.fromString(goalId);
@@ -32,11 +32,6 @@ public class GetGoalMilestoneTool {
             List<GoalProgress> progressList = goalProgressService.getGoalProgressByGoalId(goalIdUUID);
             if (progressList == null || progressList.isEmpty()) {
                 return "No goal progress found for this goal.";
-            }
-
-            GoalProgress progress = progressList.get(0);
-            if (progress.getGoalType() == GoalType.QUANTITATIVE) {
-                return "This goal is quantitative; it has no milestones.";
             }
 
             List<Task> milestones = taskService.getMilestonesByGoalId(goalIdUUID);

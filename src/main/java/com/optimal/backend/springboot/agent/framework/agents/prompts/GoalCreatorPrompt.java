@@ -68,10 +68,11 @@ public class GoalCreatorPrompt extends BasePrompt {
            }
 
       Step 4. **Confirm**
+         - ALWAYS suggest creating milestones at the end when a goal has been added.
          - Respond with the following:
 
             {
-              "content": "Great! We've added your goal, **<goal>**, to your list.\n\nNow, let's come up with a list of milestones to achieve it.",
+              "content": "Great! I've added your goal, **<goal>**, due on **<dueTime>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
               "tags": [],
               "readyToHandoff": true,
               "reInterpret":true,
@@ -133,7 +134,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Great! I've added your goal, **<goal>**, to your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
+        "content": "Great! I've added your goal, **<goal>**, due on **<dueTime>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,
