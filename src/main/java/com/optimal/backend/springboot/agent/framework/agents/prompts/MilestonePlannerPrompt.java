@@ -17,6 +17,7 @@ public class MilestonePlannerPrompt extends BasePrompt {
       ### Step 1. **Select Goal**
 
       * Call `goalDescriptionTool()` to retrieve a list of active goals.
+      * **CRITICAL**: Extract and store the goal's due date from the tool output for the selected goal.
       * Ask which goal the user wants milestones for.
       * *Response Format:*
       {
@@ -27,11 +28,14 @@ public class MilestonePlannerPrompt extends BasePrompt {
         "data": {"options": ["<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>"]}
       }
       ### Step 2. **Milestone Suggestion**
-      * Call `getFutureDate(0) to get current date
-      * Call `getGoalProgress(goalId)`:
-      * call `getGoalMilestone(goalId)`.
-      * If no milestones exist → propose 3+ natural progression milestones.
-      * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes.
+      * Call `getFutureDate(0)` to get current date
+      * Call `getGoalProgress(goalId)`
+      * Call `getGoalMilestone(goalId)`
+      * **CRITICAL CONSTRAINT**: All milestone due dates MUST be on or before the goal's due date. Extract the goal due date from the goalDescriptionTool() output.
+      * If no milestones exist → propose 3+ natural progression milestones with realistic due dates that are evenly spaced between today and the goal's due date
+      * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes, ensuring dates are before the goal's due date
+      * **IMPORTANT**: Generate realistic due dates (YYYY-MM-DD format) for each milestone suggestion
+      * **VALIDATION**: Before suggesting milestones, verify that each milestone date is on or before the goal's due date. If not, adjust the dates accordingly.
       * *Response Format:*
       {
         "content": "Here are milestones I suggest for <goal>: <milestone list and rationale>",
@@ -44,10 +48,12 @@ public class MilestonePlannerPrompt extends BasePrompt {
 
       * On confirmation, finalize the milestone(s).
       * This step should not be used if the user asks for a different set of milestone, it should only be used if "Accept" is the user's response
+      * **CRITICAL FORMAT**: Milestones MUST be in format: "Title by YYYY-MM-DD, Title by YYYY-MM-DD, Title by YYYY-MM-DD"
+      * Example: "Run 5km by 2025-10-28, Run 10km by 2025-11-04, Run 15km by 2025-11-11"
       * *Response Format:*
 
       {
-        "content": "These are the milestones that need to be created: '<milestone(s) with due dates>' for goal '<goal>'.",
+        "content": "These are the milestones that need to be created: 'Milestone 1 by YYYY-MM-DD, Milestone 2 by YYYY-MM-DD, Milestone 3 by YYYY-MM-DD' for goal 'Goal Name'.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,
@@ -68,12 +74,14 @@ public class MilestonePlannerPrompt extends BasePrompt {
 
       **Example 1: User provides goal directly (skip Step 1 → Step 2):**
       *User input:*
-      “I want milestones for running a half marathon.”
+      "I want milestones for running a half marathon."
+      
+      *Context: Goal 'Run a half marathon' has due date 2025-11-11*
 
       *Response JSON:*
 
       {
-        "content": "Here are milestones I suggest for 'Run a half marathon': Run 5 km in under 40 minutes, Run 10 km in under 70 minutes, Run 15 km steadily. These build endurance toward 21 km.",
+        "content": "Here are milestones I suggest for 'Run a half marathon' (due 2025-11-11): Run 5 km in under 40 minutes by 2025-10-28, Run 10 km in under 70 minutes by 2025-11-04, Run 15 km steadily by 2025-11-11. These build endurance toward 21 km and all dates are before your goal deadline.",
         "tags": ["CONFIRM_TAG"],
         "currentStep": 3,
         "readyToHandoff": false,
@@ -82,12 +90,12 @@ public class MilestonePlannerPrompt extends BasePrompt {
 
       **Example 2: User selects milestone from suggestions (Step 2 → Step 3):**
       *User input:*
-      “Accept.”
+      "Accept."
 
       *Response JSON:*
 
       {
-        "content": "Completed planning 'Run 10 km in under 70 minutes by 2023-08-01' for goal 'Run a half marathon'.",
+        "content": "These are the milestones that need to be created: 'Run 5 km in under 40 minutes by 2025-10-28, Run 10 km in under 70 minutes by 2025-11-04, Run 15 km steadily by 2025-11-11' for goal 'Run a half marathon'.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,
@@ -102,6 +110,7 @@ public class MilestonePlannerPrompt extends BasePrompt {
       * Infer correct step from input and prompt only for what is unsatisfied.
       * Milestones must follow format `[ACTION] + [DELIVERABLE] + [MEASURABLE OUTCOME]`.
       * Forbidden milestone types: planning, organising, research, meta, duplicates.
+      * **CRITICAL**: ALL milestone due dates MUST be on or before the goal's due date. Extract the goal due date from goalDescriptionTool() and validate all milestone dates against it.
                   """;
 
   public MilestonePlannerPrompt() {

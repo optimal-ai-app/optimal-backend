@@ -82,25 +82,30 @@ public class BaseSupervisor implements SupervisorInterface {
                • TaskCreatorAgent depends on TaskPlannerAgent
 
 
-           TEAM SELECTION
-           If the user says "goal" or "plan a goal" or "create a goal" → select GoalDefinitionTeam.
-           If the user mentions "milestones" or "milestone" for some specific goal OR a goal has just been added → select MilestoneExecutionTeam.
-           If the user asks to "create tasks", "plan tasks" and "schedule tasks" → select TaskExecutionTeam.
-          
-           IMPORTANT RULES:
-           - If the message indicates a goal was ALREADY created (e.g., "We've added your goal", "goal has been created"), do NOT select GoalDefinitionTeam.
-           - If the message says "let's create milestones" or "come up with milestones", select ONLY MilestoneExecutionTeam.
-           - If the message indicates milestones were just created (ex: "I have generated [number] milestones for [goal name]. Let's create some tasks for these milestones!"), select ONLY TaskExecutionTeam.
+          TEAM SELECTION
+          If the user says "goal" or "plan a goal" or "create a goal" → select GoalDefinitionTeam.
+          If the user mentions "milestones" or "milestone" for some specific goal OR a goal has just been added → select MilestoneExecutionTeam.
+          If the user asks to "create tasks", "plan tasks" and "schedule tasks" → select TaskExecutionTeam.
+         
+          IMPORTANT RULES:
+          - If the message indicates a goal was ALREADY created (e.g., "We've added your goal", "goal has been created"), do NOT select GoalDefinitionTeam.
+          - If the message says "let's create milestones" or "come up with milestones", select ONLY MilestoneExecutionTeam.
+          - If the message indicates milestones were just created (ex: "I have generated [number] milestones for [goal name]. Let's create some tasks for these milestones!"), select ONLY TaskExecutionTeam.
 
 
-           OUTPUT CONSTRUCTION
-           Output the union of agents from all selected teams as an array of agent nodes per INTERFACE.
-           Ensure valid dependencies:
-               • TaskCreatorAgent must depend on every planner it draws from:
-                   - If MilestonePlannerAgent present → include "MilestonePlannerAgent" in dependency.
-                   - If TaskPlannerAgent present → include "TaskPlannerAgent" in dependency.
-               • GoalCreatorAgent and MilestonePlannerAgent have no dependencies.
-           Do not include team names in the output.
+          OUTPUT CONSTRUCTION
+          **CRITICAL**: When you select a team, you MUST output ALL agents from that team.
+          - MilestoneExecutionTeam → output BOTH MilestonePlannerAgent AND TaskCreatorAgent (2 agents)
+          - TaskExecutionTeam → output BOTH TaskPlannerAgent AND TaskCreatorAgent (2 agents)
+          - GoalDefinitionTeam → output GoalCreatorAgent (1 agent)
+
+          Output all agents from the selected team as an array of agent nodes per INTERFACE.
+          Ensure valid dependencies:
+              • TaskCreatorAgent must depend on every planner it draws from:
+                  - If MilestonePlannerAgent present → include "MilestonePlannerAgent" in dependency array.
+                  - If TaskPlannerAgent present → include "TaskPlannerAgent" in dependency array.
+              • GoalCreatorAgent and MilestonePlannerAgent have no dependencies (empty array: []).
+          Do not include team names in the output.
 
 
            INSTRUCTION INTELLIGENCE
@@ -110,20 +115,36 @@ public class BaseSupervisor implements SupervisorInterface {
            CRITICAL: When TaskCreatorAgent depends on TaskPlannerAgent, instruction must say "Create REGULAR tasks for milestone [name] of goal [goal name]"
 
 
-           OUTPUT (must match exactly)
-           [
-               {
-                   "name": "AgentName",
-                   "instruction": "Specific instruction for this agent",
-                   "dependency": ["AgentName1", "AgentName2"]
-               }
-           ]
+          OUTPUT (must match exactly)
+          [
+              {
+                  "name": "AgentName",
+                  "instruction": "Specific instruction for this agent",
+                  "dependency": ["AgentName1", "AgentName2"]
+              }
+          ]
 
 
-           RULES
-          • The JSON array cannot be empty.
-          • Use only the five allowed agent names.
-          • Output valid JSON—no extra text, comments, or explanations.
+          EXAMPLE OUTPUT FOR MilestoneExecutionTeam:
+          [
+              {
+                  "name": "MilestonePlannerAgent",
+                  "instruction": "Plan milestones to achieve the goal of [goal name]",
+                  "dependency": []
+              },
+              {
+                  "name": "TaskCreatorAgent",
+                  "instruction": "Create MILESTONE tasks for goal [goal name]",
+                  "dependency": ["MilestonePlannerAgent"]
+              }
+          ]
+
+
+          RULES
+         • The JSON array cannot be empty.
+         • Use only the five allowed agent names.
+         • Output valid JSON—no extra text, comments, or explanations.
+         • When a team has multiple agents, ALL agents must be in the output array.
            """;
 
 
