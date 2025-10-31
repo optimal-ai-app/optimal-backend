@@ -114,7 +114,7 @@ public class LangChain4jConfig {
             return GoogleAiGeminiChatModel.builder()
                     .apiKey(geminiApiKey)
                     .modelName("gemini-2.5-flash")
-                    .temperature(.5)
+                    .temperature(.2)
                     .logResponses(true)
                     .returnThinking(true)
                     .build();
@@ -131,7 +131,7 @@ public class LangChain4jConfig {
                     .apiKey(gptApiKey)
                     //.modelName("gpt-4o-mini")
                     .modelName("gpt-4.1-mini")
-                    .temperature(.2)
+                    .temperature(.5)
                     .build();
         } catch (Exception e) {
             System.err.println("ERROR: Failed to create OpenAI chat model: " +

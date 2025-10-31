@@ -8,7 +8,7 @@
 # 1. Backend Setup
 cd optimal-backend
 mvn clean install
-mvn -DskipTests spring-boot:run
+mvn clean compile && mvn spring-boot:run 
 
 # 2. Start ngrok in new terminal
 cd optimal  # Go to project root
