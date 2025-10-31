@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
 import com.optimal.backend.springboot.agent.framework.core.system.GeneralPromptAppender;
-import com.optimal.backend.springboot.agent.framework.tools.GetInstructionTool;
 
 import jakarta.annotation.PostConstruct;
 

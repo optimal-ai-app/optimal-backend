@@ -71,17 +71,7 @@ import org.springframework.context.annotation.Configuration;
 
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.DisabledChatModel;
-import dev.langchain4j.model.chat.request.ResponseFormat;
-import dev.langchain4j.model.chat.request.ResponseFormatType;
-import dev.langchain4j.model.chat.request.json.JsonArraySchema;
-import dev.langchain4j.model.chat.request.json.JsonBooleanSchema;
-import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
-import dev.langchain4j.model.chat.request.json.JsonSchema;
-import dev.langchain4j.model.chat.request.json.JsonSchemaElement;
-import dev.langchain4j.model.chat.request.json.JsonStringSchema;
-import dev.langchain4j.model.chat.request.json.JsonStringSchema;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.googleai.GeminiThinkingConfig;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 
 /**
@@ -129,7 +119,7 @@ public class LangChain4jConfig {
         try {
             return OpenAiChatModel.builder()
                     .apiKey(gptApiKey)
-                    //.modelName("gpt-4o-mini")
+                    // .modelName("gpt-4o-mini")
                     .modelName("gpt-4.1-mini")
                     .temperature(.5)
                     .build();

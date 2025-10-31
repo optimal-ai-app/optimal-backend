@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.LlmResponse;
 import com.optimal.backend.springboot.agent.framework.core.Message;
@@ -26,7 +27,6 @@ public class OutputValidationGuard implements OutputGuardrail {
                 "readyToHandoff": false,
                 "reInterpret": false
             }
-            
             """;
 
     @Autowired
@@ -37,13 +37,22 @@ public class OutputValidationGuard implements OutputGuardrail {
 
         String text = assistantMessage.text().replaceAll("```json", "").replace("```", "");
         text = text.replaceAll("\n", "").replaceAll("\"summary\":", "\"content\":");
-        
+
         try {
             int objStart = text.indexOf("{");
             text = text.substring(objStart);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(text);
-            if (jsonNode.has("content") && (jsonNode.has("readyToHandoff") || jsonNode.has("reInterpret"))) {
+            if (jsonNode.has("content")) {
+                if (!jsonNode.has("readyToHandoff") && !jsonNode.has("reInterpret")) {
+                    if (jsonNode instanceof ObjectNode) {
+                        ObjectNode objectNode = (ObjectNode) jsonNode;
+                        objectNode.put("readyToHandoff", false);
+                        objectNode.put("reInterpret", false);
+                        text = objectNode.toPrettyString();
+                        System.out.println(text);
+                    }
+                }
                 return successWith(text);
             } else {
                 throw new Exception("Invalid JSON");

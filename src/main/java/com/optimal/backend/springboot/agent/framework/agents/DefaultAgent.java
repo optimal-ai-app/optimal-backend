@@ -4,25 +4,20 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.optimal.backend.springboot.agent.framework.agents.prompts.ContextAgentPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
-public class ContextAgent extends BaseAgent {
+public class DefaultAgent extends BaseAgent {
 
     @Autowired
-    public ContextAgent(
-            @Value("ContextAgent") String name,
-            @Value("ContextAgent is an agent that gets the chat logs of a conversation between a user and another agent."
-                    +
-                    "Your job is to develop a summary of the conversation so that the next time the agent is called, they can use"
-                    +
-                    " the summary to get back to the same point in the conversation they were at.") String description,
+    public DefaultAgent(
+            @Value("DefaultAgent") String name,
+            @Value("DefaultAgent is an agent that helps direct the user into workflows that exist in the application") String description,
             LlmClient llmClient) {
-        super(name, description, ContextAgentPrompt.getDefaultPrompt(), llmClient);
+        super(name, description, "", llmClient);
     }
 
     @PostConstruct

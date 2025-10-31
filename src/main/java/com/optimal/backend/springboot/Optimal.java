@@ -14,19 +14,18 @@ import org.springframework.retry.annotation.EnableRetry;
 public class Optimal {
 
 	public static void main(String[] args) {
-		// Load .env file before Spring Boot starts 
+		// Load .env file before Spring Boot starts
 		loadEnvFile();
-		
+
 		SpringApplication.run(Optimal.class, args);
 	}
 
 	private static void loadEnvFile() {
 		try {
 			Dotenv dotenv = Dotenv.configure()
-					.ignoreIfMissing()  // Don't fail if .env doesn't exist
+					.ignoreIfMissing() // Don't fail if .env doesn't exist
 					.ignoreIfMalformed() // Don't fail on malformed entries
 					.load();
-			
 			// Set each env var as a system property so Spring Boot can access them
 			dotenv.entries().forEach(entry -> {
 				// Only set if not already defined (respects existing env vars)
@@ -34,7 +33,8 @@ public class Optimal {
 					System.setProperty(entry.getKey(), entry.getValue());
 				}
 			});
-		} catch (Exception e) {}
+		} catch (Exception e) {
+		}
 	}
 
 }

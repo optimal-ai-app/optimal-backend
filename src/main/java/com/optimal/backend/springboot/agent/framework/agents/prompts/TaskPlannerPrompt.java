@@ -46,7 +46,6 @@ public class TaskPlannerPrompt extends BasePrompt {
                 "content": "Which goal would you like to create a task for?",
                 "tags": ["CONFIRM_TAG"],
                 "readyToHandoff": false,
-                "currentStep": 2,
                 "data": { "options": ["<goal 1>", "<goal 2>", "<goal 3>", ...]}
             }
 
@@ -62,7 +61,6 @@ public class TaskPlannerPrompt extends BasePrompt {
                 "content": "Here are your milestones for <goal title>: <milestone 1>, <milestone 2>, <milestone 3>. Select one to generate tasks.",
                 "tags": ["CONFIRM_TAG"],
                 "readyToHandoff": false,
-                "currentStep": 3,
                 "data": { "options": ["<milestone title - due date>", "<milestone title - due date>", ...] }
             }
 
@@ -79,7 +77,6 @@ public class TaskPlannerPrompt extends BasePrompt {
                 "content": "I've planned a repeating task for your '<milestone title>' milestone. Let me create the task card for you.",
                 "tags": [],
                 "readyToHandoff": true,
-                "currentStep": -1,
                 "data": {
                     "taskType": "<short action title>",
                     "taskDescription": "<action> to contribute to '<milestone title>' milestone",
@@ -92,7 +89,7 @@ public class TaskPlannerPrompt extends BasePrompt {
                 }
             }
 
-            **CRITICAL**: 
+            **CRITICAL**:
             - Always include milestone due date for repeatEndDate
             - Do NOT show task options to user - directly plan and hand off
             - Set readyToHandoff: true to hand off to TaskCreatorAgent
