@@ -6,12 +6,17 @@ WORKDIR /workspace
 COPY pom.xml .
 RUN mvn -B -q -DskipTests dependency:go-offline
 
-# Build
+# Build and ensure target/optimal.jar exists exactly once
 COPY src ./src
-RUN mvn -B -DskipTests clean install && \
-    set -eux; \
-    jarfile="$(ls target/*.jar | head -n 1)"; \
-    cp "$jarfile" target/optimal.jar
+RUN set -euo pipefail; \
+    mvn -B -DskipTests clean install; \
+    if [ -f target/optimal.jar ]; then \
+      echo "optimal.jar already exists"; \
+    else \
+      jarfile="$(find target -maxdepth 1 -type f -name '*.jar' ! -name 'optimal.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' | head -n 1)"; \
+      [ -n "$jarfile" ] || { echo 'No runnable JAR found in target/'; exit 1; }; \
+      cp "$jarfile" target/optimal.jar; \
+    fi
 
 # ---- Runtime stage ----
 FROM eclipse-temurin:17
