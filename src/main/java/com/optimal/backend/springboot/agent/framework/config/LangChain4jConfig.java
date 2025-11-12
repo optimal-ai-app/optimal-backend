@@ -94,7 +94,6 @@ public class LangChain4jConfig {
 
     @Bean
     public ChatModel chatLanguageModel() {
-        // Check if API key is properly configured
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() ||
                 geminiApiKey.equals("demo")) {
             System.err.println("WARNING: OpenAI API key is not configured. Using disabledchat model.");
@@ -109,7 +108,7 @@ public class LangChain4jConfig {
                     .returnThinking(true)
                     .build();
         } catch (Exception e) {
-            System.err.println("ERROR: Failed to create OpenAI chat model: " +
+            System.err.println("ERROR: Failed to create Main chat model: " +
                     e.getMessage());
             return new DisabledChatModel();
         }
@@ -119,38 +118,27 @@ public class LangChain4jConfig {
         try {
             return OpenAiChatModel.builder()
                     .apiKey(gptApiKey)
-                    // .modelName("gpt-4o-mini")
                     .modelName("gpt-4.1-mini")
-                    .temperature(.5)
+                    .temperature(.2)
                     .build();
         } catch (Exception e) {
-            System.err.println("ERROR: Failed to create OpenAI chat model: " +
+            System.err.println("ERROR: Failed to create Light chat model: " +
                     e.getMessage());
             return new DisabledChatModel();
         }
     }
-    /*
-     * public ResponseFormat getResponseFormat() {
-     * JsonObjectSchema root = JsonObjectSchema.builder()
-     * .addProperties(Map.<String, JsonSchemaElement>of(
-     * "content", JsonStringSchema.builder().build(),
-     * "tags", JsonArraySchema.builder()
-     * .items(JsonStringSchema.builder().build())
-     * .build(),
-     * "readyToHandoff", JsonBooleanSchema.builder().build()))
-     * .additionalProperties(true)
-     * .required("content", "tags", "readyToHandoff")
-     * .build();
-     * 
-     * ResponseFormat responseFormat = ResponseFormat.builder()
-     * .type(ResponseFormatType.JSON)
-     * .jsonSchema(JsonSchema.builder()
-     * .name("ContentResponse")
-     * .rootElement(root)
-     * .build())
-     * .build();
-     * return responseFormat;
-     * 
-     * }
-     */
+
+    public ChatModel creativeChatModel() {
+        try {
+            return OpenAiChatModel.builder()
+                    .apiKey(gptApiKey)
+                    .modelName("gpt-4.1-mini")
+                    .temperature(1.0)
+                    .build();
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to create Creative chat model: " +
+                    e.getMessage());
+            return new DisabledChatModel();
+        }
+    }
 }

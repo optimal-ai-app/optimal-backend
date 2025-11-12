@@ -59,7 +59,7 @@ public class OutputValidationGuard implements OutputGuardrail {
             }
         } catch (Exception e) {
             List<Message> contexts = new ArrayList<Message>(List.<Message>of(new Message("user", text)));
-            LlmResponse response = llmClient.generate(FORMAT_FIXER_PROMPT, contexts);
+            LlmResponse response = llmClient.generate(FORMAT_FIXER_PROMPT, contexts, "light");
             return successWith(response.getContent());
         }
     }

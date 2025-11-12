@@ -449,7 +449,7 @@ public class BaseSupervisor implements SupervisorInterface {
         this.finishedAgents.clear();
         this.processingAgents.clear();
         List<Message> contexts = userInput;
-        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts);
+        LlmResponse response = llmClient.generate(INTERPRETER_PROMPT, contexts, "light");
         this.agentNodes = parseAgentNodes(response.getContent());
         this.maxIterations = this.agentNodes.size() * 2;
     }

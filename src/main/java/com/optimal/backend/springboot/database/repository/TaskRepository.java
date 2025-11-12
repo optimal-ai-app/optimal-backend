@@ -23,8 +23,8 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
            AND t.dueDate BETWEEN :startDate AND :endDate
       ORDER BY t.createdDate DESC
       """)
-  List<Task> findByUserIdAndDueDateBetween(@Param("userId") UUID userId, @Param("startDate") Date startDate, @Param("endDate") Date endDate);
-
+  List<Task> findByUserIdAndDueDateBetween(@Param("userId") UUID userId, @Param("startDate") Date startDate,
+      @Param("endDate") Date endDate);
 
   @Modifying
   @Query("""
@@ -54,7 +54,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("""
         SELECT t
           FROM Task t
-         WHERE t.goalId = :goalId AND t.milestone = TRUE
+         WHERE t.goalId = :goalId AND t.milestone = TRUE AND status != 'completed'
       ORDER BY t.dueDate ASC, t.createdDate DESC
       """)
   List<Task> findMilestonesByGoalId(@Param("goalId") UUID goalId);
@@ -82,9 +82,9 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
   @Query("""
         DELETE FROM Task t2
          WHERE EXISTS (
-             SELECT 1 FROM Task t1 
+             SELECT 1 FROM Task t1
              WHERE t1.id = :taskId
-               AND t2.sharedId = t1.sharedId 
+               AND t2.sharedId = t1.sharedId
                AND t2.dueDate >= t1.dueDate
          )
       """)

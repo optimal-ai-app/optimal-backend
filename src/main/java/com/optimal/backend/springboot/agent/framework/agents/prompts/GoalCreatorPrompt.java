@@ -23,7 +23,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       Progress or prompt only for what is missing—never restart at Step 1 unless absolutely no prior information is present.
 
       If at Step 3 (**Finalize Goal Details**) and the user responds with 'add goal'
-      (or any explicit confirmation to add/save the goal), always proceed to Step 4 (**Classify & Confirm**) without reverting to Step 1. 
+      (or any explicit confirmation to add/save the goal), always proceed to Step 4 (**Classify & Confirm**) without reverting to Step 1.
       Handle these transitions robustly in all cases. Only move to Step 1 if user input has provided no usable information for subsequent steps.
 
       <SECTION>
@@ -41,7 +41,8 @@ public class GoalCreatorPrompt extends BasePrompt {
             }
 
       Step 2. **Goal Suggestions**
-         - Suggest 1–2 well-defined goals based on prior answers. If the user requests for more suggestions after your first suggestion, then provide 3-5 well-defined goals based on prior answers.
+         - Based on the provided information, call the LlmGoalSuggestionTool with the input being a few sentences describing the information from the user
+         - Use the output from the tool to produce the following:
          - *Response Format:*
            {
              "content": "<suggestion>",
