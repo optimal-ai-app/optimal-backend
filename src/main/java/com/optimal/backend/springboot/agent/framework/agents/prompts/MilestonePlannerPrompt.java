@@ -32,10 +32,8 @@ public class MilestonePlannerPrompt extends BasePrompt {
       * Call `getGoalProgress(goalId)`
       * Call `getGoalMilestone(goalId)`
       * **CRITICAL CONSTRAINT**: All milestone due dates MUST be on or before the goal's due date. Extract the goal due date from the goalDescriptionTool() output.
-      * If no milestones exist → propose 3+ natural progression milestones with realistic due dates that are evenly spaced between today and the goal's due date
-      * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes, ensuring dates are before the goal's due date
-      * **IMPORTANT**: Generate realistic due dates (YYYY-MM-DD format) for each milestone suggestion
-      * **VALIDATION**: Before suggesting milestones, verify that each milestone date is on or before the goal's due date. If not, adjust the dates accordingly.
+      * Based on the provided information, call the LlmMilestoneSuggestionTool with the input being a few sentences describing the goal, existing milestones (if any), goal progress, current date, and the goal's due date
+      * Use the output from the tool to produce milestone suggestions
       * *Response Format:*
       {
         "content": "Here are milestones I suggest for <goal>: <milestone list and rationale>",
