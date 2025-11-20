@@ -60,8 +60,8 @@ public class BaseSupervisor implements SupervisorInterface {
 
               PREDEFINED TEAMS
                   GoalDefinitionTeam → [GoalCreatorAgent]
-                  MilestoneExecutionTeam → [MilestonePlannerAgent, TaskCreatorAgent]
-                  • TaskCreatorAgent depends on MilestonePlannerAgent
+                  MilestoneExecutionTeam → [MilestonePlannerAgent, MilestoneTaskCreatorAgent]
+                  • MilestoneTaskCreatorAgent depends on MilestonePlannerAgent
                   TaskExecutionTeam → [TaskPlannerAgent, TaskCreatorAgent]
                   • TaskCreatorAgent depends on TaskPlannerAgent
 
@@ -79,15 +79,14 @@ public class BaseSupervisor implements SupervisorInterface {
 
              OUTPUT CONSTRUCTION
              **CRITICAL**: When you select a team, you MUST output ALL agents from that team.
-             - MilestoneExecutionTeam → output BOTH MilestonePlannerAgent AND TaskCreatorAgent (2 agents)
+             - MilestoneExecutionTeam → output BOTH MilestonePlannerAgent AND MilestoneTaskCreatorAgent (2 agents)
              - TaskExecutionTeam → output BOTH TaskPlannerAgent AND TaskCreatorAgent (2 agents)
              - GoalDefinitionTeam → output GoalCreatorAgent (1 agent)
 
              Output all agents from the selected team as an array of agent nodes per INTERFACE.
              Ensure valid dependencies:
-                 • TaskCreatorAgent must depend on every planner it draws from:
-                     - If MilestonePlannerAgent present → include "MilestonePlannerAgent" in dependency array.
-                     - If TaskPlannerAgent present → include "TaskPlannerAgent" in dependency array.
+                 • MilestoneTaskCreatorAgent must depend on MilestonePlannerAgent when both are present
+                 • TaskCreatorAgent must depend on TaskPlannerAgent when both are present
                  • GoalCreatorAgent and MilestonePlannerAgent have no dependencies (empty array: []).
              Do not include team names in the output.
 
@@ -95,7 +94,7 @@ public class BaseSupervisor implements SupervisorInterface {
               INSTRUCTION INTELLIGENCE
               Make each agent's "instruction" specific to the user's context, constraints, timelines, and success metrics.
               Reference explicit goals, milestones, or requirements if given.
-              CRITICAL: When TaskCreatorAgent depends on MilestonePlannerAgent, instruction must say "Create MILESTONE tasks for goal [name]"
+              CRITICAL: When MilestoneTaskCreatorAgent depends on MilestonePlannerAgent, instruction must say "Create MILESTONE tasks for goal [name]"
               CRITICAL: When TaskCreatorAgent depends on TaskPlannerAgent, instruction must say "Create REGULAR tasks for milestone [name] of goal [goal name]"
 
 
@@ -109,6 +108,16 @@ public class BaseSupervisor implements SupervisorInterface {
              ]
 
 
+             EXAMPLE OUTPUT FOR GoalDefinitionTeam:
+             [
+                 {
+                     "name": "GoalCreatorAgent",
+                     "instruction": "Create a goal to [specific goal description] with [timeline/constraints]",
+                     "dependency": []
+                 }
+             ]
+
+
              EXAMPLE OUTPUT FOR MilestoneExecutionTeam:
              [
                  {
@@ -117,16 +126,31 @@ public class BaseSupervisor implements SupervisorInterface {
                      "dependency": []
                  },
                  {
-                     "name": "TaskCreatorAgent",
+                     "name": "MilestoneTaskCreatorAgent",
                      "instruction": "Create MILESTONE tasks for goal [goal name]",
                      "dependency": ["MilestonePlannerAgent"]
                  }
              ]
 
 
+             EXAMPLE OUTPUT FOR TaskExecutionTeam:
+             [
+                 {
+                     "name": "TaskPlannerAgent",
+                     "instruction": "Plan tasks for milestone [milestone name] of goal [goal name]",
+                     "dependency": []
+                 },
+                 {
+                     "name": "TaskCreatorAgent",
+                     "instruction": "Create REGULAR tasks for milestone [milestone name] of goal [goal name]",
+                     "dependency": ["TaskPlannerAgent"]
+                 }
+             ]
+
+
              RULES
             • The JSON array cannot be empty.
-            • Use only the five allowed agent names.
+            • Use only the six allowed agent names: GoalCreatorAgent, MilestonePlannerAgent, MilestoneTaskCreatorAgent, TaskPlannerAgent, TaskCreatorAgent.
             • Output valid JSON—no extra text, comments, or explanations.
             • When a team has multiple agents, ALL agents must be in the output array.
               """;

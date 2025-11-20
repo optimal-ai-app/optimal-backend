@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.PreDestroy;
 
 import com.optimal.backend.springboot.agent.framework.agents.TaskCreatorAgent;
+import com.optimal.backend.springboot.agent.framework.agents.MilestoneTaskCreatorAgent;
 import com.optimal.backend.springboot.agent.framework.agents.MilestonePlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.TaskPlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.GoalCreatorAgent;
@@ -222,6 +223,7 @@ public class ChatController {
 
                 TaskPlannerAgent taskPlannerAgent = applicationContext.getBean(TaskPlannerAgent.class);
                 TaskCreatorAgent taskCreatorAgent = applicationContext.getBean(TaskCreatorAgent.class);
+                MilestoneTaskCreatorAgent milestoneTaskCreatorAgent = applicationContext.getBean(MilestoneTaskCreatorAgent.class);
                 GoalCreatorAgent goalCreatorAgent = applicationContext.getBean(GoalCreatorAgent.class);
                 MilestonePlannerAgent milestonePlannerAgent = applicationContext.getBean(MilestonePlannerAgent.class);
                 // HabitAgent habitAgent = new HabitAgent(llmClient);
@@ -229,6 +231,7 @@ public class ChatController {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
                 newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
+                newSupervisor.addAgent(milestoneTaskCreatorAgent.getName(), milestoneTaskCreatorAgent);
                 newSupervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
                 newSupervisor.addAgent(milestonePlannerAgent.getName(), milestonePlannerAgent);
                 // newSupervisor.addAgent(habitAgent.getName(), habitAgent);
