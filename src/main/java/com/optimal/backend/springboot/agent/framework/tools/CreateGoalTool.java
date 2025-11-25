@@ -96,6 +96,7 @@ public class CreateGoalTool {
      * Parse goal due date from various date formats.
      * Supports ISO date format (yyyy-MM-dd) and other common formats.
      * Uses user's local date from context instead of server date.
+     * If a date is in the past, finds the next occurrence of that date (adds years until future).
      */
     private Timestamp parseGoalDueDate(String dateInput) {
         // Use user's local date from their time zone
@@ -118,9 +119,25 @@ public class CreateGoalTool {
                 parsedDate = LocalDate.parse(dateInput);
             }
 
-            // Ensure the date is not in the past (relative to user's today)
+            // If date is in the past, find the next occurrence (add years until future)
             if (parsedDate.isBefore(today)) {
-                parsedDate = today;
+                int month = parsedDate.getMonthValue();
+                int day = parsedDate.getDayOfMonth();
+                int currentYear = today.getYear();
+                
+                // Try next year first
+                try {
+                    parsedDate = LocalDate.of(currentYear + 1, month, day);
+                } catch (Exception e) {
+                    // Handle invalid date (e.g., Feb 29 in non-leap year) - use last valid day of month
+                    parsedDate = LocalDate.of(currentYear + 1, month, 1).withDayOfMonth(
+                        LocalDate.of(currentYear + 1, month, 1).lengthOfMonth());
+                }
+                
+                // Keep adding years if still in the past (edge case)
+                while (parsedDate.isBefore(today)) {
+                    parsedDate = parsedDate.plusYears(1);
+                }
             }
 
             // Convert to Timestamp (end of day)

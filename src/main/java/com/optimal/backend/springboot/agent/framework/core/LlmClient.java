@@ -189,8 +189,8 @@ public class LlmClient {
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
-            return new LlmResponse(response.content().text().toString(),
-                    response.tokenUsage().totalTokenCount());
+            // Use constructor that properly handles null text (e.g., when message only has tool calls)
+            return new LlmResponse(response.content(), response.tokenUsage().totalTokenCount());
 
         } catch (InputGuardrailException e) {
             System.err.println("\nError generating response with tools: " + e.getMessage());

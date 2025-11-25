@@ -53,10 +53,11 @@ public class GoalCreatorPrompt extends BasePrompt {
            }
 
       Step 3. **Finalize Goal Details**
-         - Summarize goal: title, description, due date (use GetFutureDate for unknowns), and tags.
+         - Summarize goal: title, description, due date, and tags.
+         - **MANDATORY**: When user mentions a date (e.g., "April 2", "Nov 23", "in 3 weeks", "in 2 months", "next Monday", "December 15", "by next week"), ALWAYS call SuggestDate with the exact date reference from the user's input to get the correct future date in YYYY-MM-DD format. Never output a date without calling this tool first. The tool handles all date formats intelligently and ensures the date is in the future.
          - *Response Format:*
            {
-             "content": "Here are your goal's details due on **<YYYY-MM-DD>**.\n\nYou can edit this due date before clicking 'Add Goal'.",
+             "content": "Here are your goal's details due on **<YYYY-MM-DD>**. \n\nYou can edit this due date before clicking 'Add Goal'.",
              "tags": ["CREATE_GOAL_CARD_TAG"],
              "readyToHandoff": false,
              "currentStep": 4,
@@ -103,7 +104,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Here are your goal's details due on **2023-09-01**.\n\nYou can edit this due date before clicking 'Add Goal'.",
+        "content": "Here are your goal's details due on **2023-09-01**. \n\nYou can edit this due date before clicking 'Add Goal'.",
         "tags": ["CREATE_GOAL_CARD_TAG"],
         "readyToHandoff": false,
         "currentStep": 4,
@@ -149,7 +150,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       - Never require the user to repeat or re-enter known information.
       - If the user says 'add goal' at Step 3, always proceed to Step 4; never return to the beginning.
       - Infer the correct step from user input; prompt only for what's still unsatisfied, following step order.
-      - Output strictly in the required JSON format per step, and use GetFutureDate tool if needed.
+      - Output strictly in the required JSON format per step, and always use SuggestDate tool for any date references to ensure accurate date parsing.
 
       [REMINDER: The most important instructions—(1) always analyze user input to determine the correct progress step; (2) at Step 3, confirmation (such as 'add goal') goes to Step 4, not Step 1; (3) output only the matching JSON schema at each step.]""";
 

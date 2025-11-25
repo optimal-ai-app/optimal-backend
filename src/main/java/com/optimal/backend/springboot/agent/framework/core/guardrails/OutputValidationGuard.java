@@ -35,11 +35,20 @@ public class OutputValidationGuard implements OutputGuardrail {
     @Override
     public OutputGuardrailResult validate(AiMessage assistantMessage) {
 
-        String text = assistantMessage.text().replaceAll("```json", "").replace("```", "");
+        String textContent = assistantMessage.text();
+        if (textContent == null) {
+            // If message only contains tool calls without text, return empty content
+            textContent = "";
+        }
+        String text = textContent.replaceAll("```json", "").replace("```", "");
         text = text.replaceAll("\n", "").replaceAll("\"summary\":", "\"content\":");
 
         try {
             int objStart = text.indexOf("{");
+            if (objStart == -1) {
+                // No JSON found, throw exception to trigger format fixer
+                throw new Exception("No JSON found in response");
+            }
             text = text.substring(objStart);
             ObjectMapper mapper = new ObjectMapper();
             JsonNode jsonNode = mapper.readTree(text);

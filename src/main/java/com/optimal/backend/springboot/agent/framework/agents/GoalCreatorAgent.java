@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import com.optimal.backend.springboot.agent.framework.agents.prompts.GoalCreatorPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
-import com.optimal.backend.springboot.agent.framework.tools.GetFutureDateTool;
+import com.optimal.backend.springboot.agent.framework.tools.LlmDateSuggestionTool;
 import com.optimal.backend.springboot.agent.framework.tools.LlmGoalSuggestionTool;
 
 import jakarta.annotation.PostConstruct;
@@ -15,18 +15,18 @@ import jakarta.annotation.PostConstruct;
 @Component
 @Scope("prototype")
 public class GoalCreatorAgent extends BaseAgent {
-    private GetFutureDateTool getFutureDateTool;
+    private LlmDateSuggestionTool llmDateSuggestionTool;
     private LlmGoalSuggestionTool llmGoalSuggestionTool;
 
     @Autowired
     public GoalCreatorAgent(
-            LlmClient llmClient, GetFutureDateTool getFutureDateTool, LlmGoalSuggestionTool llmGoalSuggestionTool) {
+            LlmClient llmClient, LlmDateSuggestionTool llmDateSuggestionTool, LlmGoalSuggestionTool llmGoalSuggestionTool) {
         super("GoalCreatorAgent",
                 "Specializes exclusively in helping users define and articulate their high-level goals and aspirations. Does not handle task planning or creation.",
                 GoalCreatorPrompt.getDefaultPrompt(), llmClient);
-        this.getFutureDateTool = getFutureDateTool;
+        this.llmDateSuggestionTool = llmDateSuggestionTool;
         this.llmGoalSuggestionTool = llmGoalSuggestionTool;
-        addTool(this.getFutureDateTool);
+        addTool(this.llmDateSuggestionTool);
         addTool(this.llmGoalSuggestionTool);
     }
 

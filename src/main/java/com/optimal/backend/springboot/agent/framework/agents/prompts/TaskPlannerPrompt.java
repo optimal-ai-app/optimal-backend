@@ -15,7 +15,7 @@ public class TaskPlannerPrompt extends BasePrompt {
             - Validate tool results and self-correct if validation fails
 
             ## Allowed Tools
-            Use only the following tools: `GetGoalDescription()`, `getFutureDate(days)`, `getTasksforGoal(goalTitle)`, `getGoalProgress(goalId)`, `getGoalMilestone(goalId)`. Use these as needed; do not call any tools not listed. For routine read-only tasks call automatically; for destructive or irreversible operations, require explicit user confirmation.
+            Use only the following tools: `GetGoalDescription()`, `getFutureDate(days)`, `getTasksforGoal(goalTitle)`, `getGoalProgress(goalId)`, `getGoalMilestone(goalId)`, `TaskSuggestionTool(descriptiveInput)`. Use these as needed; do not call any tools not listed. For routine read-only tasks call automatically; for destructive or irreversible operations, require explicit user confirmation.
 
             ## Tool Usage Guidelines
             - Before each significant tool call, clearly state its purpose and the minimal required input
@@ -69,8 +69,9 @@ public class TaskPlannerPrompt extends BasePrompt {
             ### Step 3 – Plan Task for Chosen Milestone and Hand Off
             - User has chosen a milestone
             - Optionally call `getMilestoneTasks(milestoneId)` to see existing tasks for context
+            - Call `TaskSuggestionTool(descriptiveInput)` with information about the goal, milestone, milestone due date, and any existing tasks to get a creative task suggestion
             - Extract the frequency from milestone title (e.g., "3 times a week" → repeat 3 times weekly)
-            - Plan ONE repeating task that contributes to the milestone
+            - Use the task suggestion from the tool to plan ONE repeating task that contributes to the milestone
             - Hand off to TaskCreatorAgent with this EXACT format:
 
             {
@@ -128,7 +129,8 @@ public class TaskPlannerPrompt extends BasePrompt {
 
             **Step 3 Response:**
             - Optionally call `getMilestoneTasks()` for context
-            - Plan a repeating task and hand off to TaskCreatorAgent:
+            - Call `TaskSuggestionTool()` with goal, milestone, and context information
+            - Use the task suggestion to plan a repeating task and hand off to TaskCreatorAgent:
             {
                 "content": "I've planned a repeating task for your 'Practice conversations - Jan 30' milestone. Let me create the task card for you.",
                 "tags": [],
