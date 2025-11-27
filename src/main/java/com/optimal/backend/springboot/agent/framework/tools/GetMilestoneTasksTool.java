@@ -15,7 +15,7 @@ import dev.langchain4j.agent.tool.P;
 import dev.langchain4j.agent.tool.Tool;
 
 @Component
-public class GetMilestoneTasks {
+public class GetMilestoneTasksTool {
 
     @Autowired
     private TaskService taskService;

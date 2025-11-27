@@ -11,6 +11,7 @@ import com.optimal.backend.springboot.database.entity.Goal;
 import com.optimal.backend.springboot.service.GoalService;
 
 import dev.langchain4j.agent.tool.Tool;
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class GetGoalDescriptionTool {
@@ -32,23 +33,30 @@ public class GetGoalDescriptionTool {
             }
 
             StringBuilder response = new StringBuilder();
-            response.append("Here are your goals:\n\n");
+            response.append("Here are the user's goals:\n\n");
 
             for (int i = 0; i < goals.size(); i++) {
                 Goal goal = goals.get(i);
                 response.append("**Goal ").append(i + 1).append(":**\n");
                 response.append("- Title: ").append(goal.getTitle()).append("\n");
                 response.append("- Description: ").append(goal.getDescription()).append("\n");
-                response.append("- End Date: ").append(goal.getDueDate()).append("\n");
-                response.append("- Status: ").append(goal.getStatus()).append("\n\n");
+                response.append("- Gaol Due Date: ").append(goal.getDueDate()).append("\n");
+                response.append("- Status: ").append(goal.getStatus()).append("\n");
                 response.append("- Goal ID: ").append(goal.getId()).append("\n\n");
             }
-
+            System.out.println(response.toString());
             return response.toString();
         } catch (Exception e) {
             System.out.println("=== Error in GoalDescriptionTool: " + e.getMessage());
             e.printStackTrace();
             return "Error retrieving goals: " + e.getMessage();
+        }
+    }
+
+    @PostConstruct
+    protected void initialize() {
+        if (goalService != null) {
+            System.out.println("\nGoal Service Initialized\n");
         }
     }
 }

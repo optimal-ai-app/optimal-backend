@@ -4,29 +4,26 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.optimal.backend.springboot.agent.framework.agents.prompts.HabitAgentPrompt;
 import com.optimal.backend.springboot.agent.framework.core.BaseAgent;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
-import com.optimal.backend.springboot.agent.framework.tools.CreateHabitTool;
 
 import jakarta.annotation.PostConstruct;
 
 @Component
-public class HabitAgent extends BaseAgent {
-    private final CreateHabitTool createHabitTool = new CreateHabitTool();
+public class DefaultAgent extends BaseAgent {
 
     @Autowired
-    public HabitAgent(
+    public DefaultAgent(
+            @Value("DefaultAgent") String name,
+            @Value("DefaultAgent is an agent that helps direct the user into workflows that exist in the application") String description,
             LlmClient llmClient) {
-        super("HabitAgent", "Creates and manages habits, seeds actions, and logs completions",
-                HabitAgentPrompt.getDefaultPrompt(), llmClient);
-        addTool(createHabitTool);
+        super(name, description, "", llmClient);
     }
 
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("HabitAgent initialized with tools: " + getTools().size());
+        System.out.println("ContextAgent initialized with tools: " + getTools().size());
         getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

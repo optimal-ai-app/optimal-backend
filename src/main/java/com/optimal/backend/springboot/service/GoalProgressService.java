@@ -41,21 +41,21 @@ public class GoalProgressService {
         }
     }
 
-    public void updateGoalProgress(Task task) {
-        GoalProgress goalProgress = goalProgressRepository.findByGoalId(task.getGoalId()).get(0);
-        if (task.getStatus().equals("completed")) {
-            if (task.getValue() != null) {
-                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + task.getValue());
-            } else {
-                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + 1);
-            }
-        } else {
-            if (task.getValue() != null) {
-                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - task.getValue());
-            } else {
-                goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
-            }
-        }
-        goalProgressRepository.save(goalProgress);
-    }
+    // public void updateGoalProgress(Task task) {
+    //     GoalProgress goalProgress = goalProgressRepository.findByGoalId(task.getGoalId()).get(0);
+    //     if (task.getStatus().equals("completed")) {
+    //         if (task.getValue() != null) {
+    //             goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + task.getValue());
+    //         } else {
+    //             goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() + 1);
+    //         }
+    //     } else {
+    //         if (task.getValue() != null) {
+    //             goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - task.getValue());
+    //         } else {
+    //             goalProgress.setCompletedUnits(goalProgress.getCompletedUnits() - 1);
+    //         }
+    //     }
+    //     goalProgressRepository.save(goalProgress);
+    // }
 }

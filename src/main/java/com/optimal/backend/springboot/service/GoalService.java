@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
 import com.optimal.backend.springboot.database.entity.Goal;
+import com.optimal.backend.springboot.database.entity.GoalProgress;
+import com.optimal.backend.springboot.database.entity.GoalType;
+import com.optimal.backend.springboot.database.repository.GoalProgressRepository;
 import com.optimal.backend.springboot.database.repository.GoalRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,9 @@ public class GoalService {
 
     @Autowired
     private final GoalRepository goalRepository;
+
+    @Autowired
+    private GoalProgressRepository goalProgressRepository;
 
     @Transactional(readOnly = true)
     public List<Goal> getGoalsByUser(UUID userId) {
@@ -46,7 +52,18 @@ public class GoalService {
         goal.setTags(request.getTags());
         goal.setStatus("active");
         goal.setStreak(0);
-        return goalRepository.save(goal);
+
+        Goal savedGoal = goalRepository.save(goal);
+
+        GoalProgress goalProgress = new GoalProgress();
+        goalProgress.setGoalId(savedGoal.getId());
+        goalProgress.setGoalType(GoalType.QUALITATIVE);
+        goalProgress.setTotalUnits(0.0);
+        goalProgress.setCompletedUnits(0.0);
+        goalProgress.setScore(0.0);
+        goalProgressRepository.save(goalProgress);
+
+        return savedGoal;
     }
 
     public Goal updateGoal(Goal goal) {

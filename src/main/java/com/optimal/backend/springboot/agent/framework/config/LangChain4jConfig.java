@@ -1,4 +1,69 @@
+// package com.optimal.backend.springboot.agent.framework.config;
+
+// import org.springframework.beans.factory.annotation.Value;
+// import org.springframework.context.annotation.Bean;
+// import org.springframework.context.annotation.Configuration;
+
+// import dev.langchain4j.model.chat.ChatModel;
+// import dev.langchain4j.model.chat.DisabledChatModel;
+// import dev.langchain4j.model.openai.OpenAiChatModel;
+
+// /**
+//  * Configuration class for LangChain4j integration
+//  */
+// @Configuration
+// public class LangChain4jConfig {
+
+//     @Value("${langchain4j.gemini.chat-model.api-key:}")
+//     private String geminiApiKey;
+
+//     @Value("${langchain4j.open-ai.chat-model.api-key:}")
+//     private String gptApiKey;
+
+//     @Value("${langchain4j.open-ai.chat-model.temperature:1}")
+//     private Double temperature;
+
+//     @Value("${langchain4j.open-ai.chat-model.max-tokens:2048}")
+//     private Integer maxTokens;
+
+//     @Bean
+//     public ChatModel chatLanguageModel() {
+//         // Check if API key is properly configured
+//         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() || geminiApiKey.equals("demo")) {
+//             System.err.println("WARNING: OpenAI API key is not configured. Using disabled chat model.");
+//             return new DisabledChatModel();
+//         }
+//         try {
+//             return OpenAiChatModel.builder()
+//                     .apiKey(gptApiKey)
+//                     .modelName("gpt-4o-mini")
+//                     .temperature(1.0).logResponses(true).returnThinking(true)
+//                     // .maxTokens(maxTokens)
+//                     .build();
+//         } catch (Exception e) {
+//             System.err.println("ERROR: Failed to create OpenAI chat model: " + e.getMessage());
+//             return new DisabledChatModel();
+//         }
+//     }
+
+//     public ChatModel lightChatLanguageModel() {
+//         try {
+//             return OpenAiChatModel.builder()
+//                     .apiKey(gptApiKey)
+//                     .modelName("gpt-4o-mini")
+//                     .temperature(.2)
+//                     .build();
+//         } catch (Exception e) {
+//             System.err.println("ERROR: Failed to create OpenAI chat model: " +
+//                     e.getMessage());
+//             return new DisabledChatModel();
+//         }
+//     }
+// }
+
 package com.optimal.backend.springboot.agent.framework.config;
+
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -7,6 +72,7 @@ import org.springframework.context.annotation.Configuration;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.DisabledChatModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 
 /**
  * Configuration class for LangChain4j integration
@@ -14,43 +80,77 @@ import dev.langchain4j.model.openai.OpenAiChatModel;
 @Configuration
 public class LangChain4jConfig {
 
+    @Value("${langchain4j.gemini.chat-model.api-key:}")
+    private String geminiApiKey;
+
     @Value("${langchain4j.open-ai.chat-model.api-key:}")
-    private String apiKey;
+    private String gptApiKey;
 
-    @Value("${langchain4j.open-ai.chat-model.model-name:gpt-5-mini}")
-    private String modelName;
-
-    @Value("${langchain4j.open-ai.chat-model.temperature:1}")
+    @Value("${langchain4j.open-ai.chat-model.temperature:0.85}")
     private Double temperature;
 
-    @Value("${langchain4j.open-ai.chat-model.max-tokens:1000}")
+    @Value("${langchain4j.open-ai.chat-model.max-tokens:2048}")
     private Integer maxTokens;
 
     @Bean
     public ChatModel chatLanguageModel() {
         // Check if API key is properly configured
-        if (apiKey == null || apiKey.trim().isEmpty() || apiKey.equals("demo")) {
-            System.err.println("WARNING: OpenAI API key is not configured. Using disabled chat model.");
+        if (geminiApiKey == null || geminiApiKey.trim().isEmpty() ||
+                geminiApiKey.equals("demo")) {
+            System.err.println("WARNING: OpenAI API key is not configured. Using disabledchat model.");
             return new DisabledChatModel();
         }
-        System.out.println("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n");
-        System.out.println("\n\nCONFIGURING LLM MODEL\n\n");
-        System.out.println("apiKey: " + apiKey);
-        System.out.println("modelName: " + modelName);
-        System.out.println("temperature: " + temperature);
-        System.out.println("maxTokens: " + maxTokens);
-        System.out.println("\n=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=\n\n");
-
         try {
-            return OpenAiChatModel.builder()
-                    .apiKey(apiKey)
-                    .modelName(modelName)
-                    .temperature(temperature)
-                    // .maxCompletionTokens(maxTokens)
+            return GoogleAiGeminiChatModel.builder()
+                    .apiKey(geminiApiKey)
+                    .modelName("gemini-2.5-flash")
+                    .temperature(.2)
+                    .logResponses(true)
+                    .returnThinking(true)
                     .build();
         } catch (Exception e) {
-            System.err.println("ERROR: Failed to create OpenAI chat model: " + e.getMessage());
+            System.err.println("ERROR: Failed to create OpenAI chat model: " +
+                    e.getMessage());
             return new DisabledChatModel();
         }
     }
+
+    public ChatModel lightChatLanguageModel() {
+        try {
+            return OpenAiChatModel.builder()
+                    .apiKey(gptApiKey)
+                    // .modelName("gpt-4o-mini")
+                    .modelName("gpt-4.1-mini")
+                    .temperature(.5)
+                    .build();
+        } catch (Exception e) {
+            System.err.println("ERROR: Failed to create OpenAI chat model: " +
+                    e.getMessage());
+            return new DisabledChatModel();
+        }
+    }
+    /*
+     * public ResponseFormat getResponseFormat() {
+     * JsonObjectSchema root = JsonObjectSchema.builder()
+     * .addProperties(Map.<String, JsonSchemaElement>of(
+     * "content", JsonStringSchema.builder().build(),
+     * "tags", JsonArraySchema.builder()
+     * .items(JsonStringSchema.builder().build())
+     * .build(),
+     * "readyToHandoff", JsonBooleanSchema.builder().build()))
+     * .additionalProperties(true)
+     * .required("content", "tags", "readyToHandoff")
+     * .build();
+     * 
+     * ResponseFormat responseFormat = ResponseFormat.builder()
+     * .type(ResponseFormatType.JSON)
+     * .jsonSchema(JsonSchema.builder()
+     * .name("ContentResponse")
+     * .rootElement(root)
+     * .build())
+     * .build();
+     * return responseFormat;
+     * 
+     * }
+     */
 }

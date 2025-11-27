@@ -27,6 +27,7 @@ public class CreateHabitTool {
 		try {
 			UUID userId = UserContext.requireUserId();
 			Habit habit = new Habit();
+			habit.setUserId(userId);
 			habit.setType(type);
 			habit.setCadenceRule(cadenceRule);
 			habit.setAdherencePolicy(adherencePolicy);

@@ -33,6 +33,8 @@ public class LlmResponse {
      */
     private AiMessage aiMessage;
 
+    private int tokens = 0;
+
     /**
      * Constructor with just content (no tool calls)
      * Ensures content is never null
@@ -46,23 +48,31 @@ public class LlmResponse {
      * Constructor from LangChain4j AiMessage
      * Ensures content is never null
      */
-    public LlmResponse(AiMessage aiMessage) {
+    public LlmResponse(AiMessage aiMessage, int tokens) {
         this.aiMessage = aiMessage;
         this.toolCalls = extractToolCalls(aiMessage);
         this.content = extractContent(aiMessage);
+        this.tokens = tokens;
+    }
+
+    public LlmResponse(String content, int tokens) {
+        this.content = content != null ? content : "";
+        this.toolCalls = new ArrayList<>();
+        this.tokens = tokens;
     }
 
     private String extractContent(AiMessage aiMessage) {
-        if (aiMessage == null) return "";
-        
+        if (aiMessage == null)
+            return "";
+
         StringBuilder content = new StringBuilder();
-        
+
         // Add the main message text
         String messageText = aiMessage.text();
         if (messageText != null && !messageText.trim().isEmpty()) {
             content.append(messageText);
         }
-        
+
         // Add tool calls if present
         if (aiMessage.hasToolExecutionRequests()) {
             if (content.length() > 0) {
@@ -71,17 +81,17 @@ public class LlmResponse {
             content.append("Tool Calls:\n");
             aiMessage.toolExecutionRequests().forEach(request -> {
                 content.append("- Tool: ").append(request.name())
-                      .append("\n  Arguments: ").append(request.arguments())
-                      .append("\n");
+                        .append("\n  Arguments: ").append(request.arguments())
+                        .append("\n");
             });
         }
-        
+
         return content.length() > 0 ? content.toString() : "";
     }
 
     private List<ToolCall> extractToolCalls(AiMessage aiMessage) {
         List<ToolCall> calls = new ArrayList<>();
-        
+
         if (aiMessage != null && aiMessage.hasToolExecutionRequests()) {
             aiMessage.toolExecutionRequests().forEach(request -> {
                 ToolCall toolCall = new ToolCall();
@@ -91,7 +101,7 @@ public class LlmResponse {
                 calls.add(toolCall);
             });
         }
-        
+
         return calls;
     }
 

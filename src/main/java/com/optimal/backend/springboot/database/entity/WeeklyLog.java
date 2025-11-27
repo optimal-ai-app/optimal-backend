@@ -1,6 +1,6 @@
-// src/main/java/com/optimal/backend/springboot/domain/entity/Message.java
 package com.optimal.backend.springboot.database.entity;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.UUID;
 
@@ -13,35 +13,38 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "messages")
-public class Message {
+@Table(name = "weekly_logs")
+public class WeeklyLog {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @Column(name = "message_id")
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
     private UUID id;
 
-    @Column(name = "conversation_id", nullable = false)
-    private UUID conversationId;
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
-    @Column(name = "role", nullable = false)
-    private String role; // "user" or "assistant"
+    @Column(name = "log", nullable = false, columnDefinition = "TEXT")
+    private String log;
 
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
-    private String content;
+    @Column(name = "start_date", nullable = false)
+    private Date startDate;
+
+    @Column(name = "end_date", nullable = false)
+    private Date endDate;
 
     @Column(name = "created_at", nullable = false)
     private Timestamp createdAt;
-
-    @Column(name = "tokens")
-    private Integer tokens;
 
     @PrePersist
     protected void onCreate() {

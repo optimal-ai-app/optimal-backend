@@ -13,11 +13,7 @@
     <artifactId>springboot-boilerplate</artifactId>
     <version>3.4.0</version>
 
-    <name>spring-boot-boilerplate</name>
-    <description>
-        Spring Boot Boilerplate is a starter kit.
-        This project includes : Spring Boot(3.4.0), Spring Data JPA, Spring Validation, Spring Security + JWT Token, PostgreSQL, Mapstruct, Lombok, Swagger (Open API)
-    </description>
+    <name>Optimal Ai</name>
 
     <developers>
         <developer>
@@ -32,12 +28,13 @@
 
         <java.version>17</java.version>
         <jwt.version>4.4.0</jwt.version>
+        <netty.version>4.1.115.Final</netty.version>
 
         <openapi-swagger.version>2.7.0</openapi-swagger.version>
 
         <mapstruct.version>1.6.3</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-        <langchain4j.version>1.3.0</langchain4j.version>
+        <langchain4j.version>1.6.0</langchain4j.version>
         <lombok.version>1.18.38</lombok.version>
 
     </properties>
@@ -144,13 +141,37 @@
             <artifactId>langchain4j-open-ai</artifactId>
             <version>${langchain4j.version}</version>
         </dependency>
-        
+
         <dependency>
-            <groupId>io.netty</groupId>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+              <version>1.6.0</version>
+        </dependency>
+
+        <dependency>
+        <groupId>io.netty</groupId>
             <artifactId>netty-resolver-dns-native-macos</artifactId>
             <version>${netty.version}</version> 
             <!-- classifier should match your arch: osx-x86_64 or osx-aarch_64 -->
-            <classifier>osx-x86_64</classifier>
+            <classifier>osx-aarch_64</classifier>
+        </dependency>
+
+        <!-- Spring Retry for handling optimistic locking failures -->
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aspects</artifactId>
+        </dependency>
+
+        <!-- Java Dotenv for programmatic .env loading -->
+        <dependency>
+            <groupId>io.github.cdimascio</groupId>
+            <artifactId>dotenv-java</artifactId>
+            <version>3.0.0</version>
         </dependency>
 
         
@@ -159,7 +180,7 @@
 
     <build>
 
-        <finalName>spring-boot-boilerplate</finalName>
+        <finalName>optimal</finalName>
 
         <plugins>
 

@@ -1,9 +1,19 @@
 package com.optimal.backend.springboot.service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.util.Calendar;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,75 +21,98 @@ import com.optimal.backend.springboot.database.entity.Conversation;
 import com.optimal.backend.springboot.database.entity.Message;
 import com.optimal.backend.springboot.database.repository.ConversationRepository;
 import com.optimal.backend.springboot.database.repository.MessageRepository;
-import com.optimal.backend.springboot.utils.DateUtils;
+import lombok.extern.slf4j.Slf4j;
 
-import lombok.RequiredArgsConstructor;
-
+@Slf4j
 @Service
-@RequiredArgsConstructor
+@Transactional
 public class ChatService {
 
-    private final ConversationRepository conversationRepository;
-    private final MessageRepository messageRepository;
-    private final SummarizationClient summarizationClient;
+    @Autowired
+    private ConversationRepository conversationRepository;
+
+    @Autowired
+    private MessageRepository messageRepository;
 
     /**
      * Creates a new conversation for the user. Pruning is handled by the DB
      * trigger.
      */
-    @Transactional
     public Conversation createConversation(UUID userId, String title) {
         Conversation convo = new Conversation();
         convo.setId(UUID.randomUUID());
         convo.setUserId(userId);
         convo.setTitle(title);
-        convo.setSummaryText("");
+        convo.setTokens(0);
         return conversationRepository.save(convo);
     }
 
     /**
-     * Adds a user message to the conversation.
+     * Adds a user message to the conversation with retry logic for optimistic
+     * locking.
      */
-    @Transactional
-    public Message addUserMessage(UUID conversationId, String content) {
-        int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
-        Message msg = new Message();
-        msg.setId(UUID.randomUUID());
-        msg.setConversationId(conversationId);
-        msg.setRole("user");
-        msg.setContent(content);
-        msg.setSequenceIndex(nextIdx);
-        return messageRepository.save(msg);
+    // @Retryable(
+    // value = ObjectOptimisticLockingFailureException.class,
+    // maxAttempts = 3,
+    // backoff = @Backoff(delay = 100, multiplier = 2)
+    // )
+    public void addUserMessage(UUID conversationId, UUID userId, String content) {
+        try {
+            // check if the conversation exists
+            System.out.println("conversationId: " + conversationId);
+            Optional<Conversation> convo = conversationRepository.findById(conversationId);
+            if (!convo.isPresent()) {
+                System.out.println("conversation does not exist, creating new one");
+                Conversation newConvo = new Conversation();
+                newConvo.setId(conversationId);
+                newConvo.setUserId(userId);
+                newConvo.setTitle(content);
+                newConvo.setTokens(0);
+                convo = Optional.of(conversationRepository.save(newConvo));
+            }
+            System.out.println("addming message");
+            Message msg = new Message();
+            msg.setConversationId(convo.get().getId());
+            msg.setRole("user");
+            msg.setContent(content);
+            messageRepository.save(msg);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("Optimistic locking failure for conversation {}: {}", conversationId, e.getMessage());
+            throw e; // Re-throw to trigger retry
+        }
     }
 
     /**
-     * Adds the assistant's reply and updates the rolling summary.
+     * Adds the assistant's reply and updates the rolling summary with retry logic.
      */
     @Transactional
-    public Message addAssistantMessage(UUID conversationId, String content) {
-        int nextIdx = messageRepository.findMaxSequenceIndex(conversationId) + 1;
-        Message msg = new Message();
-        msg.setId(UUID.randomUUID());
-        msg.setConversationId(conversationId);
-        msg.setRole("assistant");
-        msg.setContent(content);
-        msg.setSequenceIndex(nextIdx);
-        msg.setCreatedAt(DateUtils.getCurrentTimestamp());
-        Message assistantMsg = messageRepository.save(msg);
-
-        // Fetch full history for summarization
-        List<Message> history = messageRepository.findByConversationIdOrderBySequenceIndex(conversationId);
-        List<String> texts = new ArrayList<>();
-        for (Message m : history) {
-            texts.add(m.getRole() + ": " + m.getContent());
+    @Retryable(value = ObjectOptimisticLockingFailureException.class, maxAttempts = 3, backoff = @Backoff(delay = 100, multiplier = 2))
+    public Message addAgentMessage(UUID conversationId, UUID userId, String content, int tokens) {
+        try {
+            Conversation convo = conversationRepository.findById(conversationId)
+                    .orElseGet(() -> {
+                        Conversation newConvo = new Conversation();
+                        newConvo.setId(conversationId);
+                        newConvo.setUserId(userId);
+                        newConvo.setTitle(content);
+                        newConvo.setTokens(0);
+                        return conversationRepository.save(newConvo);
+                    });
+            Message msg = new Message();
+            msg.setConversationId(convo.getId());
+            msg.setRole("agent");
+            msg.setContent(content);
+            msg.setTokens(tokens);
+            return messageRepository.save(msg);
+        } catch (ObjectOptimisticLockingFailureException e) {
+            log.warn("Optimistic locking failure for conversation {}: {}", conversationId, e.getMessage());
+            throw e; // Re-throw to trigger retry
         }
+    }
 
-        Conversation convo = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new IllegalStateException("Conversation not found"));
-        String updated = summarizationClient.updateSummary(convo.getSummaryText(), texts);
-        convo.setSummaryText(updated);
-        conversationRepository.save(convo);
-
-        return assistantMsg;
+    public long countUsersMessages(String userId) {
+        ZoneId zone = ZoneId.of("America/Los_Angeles"); // or inject/configure
+        Instant startOfToday = LocalDate.now(zone).atStartOfDay(zone).toInstant();
+        return messageRepository.countUsersMessages(userId, startOfToday);
     }
 }

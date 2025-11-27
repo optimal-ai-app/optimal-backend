@@ -1,5 +1,7 @@
 package com.optimal.backend.springboot.agent.framework.core;
 
+import java.util.UUID;
+
 import dev.langchain4j.data.message.AiMessage;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -20,6 +22,7 @@ public class Message {
     private String content;
     private String toolCallId;
     private String toolExecutionId;
+    private int tokens = 0;
 
     // Store original LangChain4j message to preserve tool calls
     private ChatMessage originalLangChain4jMessage;
@@ -29,10 +32,11 @@ public class Message {
         this.message = message;
     }
 
-    public Message(String role, String message, String content) {
+    public Message(String role, String message, String content, int tokens) {
         this.role = role;
         this.message = message;
         this.content = content;
+        this.tokens = tokens;
     }
 
     /**
@@ -62,7 +66,8 @@ public class Message {
             case "system":
                 return new SystemMessage(text);
             case "user":
-                return new UserMessage(text);
+                UUID uuid = UUID.randomUUID();
+                return new UserMessage(uuid + text);
             case "assistant":
             case "ai":
                 return new AiMessage(text);
@@ -82,7 +87,7 @@ public class Message {
     /**
      * Get the text content of this message, never returning null
      */
-    private String getTextContent() {
+    public String getTextContent() {
         if (content != null && !content.trim().isEmpty()) {
             return content;
         }
@@ -99,11 +104,11 @@ public class Message {
     public static Message fromLangChain4jMessage(ChatMessage chatMessage) {
         if (chatMessage instanceof SystemMessage) {
             SystemMessage systemMsg = (SystemMessage) chatMessage;
-            Message message = new Message("system", systemMsg.text(), systemMsg.text());
+            Message message = new Message("system", systemMsg.text(), systemMsg.text(), 0);
             return message;
         } else if (chatMessage instanceof UserMessage) {
             UserMessage userMsg = (UserMessage) chatMessage;
-            Message message = new Message("user", userMsg.singleText(), userMsg.singleText());
+            Message message = new Message("user", userMsg.singleText(), userMsg.singleText(), 0);
             return message;
         } else if (chatMessage instanceof AiMessage) {
             AiMessage aiMsg = (AiMessage) chatMessage;
@@ -111,11 +116,11 @@ public class Message {
             return new Message(aiMsg);
         } else if (chatMessage instanceof ToolExecutionResultMessage) {
             ToolExecutionResultMessage toolMsg = (ToolExecutionResultMessage) chatMessage;
-            Message message = new Message("tool", toolMsg.text(), toolMsg.text());
+            Message message = new Message("tool", toolMsg.text(), toolMsg.text(), 0);
             message.setToolExecutionId(toolMsg.id());
             return message;
         } else {
-            return new Message("user", "Unknown message type", "Unknown message type");
+            return new Message("user", "Unknown message type", "Unknown message type", 0);
         }
     }
 
@@ -125,6 +130,7 @@ public class Message {
                 "content='" + content + '\'' +
                 ", toolCallId='" + toolCallId + '\'' +
                 ", toolExecutionId='" + toolExecutionId + '\'' +
+                ", tokens='" + tokens + '\'' +
                 '}';
     }
 }

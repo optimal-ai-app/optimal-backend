@@ -1,5 +1,6 @@
 package com.optimal.backend.springboot.service;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -47,10 +48,6 @@ public class TaskService {
         return taskRepository.findById(id);
     }
 
-    public void updateGoalProgress(Task task) {
-        goalProgressService.updateGoalProgress(task);
-    }
-
     public void addTaskToProgress(Task task) {
         goalProgressService.addTaskToProgress(task);
     }
@@ -60,6 +57,20 @@ public class TaskService {
             addTaskToProgress(task);
         }
         return taskRepository.save(task);
+    }
+
+    public void updateTasks(List<String> tasks) {
+        taskRepository.updateTasks(tasks);
+    }
+
+    public String getTasksForWeek(UUID userId, Date startDate, Date endDate) {
+        List<Task> tasks = taskRepository.findByUserIdAndDueDateBetween(userId, startDate, endDate);
+        StringBuilder tasksString = new StringBuilder();
+        for (Task task : tasks) {
+            tasksString.append(task.getTitle()).append(" - ").append(task.getStatus()).append(" - ")
+                    .append(task.getDueDate()).append("\n");
+        }
+        return tasksString.toString();
     }
 
     @Transactional
@@ -115,7 +126,6 @@ public class TaskService {
         return taskCopy;
     }
 
-    // TODO: move to utils
     private String getDayNameFromCalendar(int dayOfWeek) {
         switch (dayOfWeek) {
             case Calendar.SUNDAY:
@@ -160,7 +170,6 @@ public class TaskService {
     }
 
     public Task updateTask(Task task) {
-        updateGoalProgress(task);
         return taskRepository.save(task);
     }
 
