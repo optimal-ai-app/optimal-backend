@@ -79,6 +79,9 @@ supabase:
   anonKey: ${SUPABASE_ANON_KEY}
   jwtSecret: ${SUPABASE_JWT_SECRET}
 
+cloudflare:
+  secretToken: ${CF_SECRET_TOKEN}
+
 swagger:
   contact-name: Optimal AI
   contact-mail: optimal.ai.app@gmail.com
