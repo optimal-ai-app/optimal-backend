@@ -68,29 +68,6 @@ public class AuthController {
         return ResponseEntity.ok(true);
     }
 
-    @PostMapping("/refresh")
-    @Operation(summary = "Refresh session", description = "Refresh session with Supabase")
-    public ResponseEntity<LoginResponse> refresh(@Valid @RequestParam String refreshToken) {
-        try {
-            System.out.println("refreshToken received " + refreshToken);
-            JsonNode response = supabaseAuthService.refreshSession(refreshToken).block();
-            if (response != null && response.has("access_token")) {
-                LoginResponse loginResponse = new LoginResponse();
-                loginResponse.setAccessToken(response.get("access_token").asText());
-                loginResponse.setRefreshToken(response.get("refresh_token").asText());
-                return ResponseEntity.ok(loginResponse);
-            } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-        } catch (Exception e) {
-            log.error("Refresh failed", e);
-            LoginResponse err = new LoginResponse();
-            err.setRefreshToken(null);
-            err.setAccessToken(null);
-            return ResponseEntity.badRequest().body(err);
-        }
-    }
-
     @PostMapping("/login")
     @Operation(summary = "Login user", description = "Authenticate user with Supabase")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {

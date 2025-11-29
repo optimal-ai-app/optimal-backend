@@ -18,6 +18,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.controller.RequestClasses.CreateTaskRequest;
 import com.optimal.backend.springboot.controller.RequestClasses.UpdateTaskRequest;
 import com.optimal.backend.springboot.database.entity.Task;
+import com.optimal.backend.springboot.security.annotation.CurrentUser;
+import com.optimal.backend.springboot.security.model.TokenUserContext;
 import com.optimal.backend.springboot.service.TaskService;
 
 import lombok.RequiredArgsConstructor;
@@ -30,14 +32,16 @@ public class TaskController {
     private final TaskService taskService;
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Task>> getTasksByUser(@PathVariable UUID userId) {
-        return ResponseEntity.ok(taskService.getTasksByUserId(userId));
+    public ResponseEntity<List<Task>> getTasksByUser(@CurrentUser TokenUserContext userContext) {
+        System.out.println("userContext: " + userContext.toString());
+        return ResponseEntity.ok(taskService.getTasksByUserId(userContext.getUserId()));
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest request) {
+    public ResponseEntity<Task> createTask(@RequestBody CreateTaskRequest request,
+            @CurrentUser TokenUserContext userContext) {
         Task task = new Task();
-        task.setUserId(request.getUserId());
+        task.setUserId(userContext.getUserId());
         task.setTitle(request.getTitle());
         task.setDescription(request.getDescription());
         task.setDueDate(request.getDueDate());
@@ -58,7 +62,8 @@ public class TaskController {
     }
 
     @PostMapping("/update")
-    public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request) {
+    public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request,
+            @CurrentUser TokenUserContext userContext) {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode js = mapper.valueToTree(request);
         System.out.println(js.toPrettyString());
@@ -66,19 +71,21 @@ public class TaskController {
     }
 
     @DeleteMapping("/{taskId}")
-    public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId) {
+    public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId, @CurrentUser TokenUserContext userContext) {
         taskService.deleteTask(taskId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/shared/{sharedId}")
-    public ResponseEntity<Void> deleteAllRelatedTasks(@PathVariable UUID sharedId) {
+    public ResponseEntity<Void> deleteAllRelatedTasks(@PathVariable UUID sharedId,
+            @CurrentUser TokenUserContext userContext) {
         taskService.deleteAllRelatedTasks(sharedId);
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/after/{taskId}")
-    public ResponseEntity<Void> deleteTaskAndAfter(@PathVariable UUID taskId) {
+    public ResponseEntity<Void> deleteTaskAndAfter(@PathVariable UUID taskId,
+            @CurrentUser TokenUserContext userContext) {
 
         taskService.deleteTaskAndAfter(taskId);
         return ResponseEntity.noContent().build();
