@@ -42,14 +42,14 @@ public class GoalController {
             System.out.println("=== /api/goals/create received ===");
             System.out.println("request.userId = " + userContext.getUserId());
             System.out.println("title           = " + request.getTitle());
-            Goal createdGoal = goalService.createGoal(request);
+            Goal createdGoal = goalService.createGoal(request, userContext.getUserId());
             return ResponseEntity.ok(createdGoal);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/get")
     public ResponseEntity<List<Goal>> getGoalsByUser(@CurrentUser TokenUserContext userContext) {
         List<Goal> goals = goalService.getGoalsByUser(userContext.getUserId());
         List<UUID> goalIds = goals.stream().map(Goal::getId).toList();
@@ -73,13 +73,13 @@ public class GoalController {
         return ResponseEntity.ok(goals);
     }
 
-    @GetMapping("/{goalId}")
+    @GetMapping("/get/{goalId}")
     public ResponseEntity<Goal> getGoalById(@PathVariable UUID goalId, @CurrentUser TokenUserContext userContext) {
         Optional<Goal> goal = goalService.getGoalById(goalId);
         return goal.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{goalId}")
+    @PutMapping("/update/{goalId}")
     public ResponseEntity<Goal> updateGoal(@PathVariable UUID goalId, @RequestBody Goal goal,
             @CurrentUser TokenUserContext userContext) {
         try {
@@ -95,7 +95,7 @@ public class GoalController {
         }
     }
 
-    @DeleteMapping("/{goalId}")
+    @DeleteMapping("/delete/{goalId}")
     public ResponseEntity<Void> deleteGoal(@PathVariable UUID goalId, @CurrentUser TokenUserContext userContext) {
         try {
             if (!goalService.existsById(goalId)) {

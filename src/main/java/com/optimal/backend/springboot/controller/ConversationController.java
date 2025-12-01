@@ -23,7 +23,7 @@ public class ConversationController {
 
     private final ConversationRepository conversationRepository;
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/get")
     public ResponseEntity<List<Conversation>> getConversationsByUser(@CurrentUser TokenUserContext userContext) {
         return ResponseEntity.ok(conversationRepository.findByUserId(userContext.getUserId()));
     }

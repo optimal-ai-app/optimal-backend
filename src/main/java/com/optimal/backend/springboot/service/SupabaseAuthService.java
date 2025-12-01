@@ -128,6 +128,7 @@ public class SupabaseAuthService {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
                         System.err.println("Login failed with status: " + webClientException.getStatusCode() +
                                 " and body: " + webClientException.getResponseBodyAsString());
+                        throw new RuntimeException(webClientException.getResponseBodyAsString());
                     }
                 });
     }

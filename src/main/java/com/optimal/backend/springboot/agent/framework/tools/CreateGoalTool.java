@@ -64,13 +64,12 @@ public class CreateGoalTool {
 
             // Create the goal request
             CreateGoalRequest goalRequest = new CreateGoalRequest();
-            goalRequest.setUserId(userId);
             goalRequest.setTitle(goalTitle);
             goalRequest.setDescription(goalDescription != null ? goalDescription : "");
             goalRequest.setDueDate(dueDateTimestamp);
             goalRequest.setTags(tags);
 
-            Goal created = goalService.createGoal(goalRequest);
+            Goal created = goalService.createGoal(goalRequest, UserContext.requireUserId());
             if (created != null) {
                 System.out.println("=== Goal Created Successfully:");
                 String message = "Goal '" + created.getTitle() + "' created successfully with due date: "
@@ -96,7 +95,8 @@ public class CreateGoalTool {
      * Parse goal due date from various date formats.
      * Supports ISO date format (yyyy-MM-dd) and other common formats.
      * Uses user's local date from context instead of server date.
-     * If a date is in the past, finds the next occurrence of that date (adds years until future).
+     * If a date is in the past, finds the next occurrence of that date (adds years
+     * until future).
      */
     private Timestamp parseGoalDueDate(String dateInput) {
         // Use user's local date from their time zone
@@ -124,16 +124,17 @@ public class CreateGoalTool {
                 int month = parsedDate.getMonthValue();
                 int day = parsedDate.getDayOfMonth();
                 int currentYear = today.getYear();
-                
+
                 // Try next year first
                 try {
                     parsedDate = LocalDate.of(currentYear + 1, month, day);
                 } catch (Exception e) {
-                    // Handle invalid date (e.g., Feb 29 in non-leap year) - use last valid day of month
+                    // Handle invalid date (e.g., Feb 29 in non-leap year) - use last valid day of
+                    // month
                     parsedDate = LocalDate.of(currentYear + 1, month, 1).withDayOfMonth(
-                        LocalDate.of(currentYear + 1, month, 1).lengthOfMonth());
+                            LocalDate.of(currentYear + 1, month, 1).lengthOfMonth());
                 }
-                
+
                 // Keep adding years if still in the past (edge case)
                 while (parsedDate.isBefore(today)) {
                     parsedDate = parsedDate.plusYears(1);

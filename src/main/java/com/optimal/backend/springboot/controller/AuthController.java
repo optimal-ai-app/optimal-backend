@@ -1,6 +1,7 @@
 package com.optimal.backend.springboot.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.optimal.backend.springboot.security.dto.LoginRequest;
 import com.optimal.backend.springboot.security.dto.LoginResponse;
 import com.optimal.backend.springboot.security.dto.RegistrationRequest;
@@ -11,6 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,8 +35,13 @@ public class AuthController {
 
     @PostMapping("/register")
     @Operation(summary = "Register new user", description = "Register a new user with Supabase")
-    public ResponseEntity<RegistrationResponse> register(@Valid @RequestBody RegistrationRequest request) {
+    public ResponseEntity<RegistrationResponse> register(@RequestBody RegistrationRequest request) {
         try {
+            log.info("Registering user: {}", request.getEmail());
+            log.info("Password: {}", request.getPassword());
+            log.info("Name: {}", request.getName());
+            log.info("Username: {}", request.getUsername());
+            log.info("Request: {}", request.toString());
             JsonNode userNode = supabaseAuthService
                     .registerUser(request.getEmail(), request.getPassword())
                     .block();
@@ -85,7 +93,9 @@ public class AuthController {
             }
         } catch (Exception e) {
             log.error("Login failed", e);
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            LoginResponse loginResponse = new LoginResponse();
+            loginResponse.setMessage("Login failed: " + e.getMessage());
+            return ResponseEntity.badRequest().body(loginResponse);
         }
     }
 }

@@ -31,7 +31,7 @@ public class TaskController {
 
     private final TaskService taskService;
 
-    @GetMapping("/user/{userId}")
+    @GetMapping("/get")
     public ResponseEntity<List<Task>> getTasksByUser(@CurrentUser TokenUserContext userContext) {
         System.out.println("userContext: " + userContext.toString());
         return ResponseEntity.ok(taskService.getTasksByUserId(userContext.getUserId()));
@@ -70,20 +70,20 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateTask(request));
     }
 
-    @DeleteMapping("/{taskId}")
+    @DeleteMapping("/delete/single/{taskId}")
     public ResponseEntity<Void> deleteTask(@PathVariable UUID taskId, @CurrentUser TokenUserContext userContext) {
         taskService.deleteTask(taskId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/shared/{sharedId}")
+    @DeleteMapping("/delete/shared/{sharedId}")
     public ResponseEntity<Void> deleteAllRelatedTasks(@PathVariable UUID sharedId,
             @CurrentUser TokenUserContext userContext) {
         taskService.deleteAllRelatedTasks(sharedId);
         return ResponseEntity.noContent().build();
     }
 
-    @DeleteMapping("/after/{taskId}")
+    @DeleteMapping("/delete/after/{taskId}")
     public ResponseEntity<Void> deleteTaskAndAfter(@PathVariable UUID taskId,
             @CurrentUser TokenUserContext userContext) {
 
