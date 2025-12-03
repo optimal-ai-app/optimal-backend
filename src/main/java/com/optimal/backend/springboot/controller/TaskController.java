@@ -86,7 +86,6 @@ public class TaskController {
     @DeleteMapping("/delete/after/{taskId}")
     public ResponseEntity<Void> deleteTaskAndAfter(@PathVariable UUID taskId,
             @CurrentUser TokenUserContext userContext) {
-
         taskService.deleteTaskAndAfter(taskId);
         return ResponseEntity.noContent().build();
     }

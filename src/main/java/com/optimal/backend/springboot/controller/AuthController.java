@@ -65,8 +65,8 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Registration failed with exception", e);
             RegistrationResponse err = new RegistrationResponse();
-            err.setMessage("Registration failed: " + e.getMessage());
-            return ResponseEntity.badRequest().body(err);
+            err.setMessage(e.getMessage());
+            return ResponseEntity.of(Optional.of(err));
         }
     }
 
@@ -94,8 +94,8 @@ public class AuthController {
         } catch (Exception e) {
             log.error("Login failed", e);
             LoginResponse loginResponse = new LoginResponse();
-            loginResponse.setMessage("Login failed: " + e.getMessage());
-            return ResponseEntity.badRequest().body(loginResponse);
+            loginResponse.setMessage(e.getMessage());
+            return ResponseEntity.of(Optional.of(loginResponse));
         }
     }
 }

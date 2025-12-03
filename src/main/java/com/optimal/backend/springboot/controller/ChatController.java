@@ -137,7 +137,7 @@ public class ChatController {
                 totalSupervisorsEvicted += removedCount;
             }
             lastCleanupTime = LocalDateTime.now();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("[SUPERVISOR-GC] Error during cleanup: " + e.getMessage());
             e.printStackTrace();
         }

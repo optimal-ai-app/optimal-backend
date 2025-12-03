@@ -86,7 +86,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
              WHERE t1.id = :taskId
                AND t2.sharedId = t1.sharedId
                AND t2.dueDate >= t1.dueDate
-         )
+         ) OR t2.id = :taskId
       """)
   void deleteTaskAndAfter(@Param("taskId") UUID taskId);
 
