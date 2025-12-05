@@ -201,9 +201,6 @@ public class TaskService {
 
     @Transactional
     public void deleteTaskAndAfter(UUID taskId) {
-        System.out.println("--------------------------------");
-        System.out.println("taskId: " + taskId);
-        System.out.println("--------------------------------");
         taskRepository.deleteTaskAndAfter(taskId);
     }
 

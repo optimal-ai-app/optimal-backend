@@ -1,5 +1,6 @@
 package com.optimal.backend.springboot.configuration;
 
+import com.optimal.backend.springboot.security.filter.JwtUserContextFilter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,6 +15,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -51,11 +53,12 @@ public class SecurityConfiguration {
 						UsernamePasswordAuthenticationFilter.class)
 
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-				.authorizeHttpRequests(auth -> auth
-						// Public endpoints
-						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
-						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-						// Protected endpoints
+					.authorizeHttpRequests(auth -> auth
+							// Public endpoints - completely bypass security
+							.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+							.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+							.requestMatchers("/evaluation/**").permitAll() // Evaluation endpoints for testing
+						// Protected endpoints - require JWT authentication
 						.requestMatchers("/api/auth/checkAuth").authenticated()
 						.requestMatchers("/actuator/**").authenticated()
 						.requestMatchers("/chat/**").authenticated()
@@ -66,11 +69,12 @@ public class SecurityConfiguration {
 						// (Kept your custom resolver logic exactly as is)
 						.bearerTokenResolver(request -> {
 							String requestURI = request.getRequestURI();
-							if (requestURI.equals("/api/auth/register") ||
-									requestURI.equals("/api/auth/login") ||
-									requestURI.equals("/api/auth/refresh") ||
-									requestURI.startsWith("/v3/api-docs") ||
-									requestURI.startsWith("/swagger-ui")) {
+							if (requestURI.equals("/api/auth/register") || 
+								requestURI.equals("/api/auth/login") || 
+								requestURI.equals("/api/auth/refresh") ||
+								requestURI.startsWith("/v3/api-docs") ||
+								requestURI.startsWith("/swagger-ui") ||
+								requestURI.startsWith("/evaluation")) {
 								return null;
 							}
 							String authorization = request.getHeader("Authorization");
@@ -79,6 +83,7 @@ public class SecurityConfiguration {
 							}
 							return null;
 						}))
+				.addFilterAfter(new JwtUserContextFilter(), BearerTokenAuthenticationFilter.class)
 				.build();
 	}
 

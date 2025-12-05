@@ -28,22 +28,25 @@ public class MilestonePlannerPrompt extends BasePrompt {
         "data": {"options": ["<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>", "<goal from goalDescriptionTool>"]}
       }
       ### Step 2. **Milestone Suggestion**
-      * Call `getFutureDate(0)` to get current date
       * Call `getGoalProgress(goalId)`
       * Call `getGoalMilestone(goalId)`
       * **CRITICAL CONSTRAINT**: All milestone due dates MUST be on or before the goal's due date. Extract the goal due date from the goalDescriptionTool() output.
-      * If no milestones exist → propose 3+ natural progression milestones with realistic due dates that are evenly spaced between today and the goal's due date
-      * If milestones exist → suggest 1–3 fitting next steps, with short pro/con notes, ensuring dates are before the goal's due date
-      * **IMPORTANT**: Generate realistic due dates (YYYY-MM-DD format) for each milestone suggestion
-      * **VALIDATION**: Before suggesting milestones, verify that each milestone date is on or before the goal's due date. If not, adjust the dates accordingly.
+      * Based on the provided information, call the LlmMilestoneSuggestionTool with the input being a few sentences describing the goal, existing milestones (if any), goal progress, and the goal's due date.
+      * **STRICT DATE RULE**: Suggested dates MUST fall between Current Date (automatically handled by the tool) and the Goal Due Date. Do not hallucinate years in the past.
+      * Use the output from the LlmMilestoneSuggestionTool tool to produce a structured Markdown response.
       * *Response Format:*
       {
-        "content": "Here are milestones I suggest for <goal>: <milestone list and rationale>",
+        "content": "## Milestone Suggestions for **<Goal Name>**\n\n<Short rationale sentence>.\n\n### Proposed Schedule:\n1. Due **YYYY-MM-DD**: <Milestone 1 Title> - *<Brief outcome>*\n2. Due **YYYY-MM-DD**: <Milestone 2 Title> - *<Brief outcome>*\n\nDoes this schedule look achievable?",
         "tags": ["CONFIRM_TAG"],
         "currentStep": 3,
         "readyToHandoff": false,
         "data": {"options": ["Accept", "Make new list"]}
       }
+      * **FORMATTING RULES**: 
+        1. Dates must be in bold (**YYYY-MM-DD**).
+        2. Separator between Title and Rationale MUST be " - ".
+        3. Rationale MUST be in *italics*.
+        4. Do NOT merge the title and rationale into a single sentence. Example: "Run 5km - *Build endurance*" (CORRECT) vs "Run 5km to build endurance" (INCORRECT).
       ### Step 3. **Confirm & Complete**
 
       * On confirmation, finalize the milestone(s).
@@ -81,7 +84,7 @@ public class MilestonePlannerPrompt extends BasePrompt {
       *Response JSON:*
 
       {
-        "content": "Here are milestones I suggest for 'Run a half marathon' (due 2025-11-11): Run 5 km in under 40 minutes by 2025-10-28, Run 10 km in under 70 minutes by 2025-11-04, Run 15 km steadily by 2025-11-11. These build endurance toward 21 km and all dates are before your goal deadline.",
+        "content": "## Milestone Suggestions for **Run a half marathon**\n\nTo reach your race day safely, we'll build endurance gradually.\n\n### Proposed Schedule:\n1. Due **2025-10-28**: Run 5km - *Build baseline endurance*\n2. Due **2025-11-04**: Run 10km - *Increase distance*\n3. Due **2025-11-11**: Run 15km - *Peak training run*\n\nDoes this schedule look achievable?",
         "tags": ["CONFIRM_TAG"],
         "currentStep": 3,
         "readyToHandoff": false,

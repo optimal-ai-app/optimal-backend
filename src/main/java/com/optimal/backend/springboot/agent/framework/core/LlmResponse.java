@@ -63,30 +63,30 @@ public class LlmResponse {
 
     private String extractContent(AiMessage aiMessage) {
         if (aiMessage == null)
-            return "";
+            return "Error: Null AI message received";
 
-        StringBuilder content = new StringBuilder();
-
-        // Add the main message text
+        // Get the main message text
         String messageText = aiMessage.text();
+        
+        // If there's text, return it as-is (don't append tool call info to preserve JSON structure)
         if (messageText != null && !messageText.trim().isEmpty()) {
-            content.append(messageText);
+            return messageText;
         }
-
-        // Add tool calls if present
+        
+        // Only include tool call info if there's no text (for debugging/logging purposes)
         if (aiMessage.hasToolExecutionRequests()) {
-            if (content.length() > 0) {
-                content.append("\n\n"); // Add spacing between message and tool calls
-            }
+            StringBuilder content = new StringBuilder();
             content.append("Tool Calls:\n");
             aiMessage.toolExecutionRequests().forEach(request -> {
                 content.append("- Tool: ").append(request.name())
                         .append("\n  Arguments: ").append(request.arguments())
                         .append("\n");
             });
+            return content.toString();
         }
 
-        return content.length() > 0 ? content.toString() : "";
+        // If we get here, there's neither text nor tool calls - this is an error condition
+        return "Error: Empty response from LLM (no text or tool calls)";
     }
 
     private List<ToolCall> extractToolCalls(AiMessage aiMessage) {

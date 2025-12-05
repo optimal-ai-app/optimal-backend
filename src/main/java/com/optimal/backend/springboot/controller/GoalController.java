@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.optimal.backend.springboot.controller.RequestClasses.CreateGoalRequest;
 import com.optimal.backend.springboot.database.entity.Goal;
 import com.optimal.backend.springboot.database.entity.GoalProgress;
+import com.optimal.backend.springboot.security.annotation.CurrentUser;
+import com.optimal.backend.springboot.security.model.TokenUserContext;
 import com.optimal.backend.springboot.service.GoalProgressService;
 import com.optimal.backend.springboot.service.GoalService;
 
@@ -34,21 +36,22 @@ public class GoalController {
     private final GoalProgressService goalProgressService;
 
     @PostMapping("/create")
-    public ResponseEntity<Goal> createGoal(@RequestBody CreateGoalRequest request) {
+    public ResponseEntity<Goal> createGoal(@RequestBody CreateGoalRequest request,
+            @CurrentUser TokenUserContext userContext) {
         try {
             System.out.println("=== /api/goals/create received ===");
-            System.out.println("request.userId = " + request.getUserId());
+            System.out.println("request.userId = " + userContext.getUserId());
             System.out.println("title           = " + request.getTitle());
-            Goal createdGoal = goalService.createGoal(request);
+            Goal createdGoal = goalService.createGoal(request, userContext.getUserId());
             return ResponseEntity.ok(createdGoal);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
         }
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Goal>> getGoalsByUser(@PathVariable UUID userId) {
-        List<Goal> goals = goalService.getGoalsByUser(userId);
+    @GetMapping("/get")
+    public ResponseEntity<List<Goal>> getGoalsByUser(@CurrentUser TokenUserContext userContext) {
+        List<Goal> goals = goalService.getGoalsByUser(userContext.getUserId());
         List<UUID> goalIds = goals.stream().map(Goal::getId).toList();
         if (goalIds.isEmpty()) {
             return ResponseEntity.ok(goals);
@@ -70,14 +73,15 @@ public class GoalController {
         return ResponseEntity.ok(goals);
     }
 
-    @GetMapping("/{goalId}")
-    public ResponseEntity<Goal> getGoalById(@PathVariable UUID goalId) {
+    @GetMapping("/get/{goalId}")
+    public ResponseEntity<Goal> getGoalById(@PathVariable UUID goalId, @CurrentUser TokenUserContext userContext) {
         Optional<Goal> goal = goalService.getGoalById(goalId);
         return goal.map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
     }
 
-    @PutMapping("/{goalId}")
-    public ResponseEntity<Goal> updateGoal(@PathVariable UUID goalId, @RequestBody Goal goal) {
+    @PutMapping("/update/{goalId}")
+    public ResponseEntity<Goal> updateGoal(@PathVariable UUID goalId, @RequestBody Goal goal,
+            @CurrentUser TokenUserContext userContext) {
         try {
             if (!goalService.existsById(goalId)) {
                 return ResponseEntity.notFound().build();
@@ -91,8 +95,8 @@ public class GoalController {
         }
     }
 
-    @DeleteMapping("/{goalId}")
-    public ResponseEntity<Void> deleteGoal(@PathVariable UUID goalId) {
+    @DeleteMapping("/delete/{goalId}")
+    public ResponseEntity<Void> deleteGoal(@PathVariable UUID goalId, @CurrentUser TokenUserContext userContext) {
         try {
             if (!goalService.existsById(goalId)) {
                 return ResponseEntity.notFound().build();

@@ -1,0 +1,83 @@
+{
+  "name": "Agent Workflow Evaluation Suite",
+  "description": "Comprehensive test cases for multi-agent workflow evaluation",
+  "testCases": [
+    {
+      "id": "goal_creation_001",
+      "description": "Test goal creation workflow - should select GoalDefinitionTeam",
+      "input": "I want to create a goal to learn Spanish",
+      "expectedAgentTeam": "GoalDefinitionTeam",
+      "expectedAgents": ["GoalCreatorAgent"],
+      "expectedTags": [],
+      "expectedDataKeys": null,
+      "expectedStep": null,
+      "expectedReadyToHandoff": null,
+      "expectedReInterpret": null,
+      "maxExecutionTimeMs": 30000
+    },
+    {
+      "id": "task_planning_001",
+      "description": "Test task planning workflow - should select TaskExecutionTeam",
+      "input": "I want to create tasks",
+      "expectedAgentTeam": "TaskExecutionTeam",
+      "expectedAgents": ["TaskPlannerAgent", "TaskCreatorAgent"],
+      "expectedTags": ["CONFIRM_TAG"],
+      "expectedDataKeys": ["options"],
+      "expectedStep": 1,
+      "expectedReadyToHandoff": false,
+      "expectedReInterpret": null,
+      "maxExecutionTimeMs": 30000
+    },
+    {
+      "id": "milestone_planning_001",
+      "description": "Test milestone planning workflow - should select MilestoneExecutionTeam",
+      "input": "Let's create milestones for my goal",
+      "expectedAgentTeam": "MilestoneExecutionTeam",
+      "expectedAgents": ["MilestonePlannerAgent", "MilestoneTaskCreatorAgent"],
+      "expectedTags": [],
+      "expectedDataKeys": null,
+      "expectedStep": null,
+      "expectedReadyToHandoff": null,
+      "expectedReInterpret": null,
+      "maxExecutionTimeMs": 30000
+    },
+    {
+      "id": "task_planning_step1",
+      "description": "Test TaskPlannerAgent Step 1 - should present goal list",
+      "input": "I want to plan some tasks",
+      "expectedAgentTeam": "TaskExecutionTeam",
+      "expectedAgents": ["TaskPlannerAgent", "TaskCreatorAgent"],
+      "expectedTags": ["CONFIRM_TAG"],
+      "expectedDataKeys": ["options"],
+      "expectedStep": 1,
+      "expectedReadyToHandoff": false,
+      "expectedContentContains": "goal",
+      "maxExecutionTimeMs": 30000
+    },
+    {
+      "id": "goal_creation_basic",
+      "description": "Basic goal creation request",
+      "input": "Create a goal to run a marathon",
+      "expectedAgentTeam": "GoalDefinitionTeam",
+      "expectedAgents": ["GoalCreatorAgent"],
+      "expectedTags": null,
+      "expectedDataKeys": null,
+      "expectedStep": null,
+      "expectedReadyToHandoff": null,
+      "maxExecutionTimeMs": 30000
+    },
+    {
+      "id": "task_creation_request",
+      "description": "Task creation request",
+      "input": "Plan tasks and schedule them",
+      "expectedAgentTeam": "TaskExecutionTeam",
+      "expectedAgents": ["TaskPlannerAgent", "TaskCreatorAgent"],
+      "expectedTags": null,
+      "expectedDataKeys": null,
+      "expectedStep": null,
+      "expectedReadyToHandoff": null,
+      "maxExecutionTimeMs": 30000
+    }
+  ]
+}
+

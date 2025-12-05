@@ -8,6 +8,21 @@ spring:
     url: ${SPRING_DATASOURCE_URL:}
     username: ${SPRING_DATASOURCE_USERNAME:}
     password: ${SPRING_DATASOURCE_PASSWORD:}
+    hikari:
+      # Fix for PostgreSQL prepared statement conflicts
+      # Clear prepared statements when connection is checked out from pool
+      # This prevents "prepared statement already exists" errors
+      connection-init-sql: "DEALLOCATE ALL"
+      # Connection pool settings
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      # Disable server-side prepared statements via connection properties
+      # This is the primary fix - prevents PostgreSQL from caching prepared statements
+      data-source-properties:
+        prepareThreshold: 0
   jpa:
     hibernate:
       ddl-auto: update
@@ -16,6 +31,14 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Disable server-side prepared statement cache to avoid conflicts
+        # This works together with prepareThreshold: 0
+        jdbc:
+          use_server_prepared_statement_cache: false
+          # Keep batching enabled for better performance on bulk operations
+          # (saveAll operations will still benefit from batching)
+          batch_size: 20
+          batch_versioned_data: true
 
   jta:
     enabled: false
@@ -45,6 +68,12 @@ langchain4j:
   goal-creator-agent:
     name: GoalCreatorAgent
     description: "Can create goals for a user by helping the user figure out their aspirations and use that to fulfill their ambitions."
+  milestone-planner-agent:
+    name: MilestonePlannerAgent
+    description: "Helps the user plan milestones for their goals. Part of the MilestoneExecutionTeam."
+  milestone-task-creator-agent:
+    name: MilestoneTaskCreatorAgent
+    description: "Creates milestone tasks based on milestone planning data from MilestonePlannerAgent. Specializes exclusively in milestone task creation. Depends on MilestonePlannerAgent."
   diary-log-agent:
     name: DiaryLogAgent
     description: "Can analyze diary log transcripts to generate summaries and relevant tags, and identify goals and tasks that need to be updated."

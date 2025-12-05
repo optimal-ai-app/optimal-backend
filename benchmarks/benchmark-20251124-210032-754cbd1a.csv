@@ -1,0 +1,7 @@
+Test ID,Description,Passed,Duration (ms),Error,Validation Errors,Actual Agent Team,Actual Agents,Actual Step,Actual ReadyToHandoff
+goal_creation_001,Test goal creation workflow - should select GoalDefinitionTeam,PASS,7036,,,GoalDefinitionTeam,GoalCreatorAgent,3,false
+task_planning_001,Test task planning workflow - should select TaskExecutionTeam,FAIL,5764,,"Missing expected tag: CONFIRM_TAG; Response data is null but expected keys: [options]; Step mismatch: expected 1, got -1",TaskExecutionTeam,TaskPlannerAgent; TaskCreatorAgent,-1,false
+milestone_planning_001,Test milestone planning workflow - should select MilestoneExecutionTeam,PASS,14385,,,MilestoneExecutionTeam,MilestonePlannerAgent; MilestoneTaskCreatorAgent,2,false
+task_planning_step1,Test TaskPlannerAgent Step 1 - should present goal list,FAIL,6012,,"Missing expected tag: CONFIRM_TAG; Response data is null but expected keys: [options]; Step mismatch: expected 1, got -1",TaskExecutionTeam,TaskPlannerAgent; TaskCreatorAgent,-1,false
+goal_creation_basic,Basic goal creation request,PASS,7653,,,GoalDefinitionTeam,GoalCreatorAgent,3,false
+task_creation_request,Task creation request,PASS,5666,,,TaskExecutionTeam,TaskPlannerAgent; TaskCreatorAgent,-1,false

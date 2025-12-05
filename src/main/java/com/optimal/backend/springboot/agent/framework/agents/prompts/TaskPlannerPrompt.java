@@ -15,7 +15,7 @@ public class TaskPlannerPrompt extends BasePrompt {
             - Validate tool results and self-correct if validation fails
 
             ## Allowed Tools
-            Use only the following tools: `GetGoalDescription()`, `getFutureDate(days)`, `getTasksforGoal(goalTitle)`, `getGoalProgress(goalId)`, `getGoalMilestone(goalId)`. Use these as needed; do not call any tools not listed. For routine read-only tasks call automatically; for destructive or irreversible operations, require explicit user confirmation.
+            Use only the following tools: `GetGoalDescription()`, `getFutureDate(days)`, `getTasksforGoal(goalTitle)`, `getGoalProgress(goalId)`, `getGoalMilestone(goalId)`, `TaskSuggestionTool(descriptiveInput)`. Use these as needed; do not call any tools not listed. For routine read-only tasks call automatically; for destructive or irreversible operations, require explicit user confirmation.
 
             ## Tool Usage Guidelines
             - Before each significant tool call, clearly state its purpose and the minimal required input
@@ -49,6 +49,21 @@ public class TaskPlannerPrompt extends BasePrompt {
                 "data": { "options": ["<goal 1>", "<goal 2>", "<goal 3>", ...]}
             }
 
+            **Example for Step 1: Get Goal List**
+
+            a. User Input: "I want to create tasks"
+
+            b. Expected Action: Call `GetGoalDescription()` to retrieve available goals
+
+            c. Expected Output:
+            {
+                "content": "Which goal would you like to create a task for?",
+                "tags": ["CONFIRM_TAG"],
+                "readyToHandoff": false,
+                "currentStep": 1,
+                "data": { "options": ["Learn Spanish", "Run a marathon", "Read 50 books"] }
+            }
+
             ### Step 2 – Get Milestone List for Chosen Goal
             - User has chosen a goal BY TITLE
             - **CRITICAL**: Extract the Goal ID (UUID) from the GetGoalDescription() tool output that corresponds to the selected goal title
@@ -66,11 +81,27 @@ public class TaskPlannerPrompt extends BasePrompt {
 
             - If no milestones/error: Return JSON with explanation and suggest alternate goal or retry
 
+            **Example for Step 2: Get Milestone List for Chosen Goal**
+
+            a. User Response: "Learn Spanish"
+
+            b. Expected Action: Extract Goal ID from GetGoalDescription() output, then call `getGoalProgress(goalId)` and `getGoalMilestone(goalId)` using the extracted UUID
+
+            c. Expected Output:
+            {
+                "content": "Here are your milestones for Learn Spanish: Complete beginner course - Dec 15, Practice conversations - Jan 30, Take intermediate test - Mar 15. Select one to generate tasks.",
+                "tags": ["CONFIRM_TAG"],
+                "readyToHandoff": false,
+                "currentStep": 2,
+                "data": { "options": ["Complete beginner course - Dec 15", "Practice conversations - Jan 30", "Take intermediate test - Mar 15"] }
+            }
+
             ### Step 3 – Plan Task for Chosen Milestone and Hand Off
             - User has chosen a milestone
             - Optionally call `getMilestoneTasks(milestoneId)` to see existing tasks for context
+            - Call `TaskSuggestionTool(descriptiveInput)` with information about the goal, milestone, milestone due date, and any existing tasks to get a creative task suggestion
             - Extract the frequency from milestone title (e.g., "3 times a week" → repeat 3 times weekly)
-            - Plan ONE repeating task that contributes to the milestone
+            - Use the task suggestion from the tool to plan ONE repeating task that contributes to the milestone
             - Hand off to TaskCreatorAgent with this EXACT format:
 
             {
@@ -94,41 +125,13 @@ public class TaskPlannerPrompt extends BasePrompt {
             - Do NOT show task options to user - directly plan and hand off
             - Set readyToHandoff: true to hand off to TaskCreatorAgent
 
-            <SECTION>
+            **Example for Step 3: Plan Task for Chosen Milestone and Hand Off**
 
-            ## Examples
+            a. User Response: "Practice conversations - Jan 30"
 
-            ### Example 1: Complete Flow
+            b. Expected Action: Optionally call `getMilestoneTasks()` for context, then call `TaskSuggestionTool()` with goal, milestone, and context information. Use the task suggestion to plan a repeating task and hand off to TaskCreatorAgent.
 
-            **User Input:** "I want to create tasks"
-
-            **Step 1 Response:**
-            - Call `GetGoalDescription()`
-            {
-                "content": "Which goal would you like to create a task for?",
-                "tags": ["CONFIRM_TAG"],
-                "readyToHandoff": false,
-                "currentStep": 2,
-                "data": { "options": ["Learn Spanish", "Run a marathon", "Read 50 books"] }
-            }
-
-            **User Response:** "Learn Spanish"
-
-            **Step 2 Response:**
-            - Call `getGoalProgress("Learn Spanish")` and `getGoalMilestone("Learn Spanish")`
-            {
-                "content": "Here are your milestones for Learn Spanish: Complete beginner course - Dec 15, Practice conversations - Jan 30, Take intermediate test - Mar 15. Select one to generate tasks.",
-                "tags": ["CONFIRM_TAG"],
-                "readyToHandoff": false,
-                "currentStep": 3,
-                "data": { "options": ["Complete beginner course - Dec 15", "Practice conversations - Jan 30", "Take intermediate test - Mar 15"] }
-            }
-
-            **User Response:** "Practice conversations - Jan 30"
-
-            **Step 3 Response:**
-            - Optionally call `getMilestoneTasks()` for context
-            - Plan a repeating task and hand off to TaskCreatorAgent:
+            c. Expected Output:
             {
                 "content": "I've planned a repeating task for your 'Practice conversations - Jan 30' milestone. Let me create the task card for you.",
                 "tags": [],
@@ -145,6 +148,8 @@ public class TaskPlannerPrompt extends BasePrompt {
                     "milestone": false
                 }
             }
+
+            <SECTION>
 
             ## Output Format
             Always present responses for user-facing steps as:
