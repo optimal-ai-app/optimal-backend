@@ -253,8 +253,10 @@ public class BaseSupervisor implements SupervisorInterface {
                     // List<Message> summary = contextAgent.run(fullContent);
                     // System.out.println("\nSummary: " + summary.get(0).getContent());
                     agentContexts.put(savedName, finalMessage);
-                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                            parsedResponse.content, tokens);
+                    if (chatService != null) {
+                        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                                parsedResponse.content, tokens);
+                    }
                     return executeWithHandoff(finalMessage);
                 }
                 System.out.println("Executing Normal");
@@ -265,8 +267,10 @@ public class BaseSupervisor implements SupervisorInterface {
             if (parsedResponse.currentStep > 0) {
                 agent.updateFlowStep(parsedResponse.currentStep);
             }
-            chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content,
-                    tokens);
+            if (chatService != null) {
+                chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(), parsedResponse.content,
+                        tokens);
+            }
             return parsedResponse;
         } catch (Exception e) {
             this.handoffAgent = null;
@@ -317,8 +321,10 @@ public class BaseSupervisor implements SupervisorInterface {
                 if (!agentParsedResponse.readyToHandoff && agentParsedResponse.content != null &&
                         !agentParsedResponse.content.trim().isEmpty()) {
                     handoffAgent = agentName;
-                    chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                            agentParsedResponse.content, tokens);
+                    if (chatService != null) {
+                        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                                agentParsedResponse.content, tokens);
+                    }
                     return agentParsedResponse;
                 }
             } else {
@@ -329,8 +335,10 @@ public class BaseSupervisor implements SupervisorInterface {
         if (iterations >= maxIterations) {
             throw new IllegalStateException("Exceeded max iterations; possible cycle.");
         }
-        chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
-                extractFinalResponse(this.agentOutputs.get(this.lastAgent)), tokens);
+        if (chatService != null) {
+            chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
+                    extractFinalResponse(this.agentOutputs.get(this.lastAgent)), tokens);
+        }
         return parseAgentResponse(extractFinalResponse(this.agentOutputs.get(this.lastAgent)));
     }
 
@@ -457,6 +465,24 @@ public class BaseSupervisor implements SupervisorInterface {
     // Public method to get an agent by name
     public BaseAgent getAgent(String name) {
         return agents.get(name);
+    }
+
+    // Evaluation helper methods
+    public List<String> getSelectedAgentNames() {
+        List<String> agentNames = new ArrayList<>();
+        Queue<AgentNode> nodesCopy = new LinkedList<>(agentNodes);
+        while (!nodesCopy.isEmpty()) {
+            agentNames.add(nodesCopy.poll().getName());
+        }
+        return agentNames;
+    }
+
+    public String getLastExecutedAgent() {
+        return lastAgent;
+    }
+
+    public String getHandoffAgentName() {
+        return handoffAgent;
     }
 
     @Override

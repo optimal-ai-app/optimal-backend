@@ -1,0 +1,11 @@
+{
+  "csvFile" : null,
+  "averageDurationMs" : 9608,
+  "passed" : 4,
+  "failed" : 2,
+  "hitRate" : 66.66666666666666,
+  "benchmarkId" : "20251124-205917-d154cc42",
+  "timestamp" : "2025-11-24T20:59:17.126269",
+  "suiteName" : "Agent Workflow Evaluation Suite",
+  "totalTests" : 6
+}
