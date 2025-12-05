@@ -61,11 +61,9 @@ public class SupabaseAuthService {
                     }
                 })
                 .doOnError(error -> {
-                    if (error instanceof WebClientResponseException) {
-                        WebClientResponseException webClientException = (WebClientResponseException) error;
-                        System.err.println("Registration failed with status: " + webClientException.getStatusCode() +
-                                " and body: " + webClientException.getResponseBodyAsString());
-                    }
+                    WebClientResponseException webClientException = (WebClientResponseException) error;
+                    throw new RuntimeException(webClientException.getResponseBodyAsString());
+
                 });
     }
 
@@ -128,6 +126,7 @@ public class SupabaseAuthService {
                         WebClientResponseException webClientException = (WebClientResponseException) error;
                         System.err.println("Login failed with status: " + webClientException.getStatusCode() +
                                 " and body: " + webClientException.getResponseBodyAsString());
+                        throw new RuntimeException(webClientException.getResponseBodyAsString());
                     }
                 });
     }

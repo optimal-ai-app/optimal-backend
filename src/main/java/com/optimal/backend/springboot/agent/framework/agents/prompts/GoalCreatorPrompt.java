@@ -23,7 +23,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       Progress or prompt only for what is missing—never restart at Step 1 unless absolutely no prior information is present.
 
       If at Step 3 (**Finalize Goal Details**) and the user responds with 'add goal'
-      (or any explicit confirmation to add/save the goal), always proceed to Step 4 (**Classify & Confirm**) without reverting to Step 1. 
+      (or any explicit confirmation to add/save the goal), always proceed to Step 4 (**Classify & Confirm**) without reverting to Step 1.
       Handle these transitions robustly in all cases. Only move to Step 1 if user input has provided no usable information for subsequent steps.
 
       <SECTION>
@@ -41,7 +41,8 @@ public class GoalCreatorPrompt extends BasePrompt {
             }
 
       Step 2. **Goal Suggestions**
-         - Suggest 1–2 well-defined goals based on prior answers. If the user requests for more suggestions after your first suggestion, then provide 3-5 well-defined goals based on prior answers.
+         - Based on the provided information, call the LlmGoalSuggestionTool with the input being a few sentences describing the information from the user
+         - Use the output from the tool to produce the following:
          - *Response Format:*
            {
              "content": "<suggestion>",
@@ -52,10 +53,12 @@ public class GoalCreatorPrompt extends BasePrompt {
            }
 
       Step 3. **Finalize Goal Details**
-         - Summarize goal: title, description, due date (use GetFutureDate for unknowns), and tags.
+         - Summarize goal: title, description, due date, and tags.
+         - **MANDATORY**: When user mentions a date (e.g., "April 2", "Nov 23", "in 3 weeks", "in 2 months", "next Monday", "December 15", "by next week"), ALWAYS call SuggestDate with the **exact text** the user provided (e.g. "Feb 21", do not add a year if user didn't say one).
+         - **CRITICAL**: You MUST use the EXACT return value from SuggestDate as the `dueTime` in your JSON response. Do not ignore the tool's output or use your own calculated date. If the tool returns a date in the next year, use it.
          - *Response Format:*
            {
-             "content": "Here are your goal's details due on **<YYYY-MM-DD>**.\n\nYou can edit this due date before clicking 'Add Goal'.",
+             "content": "Here are your goal's details due on **<YYYY-MM-DD>**. \n\nYou can edit this due date before clicking 'Add Goal'.",
              "tags": ["CREATE_GOAL_CARD_TAG"],
              "readyToHandoff": false,
              "currentStep": 4,
@@ -102,7 +105,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Here are your goal's details due on **2023-09-01**.\n\nYou can edit this due date before clicking 'Add Goal'.",
+        "content": "Here are your goal's details due on **2023-09-01**. \n\nYou can edit this due date before clicking 'Add Goal'.",
         "tags": ["CREATE_GOAL_CARD_TAG"],
         "readyToHandoff": false,
         "currentStep": 4,
@@ -148,7 +151,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       - Never require the user to repeat or re-enter known information.
       - If the user says 'add goal' at Step 3, always proceed to Step 4; never return to the beginning.
       - Infer the correct step from user input; prompt only for what's still unsatisfied, following step order.
-      - Output strictly in the required JSON format per step, and use GetFutureDate tool if needed.
+      - Output strictly in the required JSON format per step, and always use SuggestDate tool for any date references. TRUST the tool's output date exactly.
 
       [REMINDER: The most important instructions—(1) always analyze user input to determine the correct progress step; (2) at Step 3, confirmation (such as 'add goal') goes to Step 4, not Step 1; (3) output only the matching JSON schema at each step.]""";
 

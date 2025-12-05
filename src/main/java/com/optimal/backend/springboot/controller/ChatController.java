@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.annotation.PreDestroy;
 
 import com.optimal.backend.springboot.agent.framework.agents.TaskCreatorAgent;
+import com.optimal.backend.springboot.agent.framework.agents.MilestoneTaskCreatorAgent;
 import com.optimal.backend.springboot.agent.framework.agents.MilestonePlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.TaskPlannerAgent;
 import com.optimal.backend.springboot.agent.framework.agents.GoalCreatorAgent;
@@ -32,6 +33,8 @@ import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
 import com.optimal.backend.springboot.service.ChatService;
+import com.optimal.backend.springboot.security.annotation.CurrentUser;
+import com.optimal.backend.springboot.security.model.TokenUserContext;
 
 @RestController
 @RequestMapping("/chat")
@@ -134,7 +137,7 @@ public class ChatController {
                 totalSupervisorsEvicted += removedCount;
             }
             lastCleanupTime = LocalDateTime.now();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.err.println("[SUPERVISOR-GC] Error during cleanup: " + e.getMessage());
             e.printStackTrace();
         }
@@ -168,14 +171,15 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> request) {
+    public ResponseEntity<Map<String, Object>> chat(@RequestBody Map<String, Object> request,
+            @CurrentUser TokenUserContext userContext) {
         try {
             // Extract request parameters
             String date = (String) request.get("date"); // User's local date (yyyy-MM-dd)
             String timestamp = (String) request.get("timestamp"); // Full UTC timestamp for logging
             String chatId = (String) request.get("chatId");
 
-            String userId = (String) request.get("userId");
+            String userId = userContext.getUserId().toString();
             long messagesSentToday = chatService.countUsersMessages(userId);
             if (messagesSentToday > MESSAGE_MAXIMUM) {
                 Map<String, Object> resp = new HashMap();
@@ -183,7 +187,7 @@ public class ChatController {
                 return ResponseEntity.ok(resp);
             }
 
-            if (chatId == null || chatId.trim().isEmpty() || userId == null || userId.trim().isEmpty()) {
+            if (chatId == null || chatId.trim().isEmpty()) {
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("content", "chatId and userId are required");
                 errorResponse.put("tags", new ArrayList<>());
@@ -222,6 +226,8 @@ public class ChatController {
 
                 TaskPlannerAgent taskPlannerAgent = applicationContext.getBean(TaskPlannerAgent.class);
                 TaskCreatorAgent taskCreatorAgent = applicationContext.getBean(TaskCreatorAgent.class);
+                MilestoneTaskCreatorAgent milestoneTaskCreatorAgent = applicationContext
+                        .getBean(MilestoneTaskCreatorAgent.class);
                 GoalCreatorAgent goalCreatorAgent = applicationContext.getBean(GoalCreatorAgent.class);
                 MilestonePlannerAgent milestonePlannerAgent = applicationContext.getBean(MilestonePlannerAgent.class);
                 // HabitAgent habitAgent = new HabitAgent(llmClient);
@@ -229,6 +235,7 @@ public class ChatController {
                 BaseSupervisor newSupervisor = new BaseSupervisor(llmClient);
                 newSupervisor.addAgent(taskPlannerAgent.getName(), taskPlannerAgent);
                 newSupervisor.addAgent(taskCreatorAgent.getName(), taskCreatorAgent);
+                newSupervisor.addAgent(milestoneTaskCreatorAgent.getName(), milestoneTaskCreatorAgent);
                 newSupervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
                 newSupervisor.addAgent(milestonePlannerAgent.getName(), milestonePlannerAgent);
                 // newSupervisor.addAgent(habitAgent.getName(), habitAgent);

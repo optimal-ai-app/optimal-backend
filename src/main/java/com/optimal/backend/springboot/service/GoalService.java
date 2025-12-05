@@ -40,12 +40,11 @@ public class GoalService {
         return goalRepository.findById(goalId);
     }
 
-    public Goal createGoal(CreateGoalRequest request) {
+    public Goal createGoal(CreateGoalRequest request, UUID userId) {
         System.out.println("=== GoalService.createGoal ===");
-        System.out.println("userId in request = " + request.getUserId());
 
         Goal goal = new Goal();
-        goal.setUserId(request.getUserId());
+        goal.setUserId(userId);
         goal.setTitle(request.getTitle());
         goal.setDescription(request.getDescription());
         goal.setDueDate(request.getDueDate());

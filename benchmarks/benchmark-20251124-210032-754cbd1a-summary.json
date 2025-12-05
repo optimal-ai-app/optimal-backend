@@ -1,0 +1,12 @@
+{
+  "csvFile" : "benchmarks/benchmark-20251124-210032-754cbd1a.csv",
+  "jsonFile" : "benchmarks/benchmark-20251124-210032-754cbd1a-summary.json",
+  "averageDurationMs" : 7752,
+  "passed" : 4,
+  "failed" : 2,
+  "hitRate" : 66.66666666666666,
+  "benchmarkId" : "20251124-210032-754cbd1a",
+  "timestamp" : "2025-11-24T21:00:32.577053",
+  "suiteName" : "Agent Workflow Evaluation Suite",
+  "totalTests" : 6
+}

@@ -45,8 +45,13 @@ public class Message {
      */
     public Message(AiMessage aiMessage) {
         this.role = "assistant";
-        this.message = aiMessage.text();
-        this.content = aiMessage.text();
+        String text = aiMessage.text();
+        // Handle null text (e.g., when message only contains tool calls)
+        if (text == null) {
+            text = "";
+        }
+        this.message = text;
+        this.content = text;
         this.originalLangChain4jMessage = aiMessage; // Preserve original for tool calls
     }
 

@@ -5,8 +5,10 @@ import java.util.UUID;
 
 /**
  * ThreadLocal storage for user context information.
- * Ensures all tools within a request thread have access to the correct userId, chatID, and user's local date.
- * and user's local date without needing to extract it from conversation context.
+ * Ensures all tools within a request thread have access to the correct userId,
+ * chatID, and user's local date.
+ * and user's local date without needing to extract it from conversation
+ * context.
  */
 public class UserContext {
 
@@ -109,7 +111,7 @@ public class UserContext {
         try {
             System.out.println("Successfully parsed user's local date");
             return LocalDate.parse(dateStr);
-            
+
         } catch (Exception e) {
             System.err.println("Error parsing user date '" + dateStr + "': " + e.getMessage());
             return LocalDate.now();
@@ -122,6 +124,7 @@ public class UserContext {
      */
     public static void clear() {
         currentUserId.remove();
+        currentChatId.remove();
         currentUserDate.remove();
     }
 

@@ -58,11 +58,7 @@ public class MilestoneQueueTool {
     
     @Tool("Returns the count of remaining milestones in the queue. Returns '0' when all milestones have been created.")
     public String getRemainingCount() {
-        int count = remainingMilestones.size();
-        if (count == 0) {
-            return "0 - all milestones have been created";
-        }
-        return String.valueOf(count);
+        return String.valueOf(remainingMilestones.size());
     }
     
     /**

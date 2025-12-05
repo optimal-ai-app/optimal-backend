@@ -83,15 +83,26 @@ public class LlmClient {
     /**
      * Generate response without tools using direct ChatModel
      */
-    public LlmResponse generate(String systemPrompt, List<Message> messages) {
+    public LlmResponse generate(String systemPrompt, List<Message> messages, String modelType) {
         try {
             List<ChatMessage> allMessages = new ArrayList<>();
             if (systemPrompt != null && !systemPrompt.isEmpty()) {
                 allMessages.add(SystemMessage.from(systemPrompt));
             }
             allMessages.addAll(messages.stream().map(Message::toLangChain4jMessage).collect(Collectors.toList()));
-            ChatModel lightModel = applicationContext.getBean(LangChain4jConfig.class)
-                    .lightChatLanguageModel();
+            ChatModel lightModel;
+
+            if (modelType == "creative") {
+                lightModel = applicationContext.getBean(LangChain4jConfig.class)
+                        .creativeChatModel();
+            } else if (modelType == "smart") {
+                lightModel = applicationContext.getBean(LangChain4jConfig.class)
+                        .chatLanguageModel();
+            } else {
+                lightModel = applicationContext.getBean(LangChain4jConfig.class)
+                        .lightChatLanguageModel();
+            }
+
             ChatResponse response = lightModel.chat(allMessages);
             AiMessage aiMessage = response.aiMessage();
             return new LlmResponse(aiMessage, response.tokenUsage().totalTokenCount());
@@ -178,8 +189,8 @@ public class LlmClient {
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
-            return new LlmResponse(response.content().text().toString(),
-                    response.tokenUsage().totalTokenCount());
+            // Use constructor that properly handles null text (e.g., when message only has tool calls)
+            return new LlmResponse(response.content(), response.tokenUsage().totalTokenCount());
 
         } catch (InputGuardrailException e) {
             System.err.println("\nError generating response with tools: " + e.getMessage());
