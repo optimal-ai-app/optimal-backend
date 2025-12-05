@@ -19,6 +19,9 @@ public class LlmMilestoneSuggestionTool {
     @Autowired
     private LlmClient llmClient;
 
+    @Autowired
+    private GetFutureDateTool getFutureDateTool;
+
     private static final String MILESTONE_SUGGESTOR_PROMPT = """
             You are a milestone-planning assistant that helps users break down their goals into actionable milestones.
 
@@ -30,19 +33,19 @@ public class LlmMilestoneSuggestionTool {
             - Include realistic due dates in YYYY-MM-DD format
 
             **CRITICAL CONSTRAINTS:**
-            - ALL milestone due dates MUST be on or before the goal's due date
+            - User input will provide "Current Date" and "Goal Due Date".
+            - ALL milestone due dates MUST be strictly between Current Date and Goal Due Date.
+            - NEVER suggest dates in the past relative to the Current Date.
             - If no milestones exist for the goal: propose 3-5 natural progression milestones with realistic due dates that are evenly spaced between the current date and the goal's due date
             - If milestones already exist: suggest 1-3 fitting next steps that build on existing progress, ensuring dates are before the goal's due date
-
+            
             Format your response as:
 
-            1. [First milestone with brief explanation] by YYYY-MM-DD
+            1. [First milestone] by YYYY-MM-DD
 
-            2. [Second milestone with brief explanation] by YYYY-MM-DD
+            2. [Second milestone] by YYYY-MM-DD
 
-            3. [Third milestone with brief explanation] by YYYY-MM-DD
-
-            (Continue with 4-5 milestones if appropriate, or fewer if suggesting next steps)
+            (Continue with 4-5 milestones if appropriate)
 
             Keep milestones practical and inspiring. Focus on what will genuinely help the user make progress toward their goal.
             Avoid planning, organizing, research, meta, or duplicate milestone types.
@@ -52,8 +55,13 @@ public class LlmMilestoneSuggestionTool {
             + "up with useful and helpful milestones based on given goal information")
     public String MilestoneSuggestionTool(@P("DescriptiveInput") String descriptiveInput) {
         System.out.println("\nGETTING MILESTONE SUGGESTION\n");
+
+        // Force inject the current date to prevent hallucination
+        String currentDate = getFutureDateTool.GetFutureDate(0);
+        String enhancedInput = "Context - Current Date: " + currentDate + "\n\nUser Request: " + descriptiveInput;
+
         List<Message> contexts = new ArrayList<>();
-        contexts.add(new Message("user", descriptiveInput));
+        contexts.add(new Message("user", enhancedInput));
         LlmResponse response = this.llmClient.generate(MILESTONE_SUGGESTOR_PROMPT, contexts, "creative");
         System.out.println(response.getContent() + "\n\n");
         return response.getContent();

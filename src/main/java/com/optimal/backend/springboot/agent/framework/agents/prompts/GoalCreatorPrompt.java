@@ -54,7 +54,8 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       Step 3. **Finalize Goal Details**
          - Summarize goal: title, description, due date, and tags.
-         - **MANDATORY**: When user mentions a date (e.g., "April 2", "Nov 23", "in 3 weeks", "in 2 months", "next Monday", "December 15", "by next week"), ALWAYS call SuggestDate with the exact date reference from the user's input to get the correct future date in YYYY-MM-DD format. Never output a date without calling this tool first. The tool handles all date formats intelligently and ensures the date is in the future.
+         - **MANDATORY**: When user mentions a date (e.g., "April 2", "Nov 23", "in 3 weeks", "in 2 months", "next Monday", "December 15", "by next week"), ALWAYS call SuggestDate with the **exact text** the user provided (e.g. "Feb 21", do not add a year if user didn't say one).
+         - **CRITICAL**: You MUST use the EXACT return value from SuggestDate as the `dueTime` in your JSON response. Do not ignore the tool's output or use your own calculated date. If the tool returns a date in the next year, use it.
          - *Response Format:*
            {
              "content": "Here are your goal's details due on **<YYYY-MM-DD>**. \n\nYou can edit this due date before clicking 'Add Goal'.",
@@ -150,7 +151,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       - Never require the user to repeat or re-enter known information.
       - If the user says 'add goal' at Step 3, always proceed to Step 4; never return to the beginning.
       - Infer the correct step from user input; prompt only for what's still unsatisfied, following step order.
-      - Output strictly in the required JSON format per step, and always use SuggestDate tool for any date references to ensure accurate date parsing.
+      - Output strictly in the required JSON format per step, and always use SuggestDate tool for any date references. TRUST the tool's output date exactly.
 
       [REMINDER: The most important instructions—(1) always analyze user input to determine the correct progress step; (2) at Step 3, confirmation (such as 'add goal') goes to Step 4, not Step 1; (3) output only the matching JSON schema at each step.]""";
 
