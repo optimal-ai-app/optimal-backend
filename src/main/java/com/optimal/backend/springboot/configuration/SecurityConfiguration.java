@@ -1,6 +1,10 @@
 package com.optimal.backend.springboot.configuration;
 
 import com.optimal.backend.springboot.security.filter.JwtUserContextFilter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,16 +17,19 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
 /**
- * Security configuration for Supabase authentication
+ * Security configuration for Supabase authentication + Cloudflare Protection
  */
 @Configuration
 @EnableWebSecurity
@@ -31,11 +38,20 @@ public class SecurityConfiguration {
 	@Value("${supabase.jwtSecret}")
 	private String jwtSecret;
 
+	// 1. Load the secret token from your properties
+	@Value("${cloudflare.secretToken}")
+	private String cloudflareSecretToken;
+
 	@Bean
 	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 		return http
 				.csrf(csrf -> csrf.disable())
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+				// 2. Add the Cloudflare Filter HERE (Before standard auth checks)
+				.addFilterBefore(new CloudflareSecretFilter(cloudflareSecretToken),
+						UsernamePasswordAuthenticationFilter.class)
+
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 					.authorizeHttpRequests(auth -> auth
 							// Public endpoints - completely bypass security
@@ -46,11 +62,11 @@ public class SecurityConfiguration {
 						.requestMatchers("/api/auth/checkAuth").authenticated()
 						.requestMatchers("/actuator/**").authenticated()
 						.requestMatchers("/chat/**").authenticated()
-						.requestMatchers("/api/**").authenticated()  
-						.anyRequest().denyAll()
-						)
+						.requestMatchers("/api/**").authenticated()
+						.anyRequest().denyAll())
 				.oauth2ResourceServer(oauth2 -> oauth2
 						.jwt(Customizer.withDefaults())
+						// (Kept your custom resolver logic exactly as is)
 						.bearerTokenResolver(request -> {
 							String requestURI = request.getRequestURI();
 							if (requestURI.equals("/api/auth/register") || 
@@ -71,12 +87,36 @@ public class SecurityConfiguration {
 				.build();
 	}
 
+	// 3. Define the simple inner class for the Filter
+	public static class CloudflareSecretFilter extends OncePerRequestFilter {
+		private final String expectedSecret;
+
+		public CloudflareSecretFilter(String expectedSecret) {
+			this.expectedSecret = expectedSecret;
+		}
+
+		@Override
+		protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+				FilterChain filterChain)
+				throws ServletException, IOException {
+
+			String incomingSecret = request.getHeader("X-Optimal-Secret");
+
+			// If secret doesn't match, block immediately with 403
+			if (expectedSecret != null && !expectedSecret.equals(incomingSecret)) {
+				response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied: Incorrect Origin");
+				return;
+			}
+
+			filterChain.doFilter(request, response);
+		}
+	}
+
 	@Bean
 	public JwtDecoder jwtDecoder() {
 		SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
 		NimbusJwtDecoder jwtDecoder = NimbusJwtDecoder.withSecretKey(secretKey).build();
 
-		// Configure validators to include audience validation for Supabase
 		OAuth2TokenValidator<Jwt> audienceValidator = new JwtClaimValidator<List<String>>(
 				"aud", aud -> aud != null && aud.contains("authenticated"));
 		OAuth2TokenValidator<Jwt> withIssuer = JwtValidators
@@ -90,8 +130,10 @@ public class SecurityConfiguration {
 	@Bean
 	public CorsConfigurationSource corsConfigurationSource() {
 		CorsConfiguration configuration = new CorsConfiguration();
-		configuration.setAllowedOrigins(Arrays.asList("http://localhost:8081", "http://127.0.0.1:8081"));
-		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE"));
+		// NOTE: Update this list to include your production frontend domain!
+		configuration.setAllowedOrigins(
+				Arrays.asList("http://localhost:8081", "http://127.0.0.1:8081", "https://useoptimal.app"));
+		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // Added OPTIONS for
 		configuration.setAllowedHeaders(Arrays.asList("*"));
 		configuration.setAllowCredentials(true);
 
