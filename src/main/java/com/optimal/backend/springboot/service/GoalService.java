@@ -41,7 +41,6 @@ public class GoalService {
     }
 
     public Goal createGoal(CreateGoalRequest request, UUID userId) {
-        System.out.println("=== GoalService.createGoal ===");
 
         Goal goal = new Goal();
         goal.setUserId(userId);

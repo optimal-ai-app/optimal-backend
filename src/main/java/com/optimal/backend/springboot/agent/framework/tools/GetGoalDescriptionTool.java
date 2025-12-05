@@ -24,7 +24,6 @@ public class GetGoalDescriptionTool {
     public String GetGoalDescription() {
         try {
             UUID userId = UserContext.requireUserId();
-            System.out.println("=== GoalDescriptionTool: Using userId from context: " + userId);
 
             List<Goal> goals = goalService.getGoalsByUser(userId);
 
@@ -55,8 +54,5 @@ public class GetGoalDescriptionTool {
 
     @PostConstruct
     protected void initialize() {
-        if (goalService != null) {
-            System.out.println("\nGoal Service Initialized\n");
-        }
     }
 }

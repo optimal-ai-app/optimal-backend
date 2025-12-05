@@ -18,11 +18,6 @@ public class GetFutureDateTool {
         LocalDate userDate = UserContext.getUserLocalDate();
         LocalDate futureDate = userDate.plusDays(days);
 
-        System.out.println("=== GetFutureDateTool Debug:");
-        System.out.println("User's current date: " + userDate);
-        System.out.println("Days to add: " + days);
-        System.out.println("Calculated future date: " + futureDate);
-
         return futureDate.toString(); // Returns yyyy-MM-dd format
     }
 }

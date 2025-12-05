@@ -59,10 +59,8 @@ public class ChatService {
     public void addUserMessage(UUID conversationId, UUID userId, String content) {
         try {
             // check if the conversation exists
-            System.out.println("conversationId: " + conversationId);
             Optional<Conversation> convo = conversationRepository.findById(conversationId);
             if (!convo.isPresent()) {
-                System.out.println("conversation does not exist, creating new one");
                 Conversation newConvo = new Conversation();
                 newConvo.setId(conversationId);
                 newConvo.setUserId(userId);
@@ -70,7 +68,6 @@ public class ChatService {
                 newConvo.setTokens(0);
                 convo = Optional.of(conversationRepository.save(newConvo));
             }
-            System.out.println("addming message");
             Message msg = new Message();
             msg.setConversationId(convo.get().getId());
             msg.setRole("user");

@@ -41,7 +41,6 @@ public class LlmGoalSuggestionTool {
     @Tool("Utilizes a creative ai agent that can come"
             + "up with useful and helpful goals based on given information")
     public String GoalSuggestionTool(@P("DescriptiveInput") String descriptiveInput) {
-        System.out.println("\nGETTING GOAL SUGGESTION\n");
         List<Message> contexts = new ArrayList<>();
         contexts.add(new Message("user", descriptiveInput));
         LlmResponse response = this.llmClient.generate(GOAL_SUGGESTOR_PROMPT, contexts, "creative");

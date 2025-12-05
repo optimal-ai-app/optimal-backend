@@ -25,8 +25,6 @@ public class GetTasksforGoalTool {
         try {
             // Get userId from UserContext instead of parameters
             UUID userId = UserContext.requireUserId();
-            System.out.println("=== GetTasksforGoalTool: Using userId from context: " + userId);
-            System.out.println("=== GetTasksforGoalTool: Received goalTitle string: '" + goalTitle + "'");
 
             List<Task> tasks = taskService.getTasksByUserIdAndGoalTitle(userId, goalTitle);
 

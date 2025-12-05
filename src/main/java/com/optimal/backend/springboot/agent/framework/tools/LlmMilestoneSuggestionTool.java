@@ -38,7 +38,7 @@ public class LlmMilestoneSuggestionTool {
             - NEVER suggest dates in the past relative to the Current Date.
             - If no milestones exist for the goal: propose 3-5 natural progression milestones with realistic due dates that are evenly spaced between the current date and the goal's due date
             - If milestones already exist: suggest 1-3 fitting next steps that build on existing progress, ensuring dates are before the goal's due date
-            
+
             Format your response as:
 
             1. [First milestone] by YYYY-MM-DD
@@ -54,7 +54,6 @@ public class LlmMilestoneSuggestionTool {
     @Tool("Utilizes a creative ai agent that can come"
             + "up with useful and helpful milestones based on given goal information")
     public String MilestoneSuggestionTool(@P("DescriptiveInput") String descriptiveInput) {
-        System.out.println("\nGETTING MILESTONE SUGGESTION\n");
 
         // Force inject the current date to prevent hallucination
         String currentDate = getFutureDateTool.GetFutureDate(0);
@@ -67,4 +66,3 @@ public class LlmMilestoneSuggestionTool {
         return response.getContent();
     }
 }
-

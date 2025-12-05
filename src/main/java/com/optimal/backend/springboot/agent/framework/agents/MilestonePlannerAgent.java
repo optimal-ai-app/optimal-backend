@@ -60,7 +60,5 @@ public class MilestonePlannerAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("MilestonePlannerAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

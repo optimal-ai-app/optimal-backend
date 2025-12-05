@@ -20,7 +20,8 @@ public class GoalCreatorAgent extends BaseAgent {
 
     @Autowired
     public GoalCreatorAgent(
-            LlmClient llmClient, LlmDateSuggestionTool llmDateSuggestionTool, LlmGoalSuggestionTool llmGoalSuggestionTool) {
+            LlmClient llmClient, LlmDateSuggestionTool llmDateSuggestionTool,
+            LlmGoalSuggestionTool llmGoalSuggestionTool) {
         super("GoalCreatorAgent",
                 "Specializes exclusively in helping users define and articulate their high-level goals and aspirations. Does not handle task planning or creation.",
                 GoalCreatorPrompt.getDefaultPrompt(), llmClient);
@@ -33,7 +34,5 @@ public class GoalCreatorAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("GoalCreatorAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

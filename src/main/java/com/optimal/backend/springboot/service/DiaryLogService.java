@@ -1,4 +1,5 @@
 package com.optimal.backend.springboot.service;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class DiaryLogService {
     private TagRepository tagRepository;
     @Autowired
     private TaskService taskService;
+
     public DiaryLog createDiaryLog(UUID userId, String transcript) {
         long startTime = System.nanoTime();
         // Create DiaryLog entity
@@ -51,22 +53,23 @@ public class DiaryLogService {
         String agentResponse = response.get(response.size() - 1).getContent();
         DiaryJsonResponse diaryJsonResponse = extractDiaryJsonResponse(agentResponse);
         diaryLog.setSummary(diaryJsonResponse.summary);
-        
+
         try {
             DiaryLog savedDiaryLog = diaryLogRepo.save(diaryLog);
-            
-            //update tags
-            tagRepository.saveAll(diaryJsonResponse.tags.stream().map(tag -> new Tag(tag, savedDiaryLog.getId())).collect(Collectors.toList()));
+
+            // update tags
+            tagRepository.saveAll(diaryJsonResponse.tags.stream().map(tag -> new Tag(tag, savedDiaryLog.getId()))
+                    .collect(Collectors.toList()));
             taskService.updateTasks(diaryJsonResponse.tasks);
             diaryLog = savedDiaryLog;
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new RuntimeException("Failed to save diary log due to concurrent modification. Please try again.", e);
         }
 
-        //update tasks and goals
-        System.out.println("total time: " + DateUtils.getExecutionTimeInSeconds(startTime));
+        // update tasks and goals
         return diaryLog;
     }
+
     private DiaryJsonResponse extractDiaryJsonResponse(String agentResponse) {
         try {
             DiaryJsonResponse response = new DiaryJsonResponse();
@@ -88,16 +91,17 @@ public class DiaryLogService {
                     response.tags.add(tag.asText());
                 }
             }
-            
+
             return response;
         } catch (Exception e) {
-           return null;
+            return null;
         }
     }
 
     public String getDiaryLogsForWeek(UUID userId) {
         ToFromDate toFromDate = DateUtils.getDates();
-        List<DiaryLog> diaryLogs = diaryLogRepo.findByUserAndDateBetween(userId, toFromDate.startDate, toFromDate.endDate);
+        List<DiaryLog> diaryLogs = diaryLogRepo.findByUserAndDateBetween(userId, toFromDate.startDate,
+                toFromDate.endDate);
         StringBuilder diaryLogsString = new StringBuilder();
         for (DiaryLog diaryLog : diaryLogs) {
             diaryLogsString.append(diaryLog.getSummary());
@@ -116,13 +120,10 @@ public class DiaryLogService {
         return tagsString.toString();
     }
 
-    
-
     private class DiaryJsonResponse {
         public String summary;
         public List<String> tasks;
         public List<String> tags;
     }
 
-    
 }

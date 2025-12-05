@@ -46,7 +46,5 @@ public class DiaryLogAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("DiaryLogAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

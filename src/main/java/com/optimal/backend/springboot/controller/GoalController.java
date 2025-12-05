@@ -39,9 +39,6 @@ public class GoalController {
     public ResponseEntity<Goal> createGoal(@RequestBody CreateGoalRequest request,
             @CurrentUser TokenUserContext userContext) {
         try {
-            System.out.println("=== /api/goals/create received ===");
-            System.out.println("request.userId = " + userContext.getUserId());
-            System.out.println("title           = " + request.getTitle());
             Goal createdGoal = goalService.createGoal(request, userContext.getUserId());
             return ResponseEntity.ok(createdGoal);
         } catch (Exception e) {

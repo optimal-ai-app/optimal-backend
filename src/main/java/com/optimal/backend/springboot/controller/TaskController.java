@@ -33,7 +33,6 @@ public class TaskController {
 
     @GetMapping("/get")
     public ResponseEntity<List<Task>> getTasksByUser(@CurrentUser TokenUserContext userContext) {
-        System.out.println("userContext: " + userContext.toString());
         return ResponseEntity.ok(taskService.getTasksByUserId(userContext.getUserId()));
     }
 
@@ -50,13 +49,6 @@ public class TaskController {
         task.setGoalId(request.getGoalId());
         task.setMilestone(request.getMilestone());
 
-        System.out.println("--------------------------------");
-        System.out.println("task: " + task.toString());
-        System.out.println("request: " + request.getRepeatEndDate());
-        System.out.println("request repeat days: " + String.join(", ",
-                request.getRepeatDays() != null ? request.getRepeatDays().toArray(new String[0]) : new String[] {}));
-        System.out.println("--------------------------------");
-
         return ResponseEntity.ok(
                 taskService.createTask(task, request.getRepeatEndDate(), request.getRepeatDays()));
     }
@@ -64,9 +56,6 @@ public class TaskController {
     @PostMapping("/update")
     public ResponseEntity<Task> updateTask(@RequestBody UpdateTaskRequest request,
             @CurrentUser TokenUserContext userContext) {
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode js = mapper.valueToTree(request);
-        System.out.println(js.toPrettyString());
         return ResponseEntity.ok(taskService.updateTask(request));
     }
 

@@ -60,8 +60,5 @@ public class TaskPlannerAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-
-        System.out.println("TaskPlannerAgent initialized with CHOOLSE: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

@@ -105,11 +105,9 @@ public class UserContext {
     public static LocalDate getUserLocalDate() {
         String dateStr = currentUserDate.get();
         if (dateStr == null || dateStr.trim().isEmpty()) {
-            System.out.println("Warning: User date not set in context, falling back to server date");
             return LocalDate.now();
         }
         try {
-            System.out.println("Successfully parsed user's local date");
             return LocalDate.parse(dateStr);
 
         } catch (Exception e) {

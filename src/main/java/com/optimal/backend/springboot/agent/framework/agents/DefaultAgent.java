@@ -23,7 +23,5 @@ public class DefaultAgent extends BaseAgent {
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("ContextAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }

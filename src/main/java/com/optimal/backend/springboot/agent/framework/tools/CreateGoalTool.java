@@ -33,24 +33,14 @@ public class CreateGoalTool {
             @P("dueTime") String dueTime,
             @P("tags") String[] tags) {
         try {
-            // Get userId from UserContext instead of parameters
-            UUID userId = UserContext.requireUserId();
-            System.out.println("=== Using userId from UserContext: " + userId);
-
             // Truncate description to 300 characters if necessary
             if (goalDescription != null && goalDescription.length() > 300) {
                 goalDescription = goalDescription.substring(0, 300);
             }
 
-            System.out.println("=== Processing Parameters:");
-            System.out.println("userId from context: " + userId);
-            System.out.println("goalTitle: " + goalTitle);
-            System.out.println("goalDescription: '" + goalDescription + "'");
-
             Timestamp dueDateTimestamp = null;
             if (dueTime != null && !dueTime.trim().isEmpty()) {
                 dueDateTimestamp = parseGoalDueDate(dueTime.trim());
-                System.out.println("Parsed due date: " + dueDateTimestamp + " from input: " + dueTime);
 
             }
             // Validate required fields
@@ -71,15 +61,9 @@ public class CreateGoalTool {
 
             Goal created = goalService.createGoal(goalRequest, UserContext.requireUserId());
             if (created != null) {
-                System.out.println("=== Goal Created Successfully:");
                 String message = "Goal '" + created.getTitle() + "' created successfully with due date: "
                         + dueDateTimestamp.toString();
 
-                System.out.println("=== Goal Object Created:");
-                System.out.println("Title: '" + created.getTitle() + "'");
-                System.out.println("Description: '" + created.getDescription() + "'");
-                System.out.println("UserId: " + created.getUserId());
-                System.out.println("Due Date: " + created.getDueDate());
                 return message;
             } else {
                 return "Goal creation failed.";
@@ -145,7 +129,6 @@ public class CreateGoalTool {
             LocalDateTime endOfDay = parsedDate.atTime(23, 59, 59);
             Timestamp timestamp = Timestamp.valueOf(endOfDay);
 
-            System.out.println("=== parseGoalDueDate Result: " + timestamp);
             return timestamp;
 
         } catch (DateTimeParseException e) {

@@ -198,16 +198,12 @@ public class BaseSupervisor implements SupervisorInterface {
         }
         // Normal supervisor execution - initialize state
         this.agentOutputs.put("user", userInput);
-        System.out.println("Supervisor determining which agents to use...");
         interpret(userInput);
         if (this.agentNodes.isEmpty()) {
             System.err.println("Failed to interpret user request - no agents selected");
             return new SupervisorResponse("I'm not sure how to help with that request. Please try rephrasing.",
                     new ArrayList<>(), true, new HashMap<>(), false, -1);
         }
-        System.out.println("Supervisor selected " + this.agentNodes.size() + " agents:");
-        this.agentNodes.forEach(
-                node -> System.out.println("- " + node.getName() + ": " + node.getInstructions().get(0).getMessage()));
         return executeNormal();
     }
 
@@ -231,7 +227,6 @@ public class BaseSupervisor implements SupervisorInterface {
         BaseAgent agent = agents.get(handoffAgent);
         this.lastAgent = this.handoffAgent;
         if (agent == null) {
-            System.out.println("Handoffagent does not exist");
             this.handoffAgent = null;
             return executeNormal();
         }
@@ -240,8 +235,6 @@ public class BaseSupervisor implements SupervisorInterface {
             String finalResponse = extractFinalResponse(response);
             int tokens = response.get(response.size() - 1).getTokens();
             SupervisorResponse parsedResponse = parseAgentResponse(finalResponse);
-            System.out.println("Handoff = " + parsedResponse.readyToHandoff);
-            System.out.println("ReInterpret = " + parsedResponse.reInterpret);
             if (parsedResponse.readyToHandoff == true) {
                 String savedName = this.handoffAgent;
                 this.handoffAgent = null;
@@ -249,9 +242,7 @@ public class BaseSupervisor implements SupervisorInterface {
                 fullContent.addAll(response);
                 List<Message> finalMessage = List.of(response.get(response.size() - 1));
                 if (parsedResponse.reInterpret == true) {
-                    System.out.println("Executing Re-interpret");
                     // List<Message> summary = contextAgent.run(fullContent);
-                    // System.out.println("\nSummary: " + summary.get(0).getContent());
                     agentContexts.put(savedName, finalMessage);
                     if (chatService != null) {
                         chatService.addAgentMessage(UserContext.getChatId(), UserContext.getUserId(),
@@ -259,7 +250,6 @@ public class BaseSupervisor implements SupervisorInterface {
                     }
                     return executeWithHandoff(finalMessage);
                 }
-                System.out.println("Executing Normal");
                 // consider changing from finalmessage to context summary
                 saveAgentOutput(savedName, finalMessage);
                 return executeNormal();
@@ -528,15 +518,7 @@ public class BaseSupervisor implements SupervisorInterface {
         if (current.getDependencies().isEmpty() && this.agentOutputs.get("user") != null) {
             context.addAll(this.agentOutputs.get("user"));
         }
-        System.out.println("====== BUILDING AGENT CONTEXT ======");
-        for (Message m : context) {
-            try {
-                ObjectMapper mapper = new ObjectMapper();
-                System.out.println("\n" + mapper.writeValueAsString(m));
-            } catch (Exception e) {
-                System.out.println();
-            }
-        }
+
         try {
             int lastIndex = context.size() - 1;
             return context.get(lastIndex);

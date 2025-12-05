@@ -48,7 +48,6 @@ public class WeeklyLogService {
         String logs = "Weekly Log from " + toFromDate.startDate + " to " + toFromDate.endDate +
                 "\nDiary Logs:\n" + diaryLogs + "\nTags:\n" + tags + "\nTasks\n" + tasks;
         if (tasks.trim().isBlank() && tags.trim().isBlank() && diaryLogs.trim().isBlank()) {
-            System.out.println("WE CANNOT MAKE A LOG WITH THIS");
             weeklyLogResponse.setLog("Not enough data to make a log, please come back next week!");
             return weeklyLogResponse;
         }

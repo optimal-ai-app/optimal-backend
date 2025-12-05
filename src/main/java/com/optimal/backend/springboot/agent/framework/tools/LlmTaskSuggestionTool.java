@@ -48,7 +48,6 @@ public class LlmTaskSuggestionTool {
     @Tool("Utilizes a creative ai agent that can come"
             + "up with useful and helpful tasks based on given information")
     public String TaskSuggestionTool(@P("DescriptiveInput") String descriptiveInput) {
-        System.out.println("\nGETTING TASK SUGGESTION\n");
         List<Message> contexts = new ArrayList<>();
         contexts.add(new Message("user", descriptiveInput));
         LlmResponse response = this.llmClient.generate(TASK_SUGGESTOR_PROMPT, contexts, "creative");
@@ -56,4 +55,3 @@ public class LlmTaskSuggestionTool {
         return response.getContent();
     }
 }
-

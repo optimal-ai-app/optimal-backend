@@ -94,6 +94,7 @@ The evaluation system calculates:
 ### Console Output
 
 The evaluator prints:
+
 - Test execution progress
 - Pass/fail status for each test
 - Validation errors
@@ -102,6 +103,7 @@ The evaluator prints:
 ### CSV Export
 
 Results are exported to `evaluation-results.csv` with columns:
+
 - Test ID
 - Description
 - Passed (PASS/FAIL)
@@ -156,6 +158,7 @@ Add test cases to `src/main/resources/evaluation/test-cases.json`:
 ## Custom Validation
 
 The evaluator validates:
+
 - Agent team selection
 - Specific agent selection
 - Response tags
@@ -172,4 +175,3 @@ The evaluator validates:
 - Test execution uses fixed date (2024-01-15) for reproducibility
 - User context is cleared after each test
 - Results are exported to CSV for further analysis
-

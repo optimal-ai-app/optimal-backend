@@ -168,7 +168,6 @@ public class LlmClient {
                         .append("\n\nINSTRUCTION: " + promptSteps[instructionStep] +
                                 "\n\n");
                 chatMemory.add(SystemMessage.from(addedPrompt.toString()));
-                System.out.println("\n\nPROMPT: " + addedPrompt.toString());
             }
             OutputValidationGuard guard = applicationContext.getBean(OutputValidationGuard.class);
             List<OutputGuardrail> guardrails = new ArrayList<>();
@@ -189,7 +188,8 @@ public class LlmClient {
             // Convert response to LlmResponse
             // Note: AiServices handles tool execution internally, so we get the final
             // response
-            // Use constructor that properly handles null text (e.g., when message only has tool calls)
+            // Use constructor that properly handles null text (e.g., when message only has
+            // tool calls)
             return new LlmResponse(response.content(), response.tokenUsage().totalTokenCount());
 
         } catch (InputGuardrailException e) {

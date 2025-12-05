@@ -23,20 +23,18 @@ public class WeeklyLogAgent extends BaseAgent {
                 name,
                 description,
                 WeeklyLogAgentPrompt.getDefaultPrompt(),
-                                 new LlmClient(
-                         OpenAiChatModel.builder()
-                                 .apiKey(apiKey)
-                                 .modelName("gpt-5-nano")
-                                //  .temperature(0.7)
-                                //  .maxTokens(1000)
+                new LlmClient(
+                        OpenAiChatModel.builder()
+                                .apiKey(apiKey)
+                                .modelName("gpt-5-nano")
+                                // .temperature(0.7)
+                                // .maxTokens(1000)
                                 // .maxCompletionTokens(1000)
-                                 .build()));
+                                .build()));
     }
 
     @PostConstruct
     @Override
     protected void initialize() {
-        System.out.println("WeeklyLogAgent initialized with tools: " + getTools().size());
-        getTools().forEach(tool -> System.out.println("- " + tool.getClass().getSimpleName()));
     }
 }
