@@ -48,16 +48,15 @@ public class SecurityConfiguration {
 				.csrf(csrf -> csrf.disable())
 				.cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-				// 2. Add the Cloudflare Filter HERE (Before standard auth checks)
-				.addFilterBefore(new CloudflareSecretFilter(cloudflareSecretToken),
-						UsernamePasswordAuthenticationFilter.class)
+				// .addFilterBefore(new CloudflareSecretFilter(cloudflareSecretToken),
+				// UsernamePasswordAuthenticationFilter.class)
 
 				.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-					.authorizeHttpRequests(auth -> auth
-							// Public endpoints - completely bypass security
-							.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
-							.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-							.requestMatchers("/evaluation/**").permitAll() // Evaluation endpoints for testing
+				.authorizeHttpRequests(auth -> auth
+						// Public endpoints - completely bypass security
+						.requestMatchers("/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+						.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+						.requestMatchers("/evaluation/**").permitAll() // Evaluation endpoints for testing
 						// Protected endpoints - require JWT authentication
 						.requestMatchers("/api/auth/checkAuth").authenticated()
 						.requestMatchers("/actuator/**").authenticated()
@@ -69,12 +68,12 @@ public class SecurityConfiguration {
 						// (Kept your custom resolver logic exactly as is)
 						.bearerTokenResolver(request -> {
 							String requestURI = request.getRequestURI();
-							if (requestURI.equals("/api/auth/register") || 
-								requestURI.equals("/api/auth/login") || 
-								requestURI.equals("/api/auth/refresh") ||
-								requestURI.startsWith("/v3/api-docs") ||
-								requestURI.startsWith("/swagger-ui") ||
-								requestURI.startsWith("/evaluation")) {
+							if (requestURI.equals("/api/auth/register") ||
+									requestURI.equals("/api/auth/login") ||
+									requestURI.equals("/api/auth/refresh") ||
+									requestURI.startsWith("/v3/api-docs") ||
+									requestURI.startsWith("/swagger-ui") ||
+									requestURI.startsWith("/evaluation")) {
 								return null;
 							}
 							String authorization = request.getHeader("Authorization");
