@@ -32,6 +32,7 @@ import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
+import com.optimal.backend.springboot.agent.framework.core.model.SupervisorResponse;
 import com.optimal.backend.springboot.service.ChatService;
 import com.optimal.backend.springboot.security.annotation.CurrentUser;
 import com.optimal.backend.springboot.security.model.TokenUserContext;
@@ -250,7 +251,7 @@ public class ChatController {
             BaseSupervisor userSupervisor = supervisorWrapper.getSupervisor();
 
             // Execute supervisor with handoff support
-            BaseSupervisor.SupervisorResponse supervisorResponse = userSupervisor.executeWithHandoff(convertedMessages);
+            SupervisorResponse supervisorResponse = userSupervisor.executeWithHandoff(convertedMessages);
 
             // Check if processing is complete and clean up immediately
             if (userSupervisor.isProcessingComplete()) {
