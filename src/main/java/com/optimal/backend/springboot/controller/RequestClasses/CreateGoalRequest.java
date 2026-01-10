@@ -12,4 +12,6 @@ public class CreateGoalRequest {
     private String description;
     private Timestamp dueDate;
     private String[] tags;
+    private String icon;
+    private String iconColor;
 }

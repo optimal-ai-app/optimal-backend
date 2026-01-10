@@ -32,6 +32,12 @@ public class Goal {
     @Column(name = "title")
     private String title;
 
+    @Column(name = "icon")
+    private String icon;
+
+    @Column(name = "icon_color")
+    private String iconColor;
+
     @Column(name = "description")
     private String description;
 
