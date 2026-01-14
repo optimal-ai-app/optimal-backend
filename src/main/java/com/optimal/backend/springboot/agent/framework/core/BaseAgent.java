@@ -24,7 +24,7 @@ public abstract class BaseAgent {
     protected String name;
     protected String description;
     protected String systemPrompt;
-    protected List<Object> tools;
+    protected List<Object> tools; // Changed to Object to accept @Tool annotated classes
     protected LlmClient llmClient;
     protected int currentFlowStep;
 
@@ -39,6 +39,8 @@ public abstract class BaseAgent {
         this.tools = tools != null ? tools : new ArrayList<>();
         this.llmClient = llmClient;
         this.currentFlowStep = -1;
+        // this.tools.add(new
+        // GetInstructionTool(systemPrompt.split("<SECTION>")[1].split("Step ")));
     }
 
     public BaseAgent(String name, String description, String systemPrompt, LlmClient llmClient) {
@@ -99,6 +101,8 @@ public abstract class BaseAgent {
         }
         return content;
     }
+
+    // Remove private helper methods that are no longer needed
 
     // Getters and setters
     public String getName() {
