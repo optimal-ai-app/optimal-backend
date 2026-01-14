@@ -27,7 +27,6 @@ import com.optimal.backend.springboot.agent.framework.core.BaseSupervisor;
 import com.optimal.backend.springboot.agent.framework.core.LlmClient;
 import com.optimal.backend.springboot.agent.framework.core.Message;
 import com.optimal.backend.springboot.agent.framework.core.UserContext;
-import com.optimal.backend.springboot.agent.framework.core.model.SupervisorResponse;
 
 /**
  * Evaluates agent workflows by running test cases and validating results
@@ -73,22 +72,22 @@ public class AgentEvaluator {
         // Calculate summary
         EvaluationSummary summary = calculateSummary(results, suite);
         printSummary(summary);
-
+        
         // Generate benchmark ID and save results
         String benchmarkId = generateBenchmarkId();
         String benchmarksDir = "benchmarks";
         ensureBenchmarksDirectory(benchmarksDir);
-
+        
         // Set benchmark ID and file paths in summary before export
         summary.setBenchmarkId(benchmarkId);
         String csvFilename = String.format("%s/benchmark-%s.csv", benchmarksDir, benchmarkId);
         String jsonFilename = String.format("%s/benchmark-%s-summary.json", benchmarksDir, benchmarkId);
         summary.setCsvFilePath(csvFilename);
         summary.setJsonFilePath(jsonFilename);
-
+        
         // Export to CSV with benchmark ID
         exportToCSV(results, csvFilename);
-
+        
         // Export summary JSON
         exportSummaryToJson(summary, jsonFilename, benchmarkId);
 
@@ -122,8 +121,7 @@ public class AgentEvaluator {
             inputMessages.add(new Message("system", "Date: 2024-01-15"));
             inputMessages.add(new Message("user", testCase.getInput()));
 
-            // Capture agent selection before execution (interpret is called inside
-            // executeWithHandoff)
+            // Capture agent selection before execution (interpret is called inside executeWithHandoff)
             // We'll capture it after execution by checking what agents were actually used
             // For now, we'll interpret separately to capture selection, then execute
             supervisor.interpret(inputMessages);
@@ -132,14 +130,13 @@ public class AgentEvaluator {
             result.setActualAgentTeam(determineAgentTeam(selectedAgents));
 
             // Execute supervisor
-            SupervisorResponse response = supervisor.executeWithHandoff(inputMessages);
+            BaseSupervisor.SupervisorResponse response = supervisor.executeWithHandoff(inputMessages);
 
             long duration = System.currentTimeMillis() - startTime;
 
             // Check execution time
             if (testCase.getMaxExecutionTimeMs() != null && duration > testCase.getMaxExecutionTimeMs()) {
-                result.addValidationError(
-                        "Execution time exceeded: " + duration + "ms > " + testCase.getMaxExecutionTimeMs() + "ms");
+                result.addValidationError("Execution time exceeded: " + duration + "ms > " + testCase.getMaxExecutionTimeMs() + "ms");
             }
 
             // Capture actual values
@@ -171,14 +168,14 @@ public class AgentEvaluator {
     /**
      * Validate response against test case expectations
      */
-    private void validateResponse(EvaluationResult result, TestCase testCase,
-            SupervisorResponse response) {
-
+    private void validateResponse(EvaluationResult result, TestCase testCase, 
+                                  BaseSupervisor.SupervisorResponse response) {
+        
         // Validate agent team selection
         if (testCase.getExpectedAgentTeam() != null) {
             if (!testCase.getExpectedAgentTeam().equals(result.getActualAgentTeam())) {
-                result.addValidationError("Agent team mismatch: expected " + testCase.getExpectedAgentTeam() +
-                        ", got " + result.getActualAgentTeam());
+                result.addValidationError("Agent team mismatch: expected " + testCase.getExpectedAgentTeam() + 
+                                         ", got " + result.getActualAgentTeam());
             }
         }
 
@@ -217,37 +214,35 @@ public class AgentEvaluator {
         // Validate step
         if (testCase.getExpectedStep() != null) {
             if (response.currentStep != testCase.getExpectedStep()) {
-                result.addValidationError("Step mismatch: expected " + testCase.getExpectedStep() +
-                        ", got " + response.currentStep);
+                result.addValidationError("Step mismatch: expected " + testCase.getExpectedStep() + 
+                                         ", got " + response.currentStep);
             }
         }
 
         // Validate readyToHandoff
         if (testCase.getExpectedReadyToHandoff() != null) {
             if (response.readyToHandoff != testCase.getExpectedReadyToHandoff()) {
-                result.addValidationError("readyToHandoff mismatch: expected " + testCase.getExpectedReadyToHandoff() +
-                        ", got " + response.readyToHandoff);
+                result.addValidationError("readyToHandoff mismatch: expected " + testCase.getExpectedReadyToHandoff() + 
+                                         ", got " + response.readyToHandoff);
             }
         }
 
         // Validate reInterpret
         if (testCase.getExpectedReInterpret() != null) {
             if (response.reInterpret != testCase.getExpectedReInterpret()) {
-                result.addValidationError("reInterpret mismatch: expected " + testCase.getExpectedReInterpret() +
-                        ", got " + response.reInterpret);
+                result.addValidationError("reInterpret mismatch: expected " + testCase.getExpectedReInterpret() + 
+                                         ", got " + response.reInterpret);
             }
         }
 
         // Validate content contains substring
         if (testCase.getExpectedContentContains() != null) {
             if (response.content == null || !response.content.contains(testCase.getExpectedContentContains())) {
-                result.addValidationError(
-                        "Content does not contain expected substring: " + testCase.getExpectedContentContains());
+                result.addValidationError("Content does not contain expected substring: " + testCase.getExpectedContentContains());
             }
         }
 
-        // Validate JSON structure (basic check - OutputValidationGuard should handle
-        // this)
+        // Validate JSON structure (basic check - OutputValidationGuard should handle this)
         if (response.content == null || response.content.trim().isEmpty()) {
             result.addValidationError("Response content is null or empty");
         }
@@ -260,22 +255,22 @@ public class AgentEvaluator {
         if (agentNames == null || agentNames.isEmpty()) {
             return "None";
         }
-
+        
         // Check for GoalDefinitionTeam
         if (agentNames.contains("GoalCreatorAgent") && agentNames.size() == 1) {
             return "GoalDefinitionTeam";
         }
-
+        
         // Check for TaskExecutionTeam
         if (agentNames.contains("TaskPlannerAgent") && agentNames.contains("TaskCreatorAgent")) {
             return "TaskExecutionTeam";
         }
-
+        
         // Check for MilestoneExecutionTeam
         if (agentNames.contains("MilestonePlannerAgent") && agentNames.contains("MilestoneTaskCreatorAgent")) {
             return "MilestoneExecutionTeam";
         }
-
+        
         return "Unknown";
     }
 
@@ -285,8 +280,7 @@ public class AgentEvaluator {
     private BaseSupervisor createTestSupervisor() {
         TaskPlannerAgent taskPlannerAgent = applicationContext.getBean(TaskPlannerAgent.class);
         TaskCreatorAgent taskCreatorAgent = applicationContext.getBean(TaskCreatorAgent.class);
-        MilestoneTaskCreatorAgent milestoneTaskCreatorAgent = applicationContext
-                .getBean(MilestoneTaskCreatorAgent.class);
+        MilestoneTaskCreatorAgent milestoneTaskCreatorAgent = applicationContext.getBean(MilestoneTaskCreatorAgent.class);
         GoalCreatorAgent goalCreatorAgent = applicationContext.getBean(GoalCreatorAgent.class);
         MilestonePlannerAgent milestonePlannerAgent = applicationContext.getBean(MilestonePlannerAgent.class);
 
@@ -296,8 +290,7 @@ public class AgentEvaluator {
         supervisor.addAgent(milestoneTaskCreatorAgent.getName(), milestoneTaskCreatorAgent);
         supervisor.addAgent(goalCreatorAgent.getName(), goalCreatorAgent);
         supervisor.addAgent(milestonePlannerAgent.getName(), milestonePlannerAgent);
-        // Don't set ChatService for evaluation - we don't want to save to database
-        // during testing
+        // Don't set ChatService for evaluation - we don't want to save to database during testing
         // supervisor.setChatService(chatService);
 
         return supervisor;
@@ -310,23 +303,23 @@ public class AgentEvaluator {
         EvaluationSummary summary = new EvaluationSummary();
         summary.setSuiteName(suite.getName());
         summary.setTotalTests(results.size());
-
+        
         long passed = results.stream().filter(EvaluationResult::isPassed).count();
         summary.setPassed((int) passed);
         summary.setFailed(results.size() - (int) passed);
-
+        
         if (results.size() > 0) {
             summary.setHitRate((double) passed / results.size() * 100);
         }
-
+        
         double avgDuration = results.stream()
                 .mapToLong(EvaluationResult::getDurationMs)
                 .average()
                 .orElse(0.0);
         summary.setAverageDurationMs((long) avgDuration);
-
+        
         summary.setResults(results);
-
+        
         return summary;
     }
 
@@ -352,24 +345,24 @@ public class AgentEvaluator {
     private void exportToCSV(List<EvaluationResult> results, String filename) {
         try (FileWriter writer = new FileWriter(filename)) {
             // Header
-            writer.append(
-                    "Test ID,Description,Passed,Duration (ms),Error,Validation Errors,Actual Agent Team,Actual Agents,Actual Step,Actual ReadyToHandoff\n");
-
+            writer.append("Test ID,Description,Passed,Duration (ms),Error,Validation Errors,Actual Agent Team,Actual Agents,Actual Step,Actual ReadyToHandoff\n");
+            
             // Data rows
             for (EvaluationResult result : results) {
                 writer.append(String.format("%s,%s,%s,%d,%s,%s,%s,%s,%s,%s\n",
-                        escapeCSV(result.getTestId()),
-                        escapeCSV(result.getDescription()),
-                        result.isPassed() ? "PASS" : "FAIL",
-                        result.getDurationMs(),
-                        escapeCSV(result.getError() != null ? result.getError() : ""),
-                        escapeCSV(String.join("; ", result.getValidationErrors())),
-                        escapeCSV(result.getActualAgentTeam() != null ? result.getActualAgentTeam() : ""),
-                        escapeCSV(result.getActualAgents() != null ? String.join("; ", result.getActualAgents()) : ""),
-                        result.getActualStep() != null ? result.getActualStep().toString() : "",
-                        result.getActualReadyToHandoff() != null ? result.getActualReadyToHandoff().toString() : ""));
+                    escapeCSV(result.getTestId()),
+                    escapeCSV(result.getDescription()),
+                    result.isPassed() ? "PASS" : "FAIL",
+                    result.getDurationMs(),
+                    escapeCSV(result.getError() != null ? result.getError() : ""),
+                    escapeCSV(String.join("; ", result.getValidationErrors())),
+                    escapeCSV(result.getActualAgentTeam() != null ? result.getActualAgentTeam() : ""),
+                    escapeCSV(result.getActualAgents() != null ? String.join("; ", result.getActualAgents()) : ""),
+                    result.getActualStep() != null ? result.getActualStep().toString() : "",
+                    result.getActualReadyToHandoff() != null ? result.getActualReadyToHandoff().toString() : ""
+                ));
             }
-
+            
             System.out.println("CSV results exported to: " + filename);
         } catch (IOException e) {
             System.err.println("Failed to export CSV: " + e.getMessage());
@@ -377,8 +370,7 @@ public class AgentEvaluator {
     }
 
     private String escapeCSV(String value) {
-        if (value == null)
-            return "";
+        if (value == null) return "";
         if (value.contains(",") || value.contains("\"") || value.contains("\n")) {
             return "\"" + value.replace("\"", "\"\"") + "\"";
         }
@@ -416,7 +408,7 @@ public class AgentEvaluator {
         try {
             ObjectMapper jsonMapper = new ObjectMapper();
             jsonMapper.enable(SerializationFeature.INDENT_OUTPUT);
-
+            
             // Create a summary object with benchmark metadata
             Map<String, Object> summaryData = new HashMap<>();
             summaryData.put("benchmarkId", benchmarkId);
@@ -429,7 +421,7 @@ public class AgentEvaluator {
             summaryData.put("averageDurationMs", summary.getAverageDurationMs());
             summaryData.put("csvFile", summary.getCsvFilePath());
             summaryData.put("jsonFile", summary.getJsonFilePath());
-
+            
             jsonMapper.writeValue(new File(filename), summaryData);
             System.out.println("Summary exported to: " + filename);
         } catch (IOException e) {
@@ -437,3 +429,4 @@ public class AgentEvaluator {
         }
     }
 }
+

@@ -22,6 +22,11 @@ public class AgentNode {
         this.dependencies = new HashSet<>(dependencies);
         this.instructions = new ArrayList<>();
         this.instructions.add(new Message("user", instruction));
+        System.out.println("\n\n--------------------------------");
+        System.out.println("AgentNode created: " + name);
+        System.out.println("Instructions: " + instructions.get(0).getContent());
+        System.out.println("Dependencies: " + dependencies);
+        System.out.println("--------------------------------\n\n");
     }
 
     public void addInstruction(Message instruction) {
