@@ -27,7 +27,7 @@ public class LlmGoalSuggestionTool {
             - Realistic yet motivating
             - Tailored to their specific situation
 
-            Format your response as:
+            Format your response, making it readable with markdown formatting:
 
             1. [First goal with brief explanation]
 

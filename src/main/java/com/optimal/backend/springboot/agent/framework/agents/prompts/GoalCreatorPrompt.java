@@ -55,7 +55,7 @@ public class GoalCreatorPrompt extends BasePrompt {
       Step 3. **Finalize Goal Details**
          - Summarize goal: title, description, due date, and tags.
          - **MANDATORY**: When user mentions a date (e.g., "April 2", "Nov 23", "in 3 weeks", "in 2 months", "next Monday", "December 15", "by next week"), ALWAYS call SuggestDate with the **exact text** the user provided (e.g. "Feb 21", do not add a year if user didn't say one).
-         - **CRITICAL**: You MUST use the EXACT return value from SuggestDate as the `dueTime` in your JSON response. Do not ignore the tool's output or use your own calculated date. If the tool returns a date in the next year, use it.
+         - **CRITICAL**: You MUST use the EXACT return value from SuggestDate as the `dueDate` in your JSON response. Do not ignore the tool's output or use your own calculated date. If the tool returns a date in the next year, use it.
          - *Response Format:*
            {
              "content": "Here are your goal's details due on **<YYYY-MM-DD>**. \n\nYou can edit this due date before clicking 'Add Goal'.",
@@ -63,9 +63,9 @@ public class GoalCreatorPrompt extends BasePrompt {
              "readyToHandoff": false,
              "currentStep": 4,
              "data": {
-               "goalTitle": "<title>",
-               "goalDescription": "<desc>",
-               "dueTime": "YYYY-MM-DD",
+               "title": "<title>",
+               "description": "<desc>",
+               "dueDate": "YYYY-MM-DD",
                "tags": []
              }
            }
@@ -75,7 +75,7 @@ public class GoalCreatorPrompt extends BasePrompt {
          - Respond with the following:
 
             {
-              "content": "Great! I've added your goal, **<goal>**, due on **<dueTime>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
+              "content": "Great! I've added your goal, **<goal>**, due on **<dueDate>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
               "tags": [],
               "readyToHandoff": true,
               "reInterpret":true,
@@ -110,9 +110,9 @@ public class GoalCreatorPrompt extends BasePrompt {
         "readyToHandoff": false,
         "currentStep": 4,
         "data": {
-          "goalTitle": "Lose 10 pounds",
-          "goalDescription": "Lose weight through diet and exercise.",
-          "dueTime": "2023-09-01",
+          "title": "Lose 10 pounds",
+          "description": "Lose weight through diet and exercise.",
+          "dueDate": "2023-09-01",
           "tags": ["Health", "Weight Loss"]
         }
       }
@@ -137,7 +137,7 @@ public class GoalCreatorPrompt extends BasePrompt {
 
       _Response JSON:_
       {
-        "content": "Great! I've added your goal, **<goal>**, due on **<dueTime>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
+        "content": "Great! I've added your goal, **<goal>**, due on **<dueDate>** your list.\n\nNow, let's generate a list of milestone tasks to achieve it.",
         "tags": [],
         "readyToHandoff": true,
         "currentStep": -1,

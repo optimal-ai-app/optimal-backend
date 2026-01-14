@@ -20,16 +20,27 @@ public class LangChain4jConfig {
 
     @Bean
     public ChatModel chatLanguageModel() {
+        // try {
+        // return GoogleAiGeminiChatModel.builder()
+        // .apiKey(geminiApiKey)
+        // .modelName("gemini-2.5-flash")
+        // .temperature(.2)
+        // .logResponses(true)
+        // .returnThinking(true)
+        // .build();
+        // } catch (Exception e) {
+        // System.err.println("ERROR: Failed to create Main chat model: " +
+        // e.getMessage());
+        // return new DisabledChatModel();
+        // }
         try {
-            return GoogleAiGeminiChatModel.builder()
-                    .apiKey(geminiApiKey)
-                    .modelName("gemini-2.5-flash")
+            return OpenAiChatModel.builder()
+                    .apiKey(gptApiKey)
+                    .modelName("gpt-4.1-mini")
                     .temperature(.2)
-                    .logResponses(true)
-                    .returnThinking(true)
                     .build();
         } catch (Exception e) {
-            System.err.println("ERROR: Failed to create Main chat model: " +
+            System.err.println("ERROR: Failed to create Light chat model: " +
                     e.getMessage());
             return new DisabledChatModel();
         }
