@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.optimal.backend.springboot.database.entity.Habit;
 import com.optimal.backend.springboot.database.entity.HabitAction;
 import com.optimal.backend.springboot.database.entity.HabitLog;
+import com.optimal.backend.springboot.security.annotation.CurrentUser;
+import com.optimal.backend.springboot.security.model.TokenUserContext;
 import com.optimal.backend.springboot.service.HabitService;
 
 import lombok.RequiredArgsConstructor;
@@ -31,7 +33,8 @@ public class HabitController {
 
 	// Habits CRUD
 	@PostMapping
-	public ResponseEntity<Habit> createHabit(@RequestBody Habit habit) {
+	public ResponseEntity<Habit> createHabit(@RequestBody Habit habit, @CurrentUser TokenUserContext userContext) {
+		habit.setUserId(userContext.getUserId());
 		return ResponseEntity.ok(habitService.createHabit(habit));
 	}
 

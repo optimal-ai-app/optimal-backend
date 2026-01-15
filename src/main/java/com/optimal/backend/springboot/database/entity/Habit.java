@@ -9,7 +9,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,29 +23,29 @@ public class Habit {
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	private UUID id;
 
-	@Column(name = "type")
-	private String type;
+	@Column(name = "title")
+	private String title;
 
-	@Column(name = "cadence_rule")
-	private String cadenceRule;
+	@Column(name = "description")
+	private String description;
 
-	@Column(name = "adherence_policy")
-	private String adherencePolicy;
+	@Column(name = "streak")
+	private Integer streak;
 
-	@Column(name = "verification_method")
-	private String verificationMethod;
+	@Column(name = "cadence")
+	private String cadence;
 
-	@Column(name = "health_score", columnDefinition = "integer default 50") // Halfway on the health bar. Under 50 is in the red zone. Above 50 is in the green zone. 
-	private Integer healthScore;
+	@Column(name = "health")
+	private Integer health;
 
-	@Column(name = "notify_mode")
-	private String notifyMode;
+	@Column(name = "is_active")
+	private Boolean isActive;
 
 	@Column(name = "created_at")
 	private Timestamp createdAt;
 
-	@Column(name = "updated_at")
-	private Timestamp updatedAt;
+	@Column(name = "tags")
+	private String tags;
 
 	@Column(name = "user_id")
 	private UUID userId;
@@ -56,14 +55,6 @@ public class Habit {
 		if (this.createdAt == null) {
 			this.createdAt = new Timestamp(System.currentTimeMillis());
 		}
-		if (this.updatedAt == null) {
-			this.updatedAt = new Timestamp(System.currentTimeMillis());
-		}
-	}
-
-	@PreUpdate
-	protected void onUpdate() {
-		this.updatedAt = new Timestamp(System.currentTimeMillis());
 	}
 }
 

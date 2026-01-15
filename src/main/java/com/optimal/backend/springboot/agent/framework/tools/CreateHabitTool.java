@@ -23,17 +23,18 @@ public class CreateHabitTool {
 	private HabitService habitService;
 
 	@Tool("Creates a habit, seeds recurring habit_actions from cadence, and prepares for quick logging.")
-	public String execute(@P("habitTitle") String habitTitle, @P("type") String type, @P("cadenceRule") String cadenceRule, @P("adherencePolicy") String adherencePolicy, @P("verificationMethod") String verificationMethod, @P("notifyMode") String notifyMode, @P("actions") String[] actions) {
+	public String execute(@P("habitTitle") String habitTitle, @P("description") String description, @P("cadence") String cadence, @P("tags") String tags, @P("actions") String[] actions) {
 		try {
 			UUID userId = UserContext.requireUserId();
 			Habit habit = new Habit();
 			habit.setUserId(userId);
-			habit.setType(type);
-			habit.setCadenceRule(cadenceRule);
-			habit.setAdherencePolicy(adherencePolicy);
-			habit.setVerificationMethod(verificationMethod);
-			habit.setNotifyMode(notifyMode);
-			habit.setHealthScore(50);
+			habit.setTitle(habitTitle);
+			habit.setDescription(description);
+			habit.setCadence(cadence);
+			habit.setStreak(0);
+			habit.setHealth(50);
+			habit.setIsActive(true);
+			habit.setTags(tags);
 			Habit saved = habitService.createHabit(habit);
 
 			// Seed actions from provided list (LLM produced) if any
@@ -43,7 +44,7 @@ public class CreateHabitTool {
 					HabitAction action = new HabitAction();
 					action.setHabitId(saved.getId());
 					action.setTitle(actionTitle);
-					action.setRecurrenceRule(cadenceRule);
+					action.setRecurrenceRule(cadence);
 					createdActions.add(habitService.addHabitAction(action));
 				}
 			}
