@@ -8,6 +8,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class CreateGoalRequest {
+    private String icon;
+    private String iconColor;
     private String title;
     private String description;
     private Timestamp dueDate;

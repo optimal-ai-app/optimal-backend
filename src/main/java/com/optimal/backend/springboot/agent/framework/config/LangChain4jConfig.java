@@ -33,6 +33,19 @@ public class LangChain4jConfig {
             System.err.println("WARNING: OpenAI API key is not configured. Using disabled chat model.");
             return new DisabledChatModel();
         }
+        // try {
+        // return GoogleAiGeminiChatModel.builder()
+        // .apiKey(geminiApiKey)
+        // .modelName("gemini-2.5-flash")
+        // .temperature(.2)
+        // .logResponses(true)
+        // .returnThinking(true)
+        // .build();
+        // } catch (Exception e) {
+        // System.err.println("ERROR: Failed to create Main chat model: " +
+        // e.getMessage());
+        // return new DisabledChatModel();
+        // }
         try {
             return OpenAiChatModel.builder()
                     .apiKey(gptApiKey)
@@ -42,7 +55,7 @@ public class LangChain4jConfig {
                     .strictTools(true)
                     .build();
         } catch (Exception e) {
-            System.err.println("ERROR: Failed to create Main chat model: " +
+            System.err.println("ERROR: Failed to create Light chat model: " +
                     e.getMessage());
             return new DisabledChatModel();
         }

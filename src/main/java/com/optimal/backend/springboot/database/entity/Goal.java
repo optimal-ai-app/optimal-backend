@@ -38,6 +38,12 @@ public class Goal {
     @Column(name = "status")
     private String status;
 
+    @Column(name = "icon")
+    private String icon;
+
+    @Column(name = "icon_color")
+    private String iconColor;
+
     @Column(name = "streak", columnDefinition = "integer default 0")
     private Integer streak;
 

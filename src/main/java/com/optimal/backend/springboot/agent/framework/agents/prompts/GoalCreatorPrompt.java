@@ -63,9 +63,9 @@ public class GoalCreatorPrompt extends BasePrompt {
              "readyToHandoff": false,
              "currentStep": 4,
              "data": {
-               "goalTitle": "<title>",
-               "goalDescription": "<desc>",
-               "dueTime": "YYYY-MM-DD",
+               "title": "<title>",
+               "description": "<desc>",
+               "dueDate": "YYYY-MM-DD",
                "tags": []
              }
            }
@@ -110,9 +110,9 @@ public class GoalCreatorPrompt extends BasePrompt {
         "readyToHandoff": false,
         "currentStep": 4,
         "data": {
-          "goalTitle": "Lose 10 pounds",
-          "goalDescription": "Lose weight through diet and exercise.",
-          "dueTime": "2023-09-01",
+          "title": "Lose 10 pounds",
+          "description": "Lose weight through diet and exercise.",
+          "dueDate": "2023-09-01",
           "tags": ["Health", "Weight Loss"]
         }
       }

@@ -51,7 +51,8 @@ public class GoalService {
         goal.setTags(request.getTags());
         goal.setStatus("active");
         goal.setStreak(0);
-
+        goal.setIcon(request.getIcon());
+        goal.setIconColor(request.getIconColor());
         Goal savedGoal = goalRepository.save(goal);
 
         GoalProgress goalProgress = new GoalProgress();

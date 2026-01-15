@@ -29,6 +29,7 @@ public class GetGoalDescriptionTool {
             List<Goal> goals = goalService.getGoalsByUser(userId);
 
             if (goals.isEmpty()) {
+                System.out.println("No goals found for this user.");
                 return "No goals found for this user.";
             }
 
