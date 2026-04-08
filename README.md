@@ -10,6 +10,28 @@
   </a>
 </div>
 
+
+
+
+## About
+Optimal is an AI-powered accountability coaching app. This repository contains the Spring Boot backend, which powers goal creation, task scheduling, habit tracking, and an AI coaching system built on a custom multi-agent orchestration framework.
+
+### AI Agent Architecture
+The backend features a hand-rolled multi-agent orchestration system built on LangChain4j, without relying on high-level agent frameworks. A `BaseSupervisor` interprets each user message using an LLM-based router to dynamically assemble and execute agent teams from a predefined registry:
+
+- **GoalDefinitionTeam** — `GoalCreatorAgent`
+- **MilestoneExecutionTeam** — `MilestonePlannerAgent` → `TaskCreatorAgent`
+- **TaskExecutionTeam** — `TaskPlannerAgent` → `TaskCreatorAgent`
+
+Agents are executed with dependency resolution, where downstream agents receive structured context from upstream agents before running. A stateful handoff mechanism persists agent control across multi-turn conversations, enabling multi-step workflows like goal creation flowing into milestone planning and task generation without user re-prompting.
+
+### Additional Engineering Highlights
+- **Tool-augmented agents** — Each agent is equipped with LangChain4j `@Tool`-annotated tools (goal retrieval, task querying, date calculation, milestone queue management) that execute real database operations during inference
+- **Guardrails** — Input and output guardrails handle prompt injection detection and JSON format validation, with an LLM-based format fixer as a fallback
+- **Prompt routing** — A lightweight instruction selector runs between turns to identify the correct step in a multi-step agent prompt, reducing token waste and improving response accuracy
+- **Supervisor memory management** — Per-session supervisors are stored in a `ConcurrentHashMap` with LRU-style eviction, inactivity-based TTL, and a background cleanup executor to prevent memory leaks at scale
+- **Context-aware tooling** — `UserContext` uses `ThreadLocal` storage to propagate user ID, chat ID, and local date to all tools within a request thread without parameter threading
+
 ## Development Workflow
 
 ### Initial Setup
