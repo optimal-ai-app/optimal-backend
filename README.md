@@ -1,6 +1,15 @@
-# Spring Boot Boilerplate
- *Spring Boot Boilerplate* is a **starter kit**. This project is simple and useful.
- 
+# Optimal - Backend Repository
+## Website: [Optimal](https://useoptimal.app)
+## Demo Video:
+<div>
+  <a href="https://www.loom.com/share/692237f364174fa7bd52238adc1beb88">
+    <p>Optimal - Your Personal AI Accountability Coach (Demo Video) - Watch Video</p>
+  </a>
+  <a href="https://www.loom.com/share/692237f364174fa7bd52238adc1beb88">
+    <img style="max-width:300px;" src="https://cdn.loom.com/sessions/thumbnails/692237f364174fa7bd52238adc1beb88-220725109b52db1e-full-play.gif#t=0.1">
+  </a>
+</div>
+
 ## Development Workflow
 
 ### Initial Setup
