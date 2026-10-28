@@ -1,4 +1,5 @@
 # Optimal - Backend Repository
+## Check out our frontend code: [Frontend repo](https://github.com/optimal-ai-app/optimal)
 ## Website: [Optimal](https://useoptimal.app)
 ## Demo Video:
 <div>
